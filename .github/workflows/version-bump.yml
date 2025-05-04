@@ -1,0 +1,54 @@
+name: Version Bump
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  version-bump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10.10.0
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Git
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'github-actions@github.com'
+
+      - name: Analyze conventional commits and bump version
+        id: version-bump
+        uses: phips28/gh-action-bump-version@v10.1.1
+        with:
+          major-wording: 'BREAKING CHANGE'
+          minor-wording: 'feat'
+          patch-wording: 'fix,chore,refactor,docs,style,perf'
+          rc-wording: 'rc,beta,alpha'
+          skip-tag: 'true'
+          commit-message: 'chore: bump version to {{version}}'
+
+      - name: Push version bump commit and tag
+        run: |
+          git push
+          git tag v${{ steps.version-bump.outputs.newVersion }}
+          git push --tags 

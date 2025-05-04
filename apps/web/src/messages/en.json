@@ -1,0 +1,23 @@
+{
+  "Index": {
+    "title": "Pack & Go",
+    "subtitle": "Manage your travel plans with ease",
+    "get_started": "Get Started"
+  },
+  "Navigation": {
+    "home": "Home",
+    "trips": "Trips",
+    "planner": "Planner",
+    "checklist": "Checklist",
+    "profile": "Profile"
+  },
+  "Common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit"
+  }
+} 

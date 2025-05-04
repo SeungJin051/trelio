@@ -1,0 +1,23 @@
+{
+  "Index": {
+    "title": "Pack & Go",
+    "subtitle": "당신의 여행 계획을 손쉽게 관리하세요",
+    "get_started": "시작하기"
+  },
+  "Navigation": {
+    "home": "홈",
+    "trips": "여행",
+    "planner": "계획",
+    "checklist": "체크리스트",
+    "profile": "프로필"
+  },
+  "Common": {
+    "loading": "로딩 중...",
+    "error": "오류가 발생했습니다",
+    "retry": "다시 시도",
+    "save": "저장",
+    "cancel": "취소",
+    "delete": "삭제",
+    "edit": "수정"
+  }
+} 

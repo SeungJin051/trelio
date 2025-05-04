@@ -1,0 +1,15 @@
+# 빌드 폴더
+.next/
+dist/
+build/
+out/
+
+# 의존성 디렉토리
+node_modules/
+
+# 기타 무시할 파일
+*.d.ts
+*.min.js
+coverage/
+public/
+storybook-static/ 

@@ -1,0 +1,24 @@
+# 빌드 폴더
+.next/
+dist/
+build/
+out/
+
+# 의존성 디렉토리
+node_modules/
+
+# 패키지 매니저 파일
+pnpm-lock.yaml
+
+# 일부 특수 파일
+.eslintcache
+.env
+.env.*
+
+# 특정 파일 포맷
+*.log
+*.svg
+*.json
+*.md
+*.yml
+*.yaml 

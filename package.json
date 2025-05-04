@@ -1,0 +1,64 @@
+{
+  "name": "pack-and-go",
+  "version": "1.0.0",
+  "description": "Pack & Go - Travel Planning Application",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter web dev\" \"pnpm --filter storybook dev\"",
+    "dev:web": "pnpm --filter web dev",
+    "dev:storybook": "pnpm --filter storybook dev",
+    "storybook:fix": "cd apps/storybook && STORYBOOK_DISABLE_TELEMETRY=1 NODE_PATH=../../ npx storybook dev -p 6006",
+    "storybook:pnpm": "cd apps/storybook && STORYBOOK_DISABLE_TELEMETRY=1 NODE_PATH=../../ pnpm exec storybook dev -p 6006",
+    "prebuild": "pnpm lint",
+    "build": "pnpm --filter @repo/ui build && pnpm --filter web build",
+    "start": "pnpm --filter web start",
+    "lint": "pnpm -r lint",
+    "lint:fix": "eslint --fix \"**/*.{js,jsx,ts,tsx}\"",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,css,scss,json}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,css,scss,json}\"",
+    "test": "pnpm -r test",
+    "prepare": "husky"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.10.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.0",
+    "@commitlint/config-conventional": "^19.8.0",
+    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.3",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
+    "autoprefixer": "^10.4.17",
+    "clsx": "^2.1.1",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^10.1.2",
+    "eslint-plugin-prettier": "^5.2.6",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-storybook": "^0.12.0",
+    "husky": "^9.1.7",
+    "postcss": "^8.4.35",
+    "prettier": "^3.5.3",
+    "prettier-plugin-organize-imports": "^4.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.2.0",
+    "tailwindcss": "^3.4.17",
+    "tw-animate-css": "^1.2.9"
+  },
+  "dependencies": {
+    "@radix-ui/react-slot": "^1.2.0",
+    "class-variance-authority": "^0.7.1"
+  },
+  "overrides": {
+    "react-is": "^19.0.0"
+  }
+}

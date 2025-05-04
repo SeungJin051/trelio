@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "buildCommand": "pnpm build",
+  "installCommand": "pnpm install",
+  "framework": "nextjs",
+  "outputDirectory": "apps/web/.next",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/apps/web/$1"
+    }
+  ],
+  "github": {
+    "enabled": true,
+    "silent": true,
+    "autoJobCancelation": true
+  }
+} 
