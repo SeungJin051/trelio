@@ -2,8 +2,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@repo/ui": ["../../packages/ui"],
-      "@repo/ui/*": ["../../packages/ui/*"]
+      "@repo/ui": ["../../packages/ui/src"],
+      "@repo/ui/*": ["../../packages/ui/src/*"]
     }
   }
 } 

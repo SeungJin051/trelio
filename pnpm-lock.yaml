@@ -87,6 +87,9 @@ importers:
       tailwindcss:
         specifier: ^3.4.17
         version: 3.4.17
+      turbo:
+        specifier: ^2.5.2
+        version: 2.5.2
       tw-animate-css:
         specifier: ^1.2.9
         version: 1.2.9
@@ -175,7 +178,7 @@ importers:
   apps/web:
     dependencies:
       '@repo/ui':
-        specifier: workspace:*
+        specifier: file:../../packages/ui
         version: link:../../packages/ui
       '@tanstack/react-query':
         specifier: ^5.75.1
@@ -207,6 +210,9 @@ importers:
       tailwindcss:
         specifier: ^3.4.17
         version: 3.4.17
+      ui:
+        specifier: link:../packages/ui
+        version: link:../packages/ui
       zustand:
         specifier: ^5.0.4
         version: 5.0.4(@types/react@19.1.2)(react@19.1.0)
@@ -5259,6 +5265,40 @@ packages:
 
   tty-browserify@0.0.1:
     resolution: {integrity: sha512-C3TaO7K81YvjCgQH9Q1S3R3P3BtN3RIM8n+OvX4il1K1zgE8ZhI0op7kClgkxtutIE8hQrcrHBXvIheqKUUCxw==}
+
+  turbo-darwin-64@2.5.2:
+    resolution: {integrity: sha512-2aIl0Sx230nLk+Cg2qSVxvPOBWCZpwKNuAMKoROTvWKif6VMpkWWiR9XEPoz7sHeLmCOed4GYGMjL1bqAiIS/g==}
+    cpu: [x64]
+    os: [darwin]
+
+  turbo-darwin-arm64@2.5.2:
+    resolution: {integrity: sha512-MrFYhK/jYu8N6QlqZtqSHi3e4QVxlzqU3ANHTKn3/tThuwTLbNHEvzBPWSj5W7nZcM58dCqi6gYrfRz6bJZyAA==}
+    cpu: [arm64]
+    os: [darwin]
+
+  turbo-linux-64@2.5.2:
+    resolution: {integrity: sha512-LxNqUE2HmAJQ/8deoLgMUDzKxd5bKxqH0UBogWa+DF+JcXhtze3UTMr6lEr0dEofdsEUYK1zg8FRjglmwlN5YA==}
+    cpu: [x64]
+    os: [linux]
+
+  turbo-linux-arm64@2.5.2:
+    resolution: {integrity: sha512-0MI1Ao1q8zhd+UUbIEsrM+yLq1BsrcJQRGZkxIsHFlGp7WQQH1oR3laBgfnUCNdCotCMD6w4moc9pUbXdOR3bg==}
+    cpu: [arm64]
+    os: [linux]
+
+  turbo-windows-64@2.5.2:
+    resolution: {integrity: sha512-hOLcbgZzE5ttACHHyc1ajmWYq4zKT42IC3G6XqgiXxMbS+4eyVYTL+7UvCZBd3Kca1u4TLQdLQjeO76zyDJc2A==}
+    cpu: [x64]
+    os: [win32]
+
+  turbo-windows-arm64@2.5.2:
+    resolution: {integrity: sha512-fMU41ABhSLa18H8V3Z7BMCGynQ8x+wj9WyBMvWm1jeyRKgkvUYJsO2vkIsy8m0vrwnIeVXKOIn6eSe1ddlBVqw==}
+    cpu: [arm64]
+    os: [win32]
+
+  turbo@2.5.2:
+    resolution: {integrity: sha512-Qo5lfuStr6LQh3sPQl7kIi243bGU4aHGDQJUf6ylAdGwks30jJFloc9NYHP7Y373+gGU9OS0faA4Mb5Sy8X9Xw==}
+    hasBin: true
 
   tw-animate-css@1.2.9:
     resolution: {integrity: sha512-9O4k1at9pMQff9EAcCEuy1UNO43JmaPQvq+0lwza9Y0BQ6LB38NiMj+qHqjoQf40355MX+gs6wtlR6H9WsSXFg==}
@@ -11518,6 +11558,33 @@ snapshots:
       typescript: 5.8.3
 
   tty-browserify@0.0.1: {}
+
+  turbo-darwin-64@2.5.2:
+    optional: true
+
+  turbo-darwin-arm64@2.5.2:
+    optional: true
+
+  turbo-linux-64@2.5.2:
+    optional: true
+
+  turbo-linux-arm64@2.5.2:
+    optional: true
+
+  turbo-windows-64@2.5.2:
+    optional: true
+
+  turbo-windows-arm64@2.5.2:
+    optional: true
+
+  turbo@2.5.2:
+    optionalDependencies:
+      turbo-darwin-64: 2.5.2
+      turbo-darwin-arm64: 2.5.2
+      turbo-linux-64: 2.5.2
+      turbo-linux-arm64: 2.5.2
+      turbo-windows-64: 2.5.2
+      turbo-windows-arm64: 2.5.2
 
   tw-animate-css@1.2.9: {}
 

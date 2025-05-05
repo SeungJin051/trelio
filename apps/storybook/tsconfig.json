@@ -16,7 +16,8 @@
     "incremental": true,
     "baseUrl": "../..",
     "paths": {
-      "@repo/ui": ["../../packages/ui/src"]
+      "@repo/ui": ["../../packages/ui/src"],
+      "@repo/ui/*": ["../../packages/ui/src/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".storybook/**/*.ts", ".storybook/**/*.tsx", ".storybook/preview.js", ".storybook/main.js"],

@@ -6,4 +6,12 @@ module.exports = {
   },
   stories: ['../stories/**/*.stories.@(ts|tsx|js|jsx|mdx)'],
   addons: ['@storybook/addon-essentials'],
+  webpackFinal: async (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@repo/ui': path.resolve(__dirname, '../../packages/ui/src'),
+    };
+
+    return config;
+  },
 };
