@@ -16,8 +16,14 @@
     "incremental": true,
     "baseUrl": "../..",
     "paths": {
-      "@repo/ui": ["../../packages/ui/src"],
-      "@repo/ui/*": ["../../packages/ui/src/*"]
+      "@storybook/*": ["./apps/storybook/src/*"],
+      "@ui/*": ["./packages/ui/src/*"],
+      "@ui/components": ["./packages/ui/src/components"],
+      "@ui/components/*": ["./packages/ui/src/components/*"],
+      "@ui/utils": ["./packages/ui/src/utils"],
+      "@ui/utils/*": ["./packages/ui/src/utils/*"],
+      "@web/*": ["./apps/web/src/*"],
+      "@web/components/*": ["./apps/web/src/components/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".storybook/**/*.ts", ".storybook/**/*.tsx", ".storybook/preview.js", ".storybook/main.js"],

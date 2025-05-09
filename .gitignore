@@ -12,6 +12,9 @@ out/
 build
 dist
 
+# Storybook
+apps/storybook/storybook-static
+
 # 기타
 .DS_Store
 *.pem

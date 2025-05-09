@@ -31,6 +31,7 @@ module.exports = {
     '**/dist/**',
     '**/build/**',
     '**/.next/**',
+    '**/.turbo/**',
   ],
   overrides: [
     {
@@ -40,4 +41,10 @@ module.exports = {
       },
     },
   ],
+  settings: {
+    // Next.js에서는 web/.eslintrc.js에서 별도로 설정
+    react: {
+      version: 'detect',
+    },
+  },
 };

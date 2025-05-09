@@ -19,7 +19,9 @@
     "declaration": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@ui/*": ["./src/*"],
+      "@ui/components/*": ["./src/components/*"],
+      "@ui/utils/*": ["./src/utils/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx"],
