@@ -51,20 +51,20 @@ export default function Home() {
   };
 
   return (
-    <main className='flex flex-col items-center justify-center min-h-screen p-8'>
+    <main className='flex min-h-screen flex-col items-center justify-center p-8'>
       <h1 className='mb-4 text-4xl font-bold'>{t('title')}</h1>
       <p className='mb-8 text-lg'>{t('subtitle')}</p>
 
-      <div className='flex flex-col gap-4 mb-8'>
+      <div className='mb-8 flex flex-col gap-4'>
         <button
           onClick={handleLogin}
-          className='px-4 py-2 text-white bg-blue-600 rounded-md'
+          className='rounded-md bg-blue-600 px-4 py-2 text-white'
         >
           {isLoggedIn ? '이미 로그인됨' : '로그인 테스트'}
         </button>
 
         {isLoggedIn && (
-          <div className='p-4 border rounded-md'>
+          <div className='rounded-md border p-4'>
             <h2 className='mb-2 text-xl font-bold'>사용자 정보</h2>
             <p>이름: {user?.name}</p>
             <p>이메일: {user?.email}</p>
@@ -73,15 +73,15 @@ export default function Home() {
 
         <button
           onClick={handleAddTrip}
-          className='px-4 py-2 text-white bg-green-600 rounded-md'
+          className='rounded-md bg-green-600 px-4 py-2 text-white'
         >
           여행 추가 테스트
         </button>
 
         {trips.length > 0 && (
-          <div className='p-4 border rounded-md'>
+          <div className='rounded-md border p-4'>
             <h2 className='mb-2 text-xl font-bold'>여행 목록</h2>
-            <ul className='pl-5 list-disc'>
+            <ul className='list-disc pl-5'>
               {trips.map((trip) => (
                 <li key={trip.id}>
                   {trip.title} ({trip.startDate} ~ {trip.endDate})
@@ -92,7 +92,7 @@ export default function Home() {
         )}
       </div>
 
-      <div className='w-full max-w-md p-4 border rounded-md'>
+      <div className='w-full max-w-md rounded-md border p-4'>
         <h2 className='mb-2 text-xl font-bold'>React Query 테스트</h2>
         {isLoading ? (
           <p>로딩 중...</p>

@@ -1,11 +1,11 @@
-import { QueryProvider } from '@/providers/query-provider';
 import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
-import { Inter } from 'next/font/google';
-import './globals.css';
 
-const inter = Inter({ subsets: ['latin'] });
+import { QueryProvider } from '@/providers/query-provider';
+import { pretendard } from '@/styles/fonts';
+
+import '../styles/globals.css';
 
 export const metadata: Metadata = {
   title: 'Pack & Go - 여행 계획 애플리케이션',
@@ -27,8 +27,8 @@ export default async function RootLayout({
   const messages = await getMessages({ locale });
 
   return (
-    <html lang={locale}>
-      <body className={inter.className}>
+    <html lang={locale} className={pretendard.variable}>
+      <body className={pretendard.className}>
         <NextIntlClientProvider messages={messages}>
           <QueryProvider>{children}</QueryProvider>
         </NextIntlClientProvider>
