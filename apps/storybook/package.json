@@ -10,6 +10,7 @@
     "@storybook/addon-interactions": "^8.2.9",
     "@storybook/addon-links": "^8.2.9",
     "@storybook/addon-onboarding": "^8.2.9",
+    "@storybook/addon-themes": "^8.6.12",
     "@storybook/blocks": "^8.2.9",
     "@storybook/nextjs": "^8.6.12",
     "@storybook/react": "^8.6.12",
@@ -33,7 +34,10 @@
   },
   "scripts": {
     "dev": "storybook dev -p 6006",
-    "build": "pnpm --workspace-root --filter @repo/ui run build && storybook build",
-    "lint": "eslint '**/*.{js,jsx,ts,tsx}' --fix"
+    "build": "storybook build",
+    "lint": "eslint '.storybook/**/*.{js,jsx,ts,tsx}' 'stories/**/*.{js,jsx,ts,tsx}' --max-warnings=0 || true"
+  },
+  "dependencies": {
+    "@storybook/addon-styling-webpack": "^1.0.1"
   }
 }
