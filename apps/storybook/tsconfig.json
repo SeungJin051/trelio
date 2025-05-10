@@ -16,7 +16,7 @@
     "incremental": true,
     "baseUrl": "../..",
     "paths": {
-      "@storybook/*": ["./apps/storybook/src/*"],
+      "@storybook/*": ["./apps/storybook/*"],
       "@ui/*": ["./packages/ui/src/*"],
       "@ui/components": ["./packages/ui/src/components"],
       "@ui/components/*": ["./packages/ui/src/components/*"],

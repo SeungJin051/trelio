@@ -1,8 +1,9 @@
 'use client';
 
+import { type ReactNode, useState } from 'react';
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { useState, type ReactNode } from 'react';
 
 export function QueryProvider({ children }: { children: ReactNode }) {
   // 클라이언트 컴포넌트에서 QueryClient 인스턴스 생성

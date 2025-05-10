@@ -18,6 +18,7 @@
     "incremental": true,
     "declaration": true,
     "baseUrl": ".",
+    "types": ["react", "react-dom"],
     "paths": {
       "@ui/*": ["./src/*"],
       "@ui/components/*": ["./src/components/*"],

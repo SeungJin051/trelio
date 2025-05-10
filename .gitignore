@@ -37,3 +37,4 @@ yarn-error.log*
 # 빌드 출력
 .vercel
 .turbo 
+*storybook.log

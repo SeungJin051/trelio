@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Checkbox, Typography } from '@ui/components';
+import { Button, Checkbox, Divider, Typography } from '@ui/components';
 
 export default function Test() {
   return (
@@ -16,6 +16,7 @@ export default function Test() {
         <Typography variant='h1' weight='bold'>
           Hello
         </Typography>
+        <Divider colorTheme='red' />
       </main>
     </div>
   );
