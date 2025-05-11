@@ -18,6 +18,7 @@ const themeStyles = {
   green: 'bg-green-200',
   red: 'bg-red-200',
   yellow: 'bg-yellow-200',
+  purple: 'bg-purple-200',
 };
 
 const heightStyles = {

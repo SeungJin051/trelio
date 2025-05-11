@@ -1,8 +1,22 @@
 'use client';
 
-import { Button, Checkbox, Divider, Typography } from '@ui/components';
+import { useState } from 'react';
+
+import { FaBeer } from 'react-icons/fa';
+
+import {
+  Badge,
+  Button,
+  Checkbox,
+  Divider,
+  Icon,
+  Switch,
+  Typography,
+} from '@ui/components';
 
 export default function Test() {
+  const [isSmallChecked, setIsSmallChecked] = useState(false);
+
   return (
     <div className='grid min-h-screen grid-rows-[20px_1fr_20px] items-center justify-items-center gap-16 p-8 pb-20 sm:p-20'>
       <main className='row-start-2 flex flex-col items-center gap-[32px] sm:items-start'>
@@ -17,6 +31,28 @@ export default function Test() {
           Hello
         </Typography>
         <Divider colorTheme='red' />
+        <Switch
+          checked={isSmallChecked}
+          onChange={setIsSmallChecked}
+          label='Small Switch'
+          size='small'
+        />
+        <Icon as={FaBeer} size={100} />
+        <Badge colorTheme='blue' size='small' variant='outlined'>
+          asdf
+        </Badge>
+        <Badge colorTheme='blue' size='medium' variant='outlined'>
+          asdf
+        </Badge>
+        <Badge colorTheme='blue' size='large' variant='outlined'>
+          asdf
+        </Badge>
+        <Badge colorTheme='blue' size='small' variant='filled'>
+          asdf
+        </Badge>
+        <Badge colorTheme='blue' size='medium' variant='filled'>
+          asdf
+        </Badge>
       </main>
     </div>
   );
