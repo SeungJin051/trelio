@@ -21,6 +21,7 @@ export interface CheckboxProps
   onChange?: ChangeEventHandler<HTMLInputElement>; // 값 변경 시 호출될 함수 (빈 함수라도 추가 필요 아니면 에러발생)
   className?: string; // Wrapper div에 적용될 className
   inputClassName?: string; // input 요소에만 특별히 추가할 className
+  isRadio?: boolean;
 }
 
 /**
@@ -43,6 +44,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
       onChange,
       className, // Wrapper div 용 className
       inputClassName, // input 용 className
+      isRadio,
       ...rest
     },
     ref // 부모 컴포넌트에서 직접 input 요소에 접근할 수 있게 해주는 ref
@@ -59,7 +61,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
         {/* 실제 체크박스 input 요소 */}
         <input
           ref={ref}
-          type='checkbox'
+          type={isRadio ? 'radio' : 'checkbox'}
           id={checkboxId} // label의 htmlFor와 연결하기 위한 ID
           checked={checked}
           disabled={disabled}

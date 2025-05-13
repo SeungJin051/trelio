@@ -7,3 +7,5 @@ export * from './typography';
 export * from './divider';
 export * from './icon';
 export * from './badge';
+export * from './spinner';
+export * from './avatar';
