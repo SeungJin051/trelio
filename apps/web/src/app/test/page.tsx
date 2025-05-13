@@ -5,11 +5,14 @@ import { useState } from 'react';
 import { FaBeer } from 'react-icons/fa';
 
 import {
+  Avatar,
+  AvatarGroup,
   Badge,
   Button,
   Checkbox,
   Divider,
   Icon,
+  Spinner,
   Switch,
   Typography,
 } from '@ui/components';
@@ -27,6 +30,12 @@ export default function Test() {
           Click me1
         </Button>
         <Checkbox checked={false} onChange={() => {}} label='Checkbox' />
+        <Checkbox
+          checked={true}
+          onChange={() => {}}
+          label='Checkbox'
+          isRadio={true}
+        />
         <Typography variant='h1' weight='bold'>
           Hello
         </Typography>
@@ -53,6 +62,12 @@ export default function Test() {
         <Badge colorTheme='blue' size='medium' variant='filled'>
           asdf
         </Badge>
+        <Spinner size='medium' />
+        <AvatarGroup>
+          <Avatar size='small' />
+          <Avatar size='small' />
+          <Avatar size='small' />
+        </AvatarGroup>
       </main>
     </div>
   );
