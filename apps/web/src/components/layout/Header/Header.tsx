@@ -24,7 +24,7 @@ export const Header = () => {
   return (
     <header className='fixed left-0 right-0 top-0 z-50 bg-white'>
       <nav
-        className='mx-auto flex max-w-7xl items-center justify-between p-6 md:px-8'
+        className='mx-auto flex max-w-7xl items-center justify-between p-6'
         aria-label='Global'
       >
         <div className='flex md:flex-1'>
