@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 
+import { Header } from '@/components';
 import { QueryProvider } from '@/providers/query-provider';
 import { pretendard } from '@/styles/fonts';
 
@@ -30,7 +31,10 @@ export default async function RootLayout({
     <html lang={locale} className={pretendard.variable}>
       <body className={pretendard.className}>
         <NextIntlClientProvider messages={messages}>
-          <QueryProvider>{children}</QueryProvider>
+          <QueryProvider>
+            <Header />
+            {children}
+          </QueryProvider>
         </NextIntlClientProvider>
       </body>
     </html>
