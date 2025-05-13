@@ -33,6 +33,7 @@ yarn-error.log*
 
 # 편집기 설정 (.vscode 포함)
 # .vscode/ # 팀 전체가 동일한 설정을 사용할 수 있도록 주석 처리
+/.cursor
 
 # 빌드 출력
 .vercel
