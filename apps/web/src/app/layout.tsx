@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 
-import { Header } from '@/components';
+import { Footer, Header } from '@/components';
 import { QueryProvider } from '@/providers/query-provider';
 import { pretendard } from '@/styles/fonts';
 
@@ -33,7 +33,11 @@ export default async function RootLayout({
         <NextIntlClientProvider messages={messages}>
           <QueryProvider>
             <Header />
-            {children}
+            {/* 화면 너비 제한 */}
+            <div className='mx-auto min-h-[80vh] max-w-screen-xl pb-12 pt-24'>
+              {children}
+            </div>
+            <Footer />
           </QueryProvider>
         </NextIntlClientProvider>
       </body>
