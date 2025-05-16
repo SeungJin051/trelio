@@ -4,6 +4,7 @@ import { getMessages } from 'next-intl/server';
 
 import { Footer, Header } from '@/components';
 import { QueryProvider } from '@/providers/query-provider';
+import { ToastProvider } from '@/providers/toast-provider';
 import { pretendard } from '@/styles/fonts';
 
 import '../styles/globals.css';
@@ -32,12 +33,14 @@ export default async function RootLayout({
       <body className={pretendard.className}>
         <NextIntlClientProvider messages={messages}>
           <QueryProvider>
-            <Header />
-            {/* 화면 너비 제한 */}
-            <div className='mx-auto min-h-[80vh] max-w-screen-xl pb-12 pt-24'>
-              {children}
-            </div>
-            <Footer />
+            <ToastProvider position='top-right'>
+              <Header />
+              {/* 화면 너비 제한 */}
+              <div className='mx-auto min-h-[80vh] max-w-screen-xl pb-12 pt-24'>
+                {children}
+              </div>
+              <Footer />
+            </ToastProvider>
           </QueryProvider>
         </NextIntlClientProvider>
       </body>
