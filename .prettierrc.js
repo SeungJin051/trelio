@@ -14,17 +14,22 @@ module.exports = {
   htmlWhitespaceSensitivity: 'css', // HTML 공백 감도 설정
   embeddedLanguageFormatting: 'off',
   plugins: [
+    // imports 관련 플러그인을 한 개만 사용 (충돌 방지)
     '@trivago/prettier-plugin-sort-imports',
-    'prettier-plugin-organize-imports',
+    'prettier-plugin-tailwindcss',
   ],
+  tailwindConfig: './tailwind.config.js',
+  tailwindFunctions: ['clsx', 'cn', 'twMerge', 'cva'],
+  tailwindAttributes: ['className', 'class', 'tw'],
   importOrder: [
     '^react$',
-    '^next',
+    '^next/(.*)$',
     '<THIRD_PARTY_MODULES>',
-    '^@pack-and-go/(.*)$',
+    '^@ui/(.*)$',
     '^@/(.*)$',
     '^[./]',
   ],
-  importOrderSeparation: true,
-  importOrderSortSpecifiers: true,
+  importOrderSeparation: true, // 임포트 그룹 사이에 빈 줄 추가
+  importOrderSortSpecifiers: true, // 임포트 명세자 정렬
+  importOrderCaseInsensitive: true, // 대소문자 구분 없이 정렬
 };

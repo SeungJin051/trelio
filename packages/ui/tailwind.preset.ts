@@ -12,6 +12,10 @@ const preset: Config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['var(--font-pretendard)'],
+        pretendard: ['var(--font-pretendard)'],
+      },
       colors: {
         // 필요한 커스텀 색상을 여기에 추가하세요
       },

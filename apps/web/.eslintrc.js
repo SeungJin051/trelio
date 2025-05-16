@@ -4,6 +4,12 @@ module.exports = {
     react: {
       version: 'detect',
     },
+    'import/resolver': {
+      typescript: {
+        alwaysTryTypes: true,
+        project: 'apps/web/tsconfig.json',
+      },
+    },
   },
   rules: {
     'react/react-in-jsx-scope': 'off',

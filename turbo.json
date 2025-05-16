@@ -1,11 +1,34 @@
 {
-  "version": 2,
-  "buildCommand": "pnpm --filter web... build",
-  "installCommand": "pnpm install",
-  "framework": "nextjs",
-  "github": {
-    "enabled": true,
-    "silent": true,
-    "autoJobCancelation": true
-  }
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "outputs": []
+    },
+    "storybook#build": {
+      "dependsOn": ["@repo/ui#build"],
+      "outputs": ["storybook-static/**"]
+    },
+    "@repo/ui#build": {
+      "dependsOn": [],
+      "outputs": ["dist/**"]
+    },
+    "web#build": {
+      "dependsOn": ["@repo/ui#build"],
+      "outputs": [".next/**"]
+    }
+  },
+  "globalDependencies": [
+    "tsconfig.json",
+    ".env",
+    ".env.production",
+    "tailwind.config.js"
+  ]
 }

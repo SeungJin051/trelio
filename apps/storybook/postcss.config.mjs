@@ -1,15 +1,14 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const config = {
+export default {
   plugins: {
-    '@tailwindcss/postcss': {
-      config: path.resolve(__dirname, '../../tailwind.config.js'),
+    tailwindcss: {
+      config: './tailwind.config.js',
     },
     autoprefixer: {},
   },
 };
-
-export default config;
