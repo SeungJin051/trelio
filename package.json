@@ -1,6 +1,6 @@
 {
   "name": "pack-and-go",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Pack & Go - Travel Planning Application",
   "private": true,
   "scripts": {
