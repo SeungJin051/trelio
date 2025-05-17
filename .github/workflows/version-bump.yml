@@ -46,8 +46,18 @@ jobs:
           skip-tag: 'true'
           commit-message: 'chore: bump version to {{version}}'
 
+      - name: Debug version output
+        run: |
+          echo "New version: ${{ steps.version-bump.outputs.newVersion }}"
+          echo "Old version: ${{ steps.version-bump.outputs.oldVersion }}"
+
       - name: Push version bump commit and tag
         run: |
           git push
-          git tag v${{ steps.version-bump.outputs.newVersion }}
-          git push --tags 
+          if [ ! -z "${{ steps.version-bump.outputs.newVersion }}" ]; then
+            git tag "v${{ steps.version-bump.outputs.newVersion }}"
+            git push --tags
+          else
+            echo "Error: New version number is empty. Skipping tag creation."
+            exit 1
+          fi 
