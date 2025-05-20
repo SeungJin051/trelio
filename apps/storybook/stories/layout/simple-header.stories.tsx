@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Header } from '@web/components/layout/Header';
+import { Header, SimpleHeader } from '@web/components/layout/Header';
 
 const meta: Meta<typeof Header> = {
-  title: 'Layout/Header',
+  title: 'Layout/SimpleHeader',
   component: Header,
   parameters: {
     layout: 'fullscreen',
@@ -17,7 +17,7 @@ type Story = StoryObj<typeof Header>;
 export const Default: Story = {
   render: () => (
     <div className='h-screen'>
-      <Header />
+      <SimpleHeader />
       <div className='flex h-screen items-center justify-center bg-gray-100 pt-24'>
         <div className='max-w-2xl px-4 text-center'>
           <h1 className='mb-6 text-3xl font-bold'>메인 페이지 콘텐츠</h1>
