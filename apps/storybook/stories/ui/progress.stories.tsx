@@ -10,14 +10,14 @@ import {
 } from '@ui/components';
 
 const meta: Meta<typeof Progress> = {
-  title: 'Components/Progress',
+  title: '컴포넌트/Progress',
   component: Progress,
   parameters: {
     layout: 'centered',
     docs: {
       description: {
         component:
-          'A customizable progress bar component to display task completion or loading states.',
+          '작업 완료 상태나 로딩 상태를 표시하는 커스터마이징 가능한 프로그레스 바 컴포넌트입니다.',
       },
     },
   },
@@ -25,17 +25,17 @@ const meta: Meta<typeof Progress> = {
   argTypes: {
     value: {
       control: { type: 'range', min: 0, max: 100, step: 1 },
-      description: 'The current progress value (typically 0-100).',
+      description: '현재 진행률 값 (일반적으로 0-100)',
     },
     max: {
       control: 'number',
-      description: 'The maximum value for the progress.',
+      description: '프로그레스의 최대값',
       defaultValue: 100,
     },
     size: {
       control: 'select',
       options: ['small', 'medium', 'large'] as ProgressSize[],
-      description: 'The size of the progress bar.',
+      description: '프로그레스 바의 크기',
     },
     colorTheme: {
       control: 'select',
@@ -47,27 +47,27 @@ const meta: Meta<typeof Progress> = {
         'red',
         'gray',
       ] as ProgressColorTheme[],
-      description: 'The color theme of the progress bar.',
+      description: '프로그레스 바의 색상 테마',
     },
     animated: {
       control: 'boolean',
-      description: 'Whether the progress bar should animate changes.',
+      description: '프로그레스 바가 변화를 애니메이션으로 표시할지 여부',
     },
     showValue: {
       control: 'boolean',
-      description: 'Whether to display the percentage value.',
+      description: '퍼센트 값을 표시할지 여부',
     },
     label: {
       control: 'text',
-      description: 'An optional label displayed above the progress bar.',
+      description: '프로그레스 바 위에 표시되는 선택적 라벨',
     },
     className: {
       control: 'text',
-      description: 'Custom CSS class for the container.',
+      description: '컨테이너에 적용할 커스텀 CSS 클래스',
     },
   },
   args: {
-    // Default args for all stories
+    // 모든 스토리의 기본 args
     value: 50,
     max: 100,
     size: 'medium',
@@ -81,7 +81,6 @@ const meta: Meta<typeof Progress> = {
 export default meta;
 type Story = StoryObj<typeof Progress>;
 
-// More on writing stories with args: https://storybook.js.org/docs/react/writing-stories/args
 export const Default: Story = {
   args: {
     value: 75,
@@ -91,7 +90,7 @@ export const Default: Story = {
 export const WithLabel: Story = {
   args: {
     value: 60,
-    label: 'Upload Progress',
+    label: '파일 업로드 진행률',
   },
 };
 
@@ -105,7 +104,7 @@ export const ShowValue: Story = {
 export const WithLabelAndValue: Story = {
   args: {
     value: 40,
-    label: 'Processing Data',
+    label: '데이터 처리 중',
     showValue: true,
   },
 };
@@ -114,7 +113,7 @@ export const SmallSize: Story = {
   args: {
     value: 30,
     size: 'small',
-    label: 'Small Progress',
+    label: '작은 프로그레스',
     showValue: true,
   },
 };
@@ -123,7 +122,7 @@ export const LargeSize: Story = {
   args: {
     value: 90,
     size: 'large',
-    label: 'Large Progress',
+    label: '큰 프로그레스',
     showValue: true,
   },
 };
@@ -132,7 +131,7 @@ export const GreenTheme: Story = {
   args: {
     value: 55,
     colorTheme: 'green',
-    label: 'Green Theme',
+    label: '성공 작업',
     showValue: true,
   },
 };
@@ -141,7 +140,7 @@ export const RedTheme: Story = {
   args: {
     value: 20,
     colorTheme: 'red',
-    label: 'Error Prone Task',
+    label: '오류 발생 작업',
     showValue: true,
   },
 };
@@ -150,7 +149,7 @@ export const PurpleTheme: Story = {
   args: {
     value: 70,
     colorTheme: 'purple',
-    label: 'Purple Theme',
+    label: '특별 작업',
     showValue: true,
   },
 };
@@ -159,7 +158,7 @@ export const OrangeTheme: Story = {
   args: {
     value: 80,
     colorTheme: 'orange',
-    label: 'Warning Level',
+    label: '주의 필요 작업',
     showValue: true,
   },
 };
@@ -168,7 +167,7 @@ export const GrayTheme: Story = {
   args: {
     value: 50,
     colorTheme: 'gray',
-    label: 'Neutral Task',
+    label: '일반 작업',
     showValue: true,
   },
 };
@@ -177,7 +176,7 @@ export const NotAnimated: Story = {
   args: {
     value: 65,
     animated: false,
-    label: 'Static Progress',
+    label: '정적 프로그레스',
     showValue: true,
   },
 };
@@ -186,7 +185,7 @@ export const CustomMax: Story = {
   args: {
     value: 150,
     max: 200,
-    label: 'Custom Max Value (150/200)',
+    label: '커스텀 최대값 (150/200)',
     showValue: true,
   },
 };
@@ -194,7 +193,7 @@ export const CustomMax: Story = {
 export const ZeroProgress: Story = {
   args: {
     value: 0,
-    label: 'Not Started',
+    label: '아직 시작하지 않음',
     showValue: true,
   },
 };
@@ -202,13 +201,13 @@ export const ZeroProgress: Story = {
 export const FullProgress: Story = {
   args: {
     value: 100,
-    label: 'Completed',
+    label: '작업 완료',
     showValue: true,
     colorTheme: 'green',
   },
 };
 
-// Example of a more dynamic story to show animation
+// 애니메이션을 보여주는 동적인 스토리 예시
 const AnimatedProgressDemo = (args: ProgressProps) => {
   const [value, setValue] = useState(0);
 
@@ -230,7 +229,7 @@ const AnimatedProgressDemo = (args: ProgressProps) => {
 export const LiveAnimated: Story = {
   render: AnimatedProgressDemo,
   args: {
-    label: 'Live Update',
+    label: '실시간 업데이트',
     showValue: true,
     animated: true,
     colorTheme: 'purple',
@@ -238,7 +237,7 @@ export const LiveAnimated: Story = {
   parameters: {
     docs: {
       storyDescription:
-        'Demonstrates the animation with live value updates. The value resets after reaching max.',
+        '실시간 값 업데이트를 통한 애니메이션을 보여줍니다. 최대값에 도달하면 값이 초기화됩니다.',
     },
   },
 };
@@ -267,7 +266,19 @@ export const AllColorThemes: Story = {
           key={theme}
           {...args}
           colorTheme={theme}
-          label={`Theme: ${theme.charAt(0).toUpperCase() + theme.slice(1)}`}
+          label={`테마: ${
+            theme === 'blue'
+              ? '파랑'
+              : theme === 'green'
+                ? '초록'
+                : theme === 'purple'
+                  ? '보라'
+                  : theme === 'orange'
+                    ? '주황'
+                    : theme === 'red'
+                      ? '빨강'
+                      : '회색'
+          }`}
         />
       ))}
     </div>
@@ -275,11 +286,11 @@ export const AllColorThemes: Story = {
   args: {
     value: 65,
     showValue: true,
-    animated: false, // Disable animation for this stacked view for clarity
+    animated: false, // 명확성을 위해 이 스택 뷰에서는 애니메이션 비활성화
   },
   parameters: {
     docs: {
-      storyDescription: 'Shows all available color themes side-by-side.',
+      storyDescription: '사용 가능한 모든 색상 테마를 나란히 보여줍니다.',
     },
   },
 };
@@ -299,7 +310,9 @@ export const AllSizes: Story = {
           key={size}
           {...args}
           size={size}
-          label={`Size: ${size.charAt(0).toUpperCase() + size.slice(1)}`}
+          label={`크기: ${
+            size === 'small' ? '작음' : size === 'medium' ? '보통' : '큼'
+          }`}
         />
       ))}
     </div>
@@ -311,7 +324,128 @@ export const AllSizes: Story = {
   },
   parameters: {
     docs: {
-      storyDescription: 'Shows all available sizes side-by-side.',
+      storyDescription: '사용 가능한 모든 크기를 나란히 보여줍니다.',
+    },
+  },
+};
+
+// 한국적인 상황별 예시들 추가
+export const KoreanFoodDelivery: Story = {
+  args: {
+    value: 30,
+    label: '치킨 배달 중',
+    showValue: true,
+    colorTheme: 'orange',
+  },
+};
+
+export const OnlineCourseProgress: Story = {
+  args: {
+    value: 67,
+    label: '코딩 강의 수강률',
+    showValue: true,
+    colorTheme: 'blue',
+  },
+};
+
+export const ReadingProgress: Story = {
+  args: {
+    value: 45,
+    label: '소설 읽기 진행률',
+    showValue: true,
+    colorTheme: 'green',
+  },
+};
+
+export const GameLevelUp: Story = {
+  args: {
+    value: 88,
+    label: '레벨업까지',
+    showValue: true,
+    colorTheme: 'purple',
+  },
+};
+
+export const DownloadProgress: Story = {
+  render: () => {
+    const [progress, setProgress] = useState(0);
+    const [isDownloading, setIsDownloading] = useState(false);
+
+    const startDownload = () => {
+      if (isDownloading) return;
+
+      setIsDownloading(true);
+      setProgress(0);
+
+      const interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            setIsDownloading(false);
+            return 100;
+          }
+          return prev + Math.random() * 15;
+        });
+      }, 200);
+    };
+
+    const resetDownload = () => {
+      setProgress(0);
+      setIsDownloading(false);
+    };
+
+    return (
+      <div
+        style={{
+          width: '400px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px',
+        }}
+      >
+        <Progress
+          value={Math.min(progress, 100)}
+          label='파일 다운로드 중...'
+          showValue={true}
+          colorTheme={progress >= 100 ? 'green' : 'blue'}
+          animated={true}
+        />
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={startDownload}
+            disabled={isDownloading}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: isDownloading ? '#ccc' : '#3182F6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: isDownloading ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {isDownloading ? '다운로드 중...' : '다운로드 시작'}
+          </button>
+          <button
+            onClick={resetDownload}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#6B7280',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
+          >
+            초기화
+          </button>
+        </div>
+      </div>
+    );
+  },
+  parameters: {
+    docs: {
+      storyDescription:
+        '실제 다운로드를 시뮬레이션하는 인터랙티브한 예시입니다.',
     },
   },
 };
