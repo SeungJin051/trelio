@@ -5,12 +5,6 @@ import type { ElementType } from 'react';
  * Supabase user_profiles 테이블과 일치하는 타입들
  */
 
-// 연령대 타입
-export type AgeRange = '10대' | '20대' | '30대' | '40대' | '50대' | '60대+';
-
-// 성별 타입
-export type Gender = 'male' | 'female' | 'other';
-
 // 프로필 이미지 옵션 타입
 export type ProfileImageOption = 'social' | 'upload';
 
@@ -40,8 +34,6 @@ export type AuthProvider = 'kakao' | 'google' | 'unknown';
 // 기본 사용자 프로필 인터페이스 (회원가입 폼용)
 export interface UserProfile {
   nickname: string;
-  age_range?: AgeRange;
-  gender?: Gender;
   profile_image_option: ProfileImageOption;
   profile_image_url?: string;
   preferred_destinations: PreferredDestination[];
@@ -62,8 +54,6 @@ export interface CreateUserProfileRequest {
   id: string;
   email: string;
   nickname: string;
-  age_range: AgeRange;
-  gender: Gender;
   profile_image_option: ProfileImageOption;
   profile_image_url?: string;
   preferred_destinations: PreferredDestination[];
@@ -74,8 +64,6 @@ export interface CreateUserProfileRequest {
 // 사용자 프로필 업데이트 요청 타입 (선택적 필드)
 export interface UpdateUserProfileRequest {
   nickname?: string;
-  age_range?: AgeRange;
-  gender?: Gender;
   profile_image_option?: ProfileImageOption;
   profile_image_url?: string | null;
   preferred_destinations?: PreferredDestination[];

@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
 import type { User } from '@supabase/supabase-js';
+import { IconType } from 'react-icons';
 import {
   FaCamera,
   FaCheck,
@@ -13,6 +14,7 @@ import {
   FaMountain,
   FaPlane,
   FaShoppingBag,
+  FaUpload,
   FaUtensils,
   FaWater,
 } from 'react-icons/fa';
@@ -23,9 +25,7 @@ import { Card } from '@/components';
 import { useToast } from '@/hooks/useToast';
 import { createClient } from '@/lib/supabase/client/supabase';
 import type {
-  AgeRange,
   DestinationInfo,
-  Gender,
   PreferredDestination,
   TravelStyle,
   TravelStyleInfo,
@@ -38,17 +38,22 @@ const SignUpView = () => {
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<UserProfile>({
     nickname: '',
-    age_range: undefined,
-    gender: undefined,
     profile_image_option: 'social',
     preferred_destinations: [],
     travel_styles: [],
   });
 
+  // 이미지 업로드 관련 상태
+  const [croppedImage, setCroppedImage] = useState<string | null>(null);
+  const [uploadedImageFile, setUploadedImageFile] = useState<File | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
   const router = useRouter();
   const toast = useToast();
   const supabase = createClient();
-  const totalSteps = 4;
+  const totalSteps = 3;
   const progress = (step / totalSteps) * 100;
 
   // 컴포넌트 마운트 시 현재 사용자 정보 확인
@@ -164,16 +169,13 @@ const SignUpView = () => {
   const canProceed = () => {
     switch (step) {
       case 1:
-        return profile.profile_image_option !== null;
-      case 2:
         return (
           profile.nickname.trim() !== '' &&
-          profile.age_range !== ('' as AgeRange) &&
-          profile.gender !== ('' as Gender)
+          profile.profile_image_option !== null
         );
-      case 3:
+      case 2:
         return profile.preferred_destinations.length > 0;
-      case 4:
+      case 3:
         return profile.travel_styles.length > 0;
       default:
         return false;
@@ -198,8 +200,7 @@ const SignUpView = () => {
         id: user.id,
         email: user.email || '',
         nickname: profile.nickname,
-        age_range: profile.age_range,
-        gender: profile.gender,
+        // age_range, gender 제거
         profile_image_option: profile.profile_image_option,
         profile_image_url: profile.profile_image_url,
         preferred_destinations: profile.preferred_destinations,
@@ -244,6 +245,103 @@ const SignUpView = () => {
     }
   };
 
+  // 파일 선택 핸들러 (자동 크롭)
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // 파일 타입 검증
+    if (!file.type.startsWith('image/')) {
+      toast.error('이미지 파일만 업로드할 수 있습니다.');
+      return;
+    }
+
+    // 파일 크기 검증 (5MB 제한)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('파일 크기는 5MB 이하여야 합니다.');
+      return;
+    }
+
+    setUploadedImageFile(file);
+
+    // 파일을 base64로 변환하여 즉시 크롭
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const imageUrl = e.target?.result as string;
+      cropImageAutomatically(imageUrl);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // 자동 크롭 기능 (모달 없이 즉시 처리)
+  const cropImageAutomatically = (imageUrl: string) => {
+    if (!canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const img = new Image();
+    img.onload = () => {
+      // 정사각형 크롭을 위한 크기 계산
+      const size = Math.min(img.width, img.height);
+      const startX = (img.width - size) / 2;
+      const startY = (img.height - size) / 2;
+
+      // 캔버스 크기 설정 (300x300으로 리사이즈)
+      canvas.width = 300;
+      canvas.height = 300;
+
+      // 이미지를 캔버스에 그리기
+      ctx.drawImage(
+        img,
+        startX,
+        startY,
+        size,
+        size, // 소스 영역
+        0,
+        0,
+        300,
+        300 // 대상 영역
+      );
+
+      // 크롭된 이미지를 base64로 변환
+      const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      setCroppedImage(croppedDataUrl);
+
+      // 프로필에 업로드된 이미지 설정
+      setProfile((prev) => ({
+        ...prev,
+        profile_image_url: croppedDataUrl,
+        profile_image_option: 'upload',
+      }));
+
+      toast.success('프로필 사진이 설정되었습니다.');
+    };
+
+    img.src = imageUrl;
+  };
+
+  // 파일 업로드 버튼 클릭 핸들러
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  // 소셜 프로필로 되돌리기
+  const resetToSocialProfile = () => {
+    setCroppedImage(null);
+    setUploadedImageFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    setProfile((prev) => ({
+      ...prev,
+      profile_image_option: 'social',
+      profile_image_url:
+        user?.user_metadata?.avatar_url || user?.user_metadata?.picture,
+    }));
+  };
+
   if (!user) {
     return (
       // <div className='flex items-center justify-center min-h-screen'>
@@ -267,110 +365,29 @@ const SignUpView = () => {
                 variant='h2'
                 className='text-2xl font-bold text-gray-900'
               >
-                프로필 사진을 설정해주세요
+                프로필을 설정해주세요
               </Typography>
               <Typography variant='body1' className='text-gray-600'>
-                나만의 여행 프로필을 만들어보세요
+                닉네임과 프로필 사진을 설정해보세요
               </Typography>
             </div>
 
             <div className='flex justify-center'>
               <div className='relative'>
                 <Avatar
-                  src={profile.profile_image_url}
+                  src={croppedImage || profile.profile_image_url}
                   alt={profile.nickname || user.email || '사용자'}
                   size='large'
                 />
+                {profile.profile_image_option === 'upload' && (
+                  <button
+                    onClick={handleUploadClick}
+                    className='absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg hover:bg-blue-600'
+                  >
+                    <Icon as={FaCamera} className='h-4 w-4' />
+                  </button>
+                )}
               </div>
-            </div>
-
-            <div className='space-y-3'>
-              <Card
-                cardType='selectable'
-                selected={profile.profile_image_option === 'social'}
-                onClick={() =>
-                  setProfile((prev) => ({
-                    ...prev,
-                    profile_image_option: 'social',
-                  }))
-                }
-              >
-                <div className='flex items-center justify-between p-4'>
-                  <div className='flex items-center space-x-3'>
-                    <div className='flex h-10 w-10 items-center justify-center rounded-full bg-blue-100'>
-                      <Icon as={FaCheck} className='h-5 w-5 text-blue-600' />
-                    </div>
-                    <div>
-                      <Typography
-                        variant='body1'
-                        className='font-medium text-gray-900'
-                      >
-                        소셜 프로필 사진 사용하기
-                      </Typography>
-                      <Typography variant='body2' className='text-gray-500'>
-                        기존 프로필 사진을 그대로 사용해요
-                      </Typography>
-                    </div>
-                  </div>
-                  {profile.profile_image_option === 'social' && (
-                    <div className='flex h-5 w-5 items-center justify-center rounded-full bg-blue-500'>
-                      <Icon as={FaCheck} className='h-3 w-3 text-white' />
-                    </div>
-                  )}
-                </div>
-              </Card>
-
-              <Card
-                cardType='selectable'
-                selected={profile.profile_image_option === 'upload'}
-                onClick={() =>
-                  setProfile((prev) => ({
-                    ...prev,
-                    profile_image_option: 'upload',
-                  }))
-                }
-              >
-                <div className='flex items-center justify-between p-4'>
-                  <div className='flex items-center space-x-3'>
-                    <div className='flex h-10 w-10 items-center justify-center rounded-full bg-gray-100'>
-                      <Icon as={FaCamera} className='h-5 w-5 text-gray-600' />
-                    </div>
-                    <div>
-                      <Typography
-                        variant='body1'
-                        className='font-medium text-gray-900'
-                      >
-                        새 사진 업로드하기
-                      </Typography>
-                      <Typography variant='body2' className='text-gray-500'>
-                        나만의 프로필 사진을 업로드해요
-                      </Typography>
-                    </div>
-                  </div>
-                  {profile.profile_image_option === 'upload' && (
-                    <div className='flex h-5 w-5 items-center justify-center rounded-full bg-blue-500'>
-                      <Icon as={FaCheck} className='h-3 w-3 text-white' />
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </div>
-          </div>
-        );
-
-      case 2:
-        return (
-          <div className='space-y-6'>
-            <div className='space-y-2 text-center'>
-              <Typography
-                variant='h2'
-                className='text-2xl font-bold text-gray-900'
-              >
-                기본 정보를 입력해주세요
-              </Typography>
-              <Typography variant='body1' className='text-gray-600'>
-                더 나은 여행 추천을 위해 필요해요
-              </Typography>
             </div>
 
             <div className='space-y-4'>
@@ -397,70 +414,105 @@ const SignUpView = () => {
               <div>
                 <Typography
                   variant='body2'
-                  className='mb-2 font-medium text-gray-700'
+                  className='mb-3 font-medium text-gray-700'
                 >
-                  연령대 *
+                  프로필 사진 *
                 </Typography>
-                <div className='grid grid-cols-2 gap-2'>
-                  {(
-                    ['10대', '20대', '30대', '40대', '50대', '60대+'] as const
-                  ).map((age) => (
-                    <button
-                      key={age}
-                      onClick={() =>
-                        setProfile((prev) => ({ ...prev, age_range: age }))
+                <div className='space-y-3'>
+                  <Card
+                    cardType='selectable'
+                    selected={profile.profile_image_option === 'social'}
+                    onClick={resetToSocialProfile}
+                  >
+                    <div className='flex items-center justify-between p-4'>
+                      <div className='flex items-center space-x-3'>
+                        <div className='flex h-10 w-10 items-center justify-center rounded-full bg-blue-100'>
+                          <Icon
+                            as={FaCheck}
+                            className='h-5 w-5 text-blue-600'
+                          />
+                        </div>
+                        <div>
+                          <Typography
+                            variant='body1'
+                            className='font-medium text-gray-900'
+                          >
+                            소셜 프로필 사진 사용하기
+                          </Typography>
+                          <Typography variant='body2' className='text-gray-500'>
+                            기존 프로필 사진을 그대로 사용해요
+                          </Typography>
+                        </div>
+                      </div>
+                      {profile.profile_image_option === 'social' && (
+                        <div className='flex h-5 w-5 items-center justify-center rounded-full bg-blue-500'>
+                          <Icon as={FaCheck} className='h-3 w-3 text-white' />
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+
+                  <Card
+                    cardType='selectable'
+                    selected={profile.profile_image_option === 'upload'}
+                    onClick={() => {
+                      setProfile((prev) => ({
+                        ...prev,
+                        profile_image_option: 'upload',
+                      }));
+                      if (!croppedImage) {
+                        handleUploadClick();
                       }
-                      className={`rounded-lg border p-3 text-sm font-medium transition-colors ${
-                        profile.age_range === age
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      {age}
-                    </button>
-                  ))}
+                    }}
+                  >
+                    <div className='flex items-center justify-between p-4'>
+                      <div className='flex items-center space-x-3'>
+                        <div className='flex h-10 w-10 items-center justify-center rounded-full bg-gray-100'>
+                          <Icon
+                            as={FaUpload}
+                            className='h-5 w-5 text-gray-600'
+                          />
+                        </div>
+                        <div>
+                          <Typography
+                            variant='body1'
+                            className='font-medium text-gray-900'
+                          >
+                            새 사진 업로드하기
+                          </Typography>
+                          <Typography variant='body2' className='text-gray-500'>
+                            {croppedImage
+                              ? '업로드된 사진 사용중'
+                              : '나만의 프로필 사진을 업로드해요'}
+                          </Typography>
+                        </div>
+                      </div>
+                      {profile.profile_image_option === 'upload' && (
+                        <div className='flex h-5 w-5 items-center justify-center rounded-full bg-blue-500'>
+                          <Icon as={FaCheck} className='h-3 w-3 text-white' />
+                        </div>
+                      )}
+                    </div>
+                  </Card>
                 </div>
               </div>
 
-              <div>
-                <Typography
-                  variant='body2'
-                  className='mb-2 font-medium text-gray-700'
-                >
-                  성별 *
-                </Typography>
-                <div className='grid grid-cols-3 gap-2'>
-                  {(
-                    [
-                      { value: 'male', label: '남성' },
-                      { value: 'female', label: '여성' },
-                      { value: 'other', label: '기타' },
-                    ] as const
-                  ).map((gender) => (
-                    <button
-                      key={gender.value}
-                      onClick={() =>
-                        setProfile((prev) => ({
-                          ...prev,
-                          gender: gender.value,
-                        }))
-                      }
-                      className={`rounded-lg border p-3 text-sm font-medium transition-colors ${
-                        profile.gender === gender.value
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      {gender.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {/* 숨겨진 파일 입력 */}
+              <input
+                ref={fileInputRef}
+                type='file'
+                accept='image/*'
+                onChange={handleFileSelect}
+                className='hidden'
+              />
             </div>
+
+            {/* 숨겨진 캔버스 (크롭용) */}
+            <canvas ref={canvasRef} className='hidden' />
           </div>
         );
 
-      case 3:
+      case 2:
         return (
           <div className='space-y-6'>
             <div className='space-y-2 text-center'>
@@ -507,7 +559,7 @@ const SignUpView = () => {
           </div>
         );
 
-      case 4:
+      case 3:
         return (
           <div className='space-y-6'>
             <div className='space-y-2 text-center'>
@@ -534,7 +586,7 @@ const SignUpView = () => {
                     <div
                       className={`flex h-12 w-12 items-center justify-center rounded-full ${style.color}`}
                     >
-                      <Icon as={style.icon} className='h-6 w-6' />
+                      <Icon as={style.icon as IconType} className='h-6 w-6' />
                     </div>
                     <Typography
                       variant='body2'
