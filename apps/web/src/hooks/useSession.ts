@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { usePathname, useRouter } from 'next/navigation';
 
-import { Session } from '@supabase/supabase-js';
+import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 
 import { createClient } from '@/lib/supabase/client/supabase';
 
@@ -19,9 +19,9 @@ type UserProfile = {
 type SignUpStatus = 'completed' | 'incomplete' | 'loading';
 
 export const useSession = () => {
+  const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [signUpStatus, setSignUpStatus] = useState<SignUpStatus>('loading');
 
@@ -30,7 +30,49 @@ export const useSession = () => {
   const supabase = createClient();
 
   // 리다이렉트 예외 페이지들 (회원가입 미완료여도 접근 가능한 페이지)
-  const excludedPaths = ['/sign-up', '/log-in', '/auth/callback'];
+  const excludedPaths = useMemo(
+    () => ['/sign-up', '/log-in', '/auth/callback'],
+    []
+  );
+
+  // 사용자 프로필 정보 가져오기
+  const fetchUserProfile = useCallback(
+    async (user: User) => {
+      try {
+        const { data: profile, error } = await supabase
+          .from('user_profiles')
+          .select('nickname, profile_image_url')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          // 프로필이 없는 경우 (새 사용자)
+          const basicUserData = {
+            id: user.id,
+            email: user.email,
+          };
+          setUserProfile(basicUserData);
+          setSignUpStatus('incomplete');
+          // console.log('회원가입 미완료 사용자 감지:', basicUserData);
+        } else {
+          // 프로필이 있는 경우 (기존 사용자)
+          const userData = {
+            id: user.id,
+            email: user.email,
+            nickname: profile.nickname,
+            profile_image_url: profile.profile_image_url,
+          };
+          setUserProfile(userData);
+          setSignUpStatus('completed');
+          // console.log('회원가입 완료된 사용자:', userData);
+        }
+      } catch {
+        // console.error('프로필 fetch 중 오류');
+        setSignUpStatus('incomplete'); // 오류 발생 시 미완료로 처리
+      }
+    },
+    [supabase]
+  );
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -51,11 +93,12 @@ export const useSession = () => {
           setSignUpStatus('loading'); // 로그인되지 않은 상태
         }
 
-        // 세션 변경 이벤트 구독
-        const { data: authListener } = supabase.auth.onAuthStateChange(
-          async (_event, newSession) => {
+        // Auth state 변경 리스너 설정
+        const {
+          data: { subscription },
+        } = supabase.auth.onAuthStateChange(
+          async (_event: AuthChangeEvent, newSession: Session | null) => {
             setSession(newSession);
-
             if (newSession?.user) {
               await fetchUserProfile(newSession.user);
             } else {
@@ -66,7 +109,7 @@ export const useSession = () => {
         );
 
         return () => {
-          authListener.subscription.unsubscribe();
+          subscription.unsubscribe();
         };
       } catch (err) {
         setError(
@@ -80,7 +123,7 @@ export const useSession = () => {
     };
 
     fetchSession();
-  }, [supabase]);
+  }, [supabase, fetchUserProfile]);
 
   // 회원가입 완료 여부에 따른 리다이렉트 처리
   useEffect(() => {
@@ -93,48 +136,15 @@ export const useSession = () => {
     if (session && signUpStatus === 'incomplete') {
       router.push('/sign-up');
     }
-  }, [session, signUpStatus, loading, pathname, router, excludedPaths]);
-
-  // 사용자 프로필 정보 가져오기
-  const fetchUserProfile = async (user: any) => {
-    try {
-      const { data: profile, error } = await supabase
-        .from('user_profiles')
-        .select('nickname, profile_image_url')
-        .eq('id', user.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        // console.error('프로필 조회 오류:', error);
-        setSignUpStatus('incomplete'); // 오류 발생 시 미완료로 처리
-        return;
-      }
-
-      if (profile) {
-        // 프로필이 존재하는 경우 - 회원가입 완료
-        const userProfileData = {
-          id: user.id,
-          email: user.email,
-          nickname: profile.nickname,
-          profile_image_url: profile.profile_image_url,
-        };
-        setUserProfile(userProfileData);
-        setSignUpStatus('completed');
-      } else {
-        // 프로필이 없는 경우 - 회원가입 미완료
-        const basicUserData = {
-          id: user.id,
-          email: user.email,
-        };
-        setUserProfile(basicUserData);
-        setSignUpStatus('incomplete');
-        // console.log('⚠️ 회원가입 미완료 사용자 감지:', basicUserData);
-      }
-    } catch (err) {
-      // console.error('프로필 fetch 중 오류:', err);
-      setSignUpStatus('incomplete'); // 오류 발생 시 미완료로 처리
-    }
-  };
+  }, [
+    session,
+    signUpStatus,
+    loading,
+    pathname,
+    router,
+    excludedPaths,
+    fetchUserProfile,
+  ]);
 
   return {
     session,

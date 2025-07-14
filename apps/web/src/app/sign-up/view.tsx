@@ -45,7 +45,6 @@ const SignUpView = () => {
 
   // 이미지 업로드 관련 상태
   const [croppedImage, setCroppedImage] = useState<string | null>(null);
-  const [uploadedImageFile, setUploadedImageFile] = useState<File | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -262,8 +261,6 @@ const SignUpView = () => {
       return;
     }
 
-    setUploadedImageFile(file);
-
     // 파일을 base64로 변환하여 즉시 크롭
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -330,7 +327,6 @@ const SignUpView = () => {
   // 소셜 프로필로 되돌리기
   const resetToSocialProfile = () => {
     setCroppedImage(null);
-    setUploadedImageFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }

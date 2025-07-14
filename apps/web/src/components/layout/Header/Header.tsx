@@ -31,7 +31,6 @@ const navigation: NavItem[] = [
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [activeItem, setActiveItem] = useState('');
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   const {
@@ -50,32 +49,6 @@ export const Header = () => {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // 현재 활성화된 메뉴 아이템 감지
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const path = window.location.pathname;
-
-      // 메인 페이지인 경우 아무 메뉴도 활성화하지 않음
-      if (path === '/') {
-        setActiveItem('');
-        return;
-      }
-
-      // 정확히 일치하는 경로 우선 확인
-      const exactMatch = navigation.find((item) => path === item.href);
-      if (exactMatch) {
-        setActiveItem(exactMatch.href);
-        return;
-      }
-
-      // 하위 경로 매칭 (메인 페이지가 아닌 경우만)
-      const pathMatch = navigation.find(
-        (item) => item.href !== '/' && path.startsWith(item.href)
-      );
-      setActiveItem(pathMatch?.href || '');
-    }
   }, []);
 
   // 외부 클릭 시 드롭다운 닫기
@@ -243,7 +216,6 @@ export const Header = () => {
               key={item.name}
               href={item.href}
               className='relative rounded-lg px-3 py-2 transition-colors hover:bg-gray-100'
-              onClick={() => setActiveItem(item.href)}
             >
               <Typography
                 variant='body2'
@@ -316,7 +288,6 @@ export const Header = () => {
                         href={item.href}
                         className='flex items-center rounded-xl px-4 py-3 text-gray-700 transition-colors hover:bg-gray-50'
                         onClick={() => {
-                          setActiveItem(item.href);
                           setMobileMenuOpen(false);
                         }}
                       >

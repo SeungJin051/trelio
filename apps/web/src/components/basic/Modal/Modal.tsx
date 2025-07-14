@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import Image from 'next/image';
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { IoCloseOutline } from 'react-icons/io5';
 
@@ -34,7 +34,7 @@ export interface ModalProps {
   width?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
 }
 
-const modalVariants = {
+const modalVariants: Variants = {
   hidden: {
     opacity: 0,
     scale: 0.95,
@@ -60,7 +60,7 @@ const modalVariants = {
   },
 };
 
-const overlayVariants = {
+const overlayVariants: Variants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { duration: 0.2 } },
   exit: { opacity: 0, transition: { duration: 0.2 } },
