@@ -38,10 +38,10 @@ export const Footer = () => {
           <div className='md:max-w-sm'>
             <div className='flex items-center justify-center md:justify-start'>
               <div className='flex h-10 w-10 items-center justify-center rounded-lg bg-[#3182F6] font-bold text-white'>
-                P&G
+                Trelio
               </div>
               <Typography variant='h4' weight='semiBold' className='ml-2'>
-                Pack & Go
+                Trelio
               </Typography>
             </div>
 
@@ -96,7 +96,7 @@ export const Footer = () => {
 
         <div className='mt-8 flex flex-col-reverse items-center justify-between border-t border-gray-100 pt-8 md:flex-row'>
           <p className='mt-4 text-sm text-gray-500 md:mt-0'>
-            © 2025 Pack & Go. All rights reserved.
+            © 2025 Trelio. All rights reserved.
           </p>
           <button
             onClick={scrollToTop}

@@ -29,13 +29,13 @@ export const SimpleHeader = () => {
       >
         <div className='flex md:flex-1'>
           <Link href='/' className='flex items-center'>
-            <span className='sr-only'>Pack & Go</span>
+            <span className='sr-only'>Trelio</span>
             <div className='flex h-10 w-10 items-center justify-center rounded-lg bg-[#3182F6] font-bold text-white'>
               P&G
             </div>
             <div className='ml-2 flex items-center justify-center md:justify-start'>
               <Typography variant='h4' weight='semiBold'>
-                Pack & Go
+                Trelio
               </Typography>
             </div>
           </Link>

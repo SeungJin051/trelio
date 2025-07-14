@@ -59,13 +59,13 @@ export const Header = () => {
       >
         <div className='flex md:flex-1'>
           <Link href='/' className='flex items-center'>
-            <span className='sr-only'>Pack & Go</span>
+            <span className='sr-only'>Trelio</span>
             <div className='flex items-center justify-center md:justify-start'>
               <div className='flex h-10 w-10 items-center justify-center rounded-lg bg-[#3182F6] font-bold text-white'>
-                P&G
+                Trelio
               </div>
               <Typography variant='h4' weight='semiBold' className='ml-2'>
-                Pack & Go
+                Trelio
               </Typography>
             </div>
           </Link>
@@ -158,12 +158,12 @@ export const Header = () => {
                     <Image
                       className='h-8 w-auto'
                       src='https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=blue&shade=500'
-                      alt='Pack & Go'
+                      alt='Trelio'
                       width={32}
                       height={32}
                     />
                     <span className='ml-2 text-lg font-medium text-gray-900'>
-                      Pack & Go
+                      Trelio
                     </span>
                   </Link>
                   <button

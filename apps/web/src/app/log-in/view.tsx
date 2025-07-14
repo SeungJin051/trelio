@@ -185,7 +185,7 @@ const LoginView = () => {
             모든 것을 경험하세요.
           </Typography>
           <Typography variant='body2' className='text-gray-500'>
-            여행 준비의 모든 솔루션, Pack & Go
+            여행 준비의 모든 솔루션, Trelio
           </Typography>
         </div>
 
@@ -268,7 +268,7 @@ const LoginView = () => {
         {/* 추가 링크 */}
         <div className='mt-8 text-center'>
           <p className='text-xs text-gray-500'>
-            계속 진행하시면 Pack & Go의{' '}
+            계속 진행하시면 Trelio의{' '}
             <Link href='/terms' className='text-[#3182F6] hover:underline'>
               이용약관
             </Link>
