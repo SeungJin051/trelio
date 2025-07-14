@@ -7,7 +7,7 @@ interface AvatarProps {
 export const Avatar = ({ size = 'medium', src, alt }: AvatarProps) => {
   const sizeClass =
     size === 'small'
-      ? 'h-6 w-6 text-xs'
+      ? 'h-8 w-8 text-xs'
       : size === 'large'
         ? 'h-14 w-14 text-xl'
         : 'h-10 w-10 text-base';
