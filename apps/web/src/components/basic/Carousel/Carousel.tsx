@@ -118,7 +118,7 @@ export const Carousel = ({
       x: 0,
       opacity: 1,
       transition: {
-        x: { type: 'spring', stiffness: 300, damping: 30 },
+        x: { type: 'spring' as const, stiffness: 300, damping: 30 },
         opacity: { duration: 0.2 },
       },
     },
@@ -126,7 +126,7 @@ export const Carousel = ({
       x: direction > 0 ? -slideWidth : slideWidth,
       opacity: 0,
       transition: {
-        x: { type: 'spring', stiffness: 300, damping: 30 },
+        x: { type: 'spring' as const, stiffness: 300, damping: 30 },
         opacity: { duration: 0.2 },
       },
     }),
