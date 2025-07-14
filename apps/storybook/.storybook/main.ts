@@ -31,7 +31,7 @@ const config: StorybookConfig = {
       ${head}
       <script>
         // GitHub Pages에서 올바른 경로를 사용하기 위한 설정
-        window.STORYBOOK_REACT_APP_BASE_PATH = '/pack-and-go/';
+        window.STORYBOOK_REACT_APP_BASE_PATH = '/trelio/';
       </script>
     `;
   },

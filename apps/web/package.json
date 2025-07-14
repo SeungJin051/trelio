@@ -14,6 +14,8 @@
   "dependencies": {
     "@lottiefiles/dotlottie-react": "^0.13.5",
     "@repo/ui": "file:../../packages/ui",
+    "@supabase/ssr": "^0.6.1",
+    "@supabase/supabase-js": "^2.49.5",
     "@tanstack/react-query": "^5.75.1",
     "@tanstack/react-query-devtools": "^5.75.1",
     "autoprefixer": "^10.0.1",
