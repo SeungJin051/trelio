@@ -6,6 +6,8 @@ import Link from 'next/link';
 
 import { Typography } from '@ui/components/typography';
 
+import { TrelioLogo } from '@/components/common';
+
 export const SimpleHeader = () => {
   const [scrolled, setScrolled] = useState(false);
   // 스크롤 감지
@@ -30,11 +32,13 @@ export const SimpleHeader = () => {
         <div className='flex md:flex-1'>
           <Link href='/' className='flex items-center'>
             <span className='sr-only'>Trelio</span>
-            <div className='flex h-10 w-10 items-center justify-center rounded-lg bg-[#3182F6] font-bold text-white'>
-              P&G
-            </div>
+            <TrelioLogo width={40} height={40} className='text-[#3182F6]' />
             <div className='ml-2 flex items-center justify-center md:justify-start'>
-              <Typography variant='h4' weight='semiBold'>
+              <Typography
+                variant='h4'
+                weight='semiBold'
+                className='text-gray-900'
+              >
                 Trelio
               </Typography>
             </div>

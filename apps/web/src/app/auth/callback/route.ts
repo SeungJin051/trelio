@@ -38,8 +38,6 @@ export async function GET(request: NextRequest) {
         } = await supabase.auth.getUser();
 
         if (user) {
-          console.log('🔍 콜백에서 사용자 프로필 확인 중...', user.id);
-
           // 사용자 프로필이 존재하는지 확인
           const { data: profile, error: profileError } = await supabase
             .from('user_profiles')

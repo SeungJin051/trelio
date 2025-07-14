@@ -173,7 +173,7 @@ const LoginView = () => {
         {/* 로고 및 헤더 */}
         <div className='mb-8'>
           <div className='mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#3182F6]'>
-            <span className='text-xl font-bold text-white'>P&G</span>
+            <span className='text-xl font-bold text-white'>Trelio</span>
           </div>
           <Typography
             variant='h3'
@@ -185,7 +185,7 @@ const LoginView = () => {
             모든 것을 경험하세요.
           </Typography>
           <Typography variant='body2' className='text-gray-500'>
-            여행 준비의 모든 솔루션, Trelio
+            여행 계획의 모든 솔루션, Trelio
           </Typography>
         </div>
 
