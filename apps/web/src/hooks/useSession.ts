@@ -105,7 +105,7 @@ export const useSession = () => {
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        console.error('프로필 조회 오류:', error);
+        // console.error('프로필 조회 오류:', error);
         setSignUpStatus('incomplete'); // 오류 발생 시 미완료로 처리
         return;
       }
@@ -131,7 +131,7 @@ export const useSession = () => {
         // console.log('⚠️ 회원가입 미완료 사용자 감지:', basicUserData);
       }
     } catch (err) {
-      console.error('프로필 fetch 중 오류:', err);
+      // console.error('프로필 fetch 중 오류:', err);
       setSignUpStatus('incomplete'); // 오류 발생 시 미완료로 처리
     }
   };
