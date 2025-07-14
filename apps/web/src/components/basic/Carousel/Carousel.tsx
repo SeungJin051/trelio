@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import { BsChevronLeft, BsChevronRight } from 'react-icons/bs';
 
 import { cn } from '@ui/utils/cn';
@@ -109,7 +109,7 @@ export const Carousel = ({
     };
   }, [goToNext, goToPrev]);
 
-  const slideVariants = {
+  const slideVariants: Variants = {
     enter: (direction: number) => ({
       x: direction > 0 ? slideWidth : -slideWidth,
       opacity: 0,

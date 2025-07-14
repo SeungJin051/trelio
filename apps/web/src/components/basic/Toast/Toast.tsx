@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { IoIosInformationCircle } from 'react-icons/io';
 import { IoAlertCircleSharp } from 'react-icons/io5';
 import { IoCloseOutline } from 'react-icons/io5';
@@ -28,7 +28,7 @@ export interface ToastProps {
   position?: ToastPosition;
 }
 
-const toastVariants = {
+const toastVariants: Variants = {
   initial: (position: ToastPosition) => {
     if (position.includes('top')) {
       return { opacity: 0, y: -20 };
