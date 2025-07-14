@@ -13,19 +13,22 @@ import { Footer, Header, SimpleHeader } from '@/components';
 const LayoutWrapper = ({ children }: PropsWithChildren) => {
   const pathname = usePathname();
 
-  // URL 경로에서 현재 경로가 로그인 그룹인지 확인
-  const isLoginPage = pathname.includes('log-in');
+  // URL 경로에서 현재 경로가 Auth 그룹인지 확인
+  const isAuthPage =
+    pathname.includes('log-in') || pathname.includes('sign-up');
 
   return (
     <>
       {/* 로그인 페이지가 아닐 경우 헤더 표시 */}
-      {!isLoginPage && <Header />}
+      {!isAuthPage && <Header />}
       {/* 로그인 페이지나 404 페이지일 경우 심플헤더 표시 */}
-      {isLoginPage || pathname.includes('not-found') ? <SimpleHeader /> : null}
+      {isAuthPage || pathname.includes('not-found') ? <SimpleHeader /> : null}
       {/* 화면 너비 제한 */}
-      <div className='mx-auto min-h-[80vh] max-w-screen-xl'>{children}</div>
+      <div className='mx-auto mt-[56px] min-h-dvh max-w-screen-xl'>
+        {children}
+      </div>
       {/* 로그인 페이지가 아닐 경우 푸터 표시 */}
-      {!isLoginPage && <Footer />}
+      {!isAuthPage && <Footer />}
     </>
   );
 };

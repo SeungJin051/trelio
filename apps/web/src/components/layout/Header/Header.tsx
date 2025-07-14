@@ -116,12 +116,16 @@ export const Header = () => {
         </div>
 
         {/* 로그인 버튼 */}
-        <Link
-          href='log-in'
-          className='hidden cursor-pointer md:flex md:flex-1 md:justify-end'
-        >
-          <Icon as={CiLogin} color='#374151' size={24} />
-        </Link>
+        <div className='hidden md:flex md:flex-1 md:justify-end'>
+          <Link href='/log-in'>
+            <Icon
+              as={CiLogin}
+              color='#374151'
+              size={24}
+              className='cursor-pointer'
+            />
+          </Link>
+        </div>
       </nav>
 
       {/* 모바일 메뉴 */}
