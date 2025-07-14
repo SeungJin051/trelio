@@ -2,6 +2,9 @@
 
 사용자가 여행 일정을 효율적으로 관리할 수 있도록 돕는 웹 애플리케이션입니다. 다양한 기능을 통해 여행 계획, 일정 관리, 체크리스트 등을 쉽게 관리할 수 있습니다.
 
+* **서비스:** [Trelio](https://trelio-seungjinlims-projects.vercel.app/)
+* **디자인 시스템:** [Storybook](https://seungjin051.github.io/trelio/)
+  
 ## 주요 기능
 
 - 여행 계획 생성 및 관리
