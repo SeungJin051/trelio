@@ -19,6 +19,7 @@ const meta: Meta<typeof Card> = {
         'horizontal',
         'pricing',
         'cta',
+        'selectable',
       ],
       description: '카드 타입',
     },
@@ -50,6 +51,10 @@ const meta: Meta<typeof Card> = {
       control: 'text',
       description: '링크 URL',
     },
+    selected: {
+      control: 'boolean',
+      description: '선택 상태 (selectable 타입에서 사용)',
+    },
   },
 };
 
@@ -73,6 +78,8 @@ export const ImageCard: Story = {
     title: '이미지 카드',
     description: '이미지가 포함된 카드 컴포넌트입니다.',
     image: 'https://picsum.photos/400/250',
+    buttonText: '자세히 보기',
+    onClick: () => alert('이미지 카드 버튼이 클릭되었습니다!'),
   },
 };
 
@@ -107,8 +114,6 @@ export const HorizontalCard: Story = {
     title: '수평 카드',
     description: '이미지와 콘텐츠가 수평으로 배치된 카드 컴포넌트입니다.',
     image: 'https://picsum.photos/300/300',
-    buttonText: '더 알아보기',
-    onClick: () => alert('버튼이 클릭되었습니다!'),
   },
 };
 
@@ -144,15 +149,25 @@ export const CTACard: Story = {
   },
 };
 
-// 저자 정보가 있는 카드
-export const CardWithAuthor: Story = {
+// 선택 가능한 카드
+export const SelectableCard: Story = {
   args: {
-    cardType: 'default',
-    title: '블로그 포스트 제목',
-    description: '이 글은 최신 기술 트렌드에 대한 내용을 담고 있습니다.',
-    avatarSrc: 'https://i.pravatar.cc/40',
-    authorName: '홍길동',
-    authorRole: '기술 블로거',
+    cardType: 'selectable',
+    title: '선택 가능한 카드',
+    description: '선택 상태를 가질 수 있는 카드 컴포넌트입니다.',
+    selected: false,
+    onClick: () => alert('선택 가능한 카드가 클릭되었습니다!'),
+  },
+};
+
+// 선택된 상태의 카드
+export const SelectedCard: Story = {
+  args: {
+    cardType: 'selectable',
+    title: '선택된 카드',
+    description: '현재 선택된 상태의 카드 컴포넌트입니다.',
+    selected: true,
+    onClick: () => alert('선택된 카드가 클릭되었습니다!'),
   },
 };
 
@@ -178,6 +193,8 @@ export const AllCardTypes = () => {
         title='이미지 카드'
         description='상단에 이미지를 포함하는 카드입니다.'
         image='https://picsum.photos/400/250'
+        buttonText='자세히 보기'
+        onClick={() => alert('이미지 카드 클릭!')}
       />
 
       <Card
@@ -193,7 +210,7 @@ export const AllCardTypes = () => {
         title='링크 카드'
         description='하단에 링크가 있는 카드입니다.'
         linkText='자세히 보기'
-        linkHref='https://pack-and-go-web.vercel.app/'
+        linkHref='https://trelio-web.vercel.app/'
       />
 
       <Card
@@ -201,8 +218,6 @@ export const AllCardTypes = () => {
         title='수평 카드'
         description='이미지와 콘텐츠가 수평으로 배치된 카드입니다.'
         image='https://picsum.photos/300/300'
-        buttonText='더 알아보기'
-        onClick={() => alert('수평 카드 클릭!')}
       />
 
       <Card
@@ -220,6 +235,22 @@ export const AllCardTypes = () => {
         ]}
         buttonText='구독 신청하기'
         onClick={() => alert('프리미엄 구독 신청!')}
+      />
+
+      <Card
+        cardType='selectable'
+        title='선택 가능한 카드'
+        description='선택 상태를 가질 수 있습니다.'
+        selected={false}
+        onClick={() => alert('선택 가능한 카드 클릭!')}
+      />
+
+      <Card
+        cardType='selectable'
+        title='선택된 카드'
+        description='현재 선택된 상태입니다.'
+        selected={true}
+        onClick={() => alert('선택된 카드 클릭!')}
       />
 
       <div style={{ gridColumn: '1 / -1' }}>

@@ -23,7 +23,12 @@
       "@ui/utils": ["./packages/ui/src/utils"],
       "@ui/utils/*": ["./packages/ui/src/utils/*"],
       "@web/*": ["./apps/web/src/*"],
-      "@web/components/*": ["./apps/web/src/components/*"]
+      "@web/components/*": ["./apps/web/src/components/*"],
+      "@/*": ["./apps/web/src/*"],
+      "@/components/*": ["./apps/web/src/components/*"],
+      "@/utils/*": ["./apps/web/src/utils/*"],
+      "@/hooks/*": ["./apps/web/src/hooks/*"],
+      "@/styles/*": ["./apps/web/src/styles/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".storybook/**/*.ts", ".storybook/**/*.tsx", ".storybook/preview.js", ".storybook/main.js"],

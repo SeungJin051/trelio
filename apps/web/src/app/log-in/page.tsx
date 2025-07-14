@@ -1,7 +1,5 @@
-import LogInView from './view';
+import LoginView from './view';
 
-const LogInPage = () => {
-  return <LogInView />;
-};
-
-export default LogInPage;
+export default function LoginPage() {
+  return <LoginView />;
+}

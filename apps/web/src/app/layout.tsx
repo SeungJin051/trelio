@@ -10,7 +10,7 @@ import { pretendard } from '@/styles/fonts';
 import '../styles/globals.css';
 
 export const metadata: Metadata = {
-  title: 'Pack & Go - 여행 계획 애플리케이션',
+  title: 'Trelio - 여행 계획 애플리케이션',
   description: '쉽고 편리한 여행 계획 및 체크리스트 관리 애플리케이션',
 };
 

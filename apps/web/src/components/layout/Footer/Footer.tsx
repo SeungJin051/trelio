@@ -8,6 +8,8 @@ import { IoIosArrowUp } from 'react-icons/io';
 
 import { Icon, Typography } from '@ui/components';
 
+import { TrelioLogo } from '@/components/common';
+
 export const Footer = () => {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -15,10 +17,10 @@ export const Footer = () => {
 
   // 개인 프로젝트에 필요한 최소한의 링크만 유지
   const footerLinks = [
-    { name: '여행 계획', href: '/travel-plan' },
-    { name: '여행지 추천', href: '/recommendations' },
-    { name: '항공권 검색', href: '/flights' },
-    { name: '여행 팁', href: '/tips' },
+    { name: '여행 목록', href: '/travel-list' },
+    { name: '요금제', href: '/price' },
+    { name: 'FAQ', href: '/faq' },
+    { name: '문의하기', href: '/contact' },
   ];
 
   const socialLinks = [
@@ -37,16 +39,15 @@ export const Footer = () => {
           {/* 로고 및 설명 */}
           <div className='md:max-w-sm'>
             <div className='flex items-center justify-center md:justify-start'>
-              <div className='flex h-10 w-10 items-center justify-center rounded-lg bg-[#3182F6] font-bold text-white'>
-                P&G
-              </div>
+              <TrelioLogo />
+
               <Typography variant='h4' weight='semiBold' className='ml-2'>
-                Pack & Go
+                Trelio
               </Typography>
             </div>
 
             <p className='mt-4 text-base leading-relaxed text-gray-600'>
-              팩앤고는 여행 계획 서비스,
+              Trelio는 여행 계획 서비스,
               <br />
               여행 계획을 쉽고 편리하게 관리할 수 있어요
             </p>
@@ -96,7 +97,7 @@ export const Footer = () => {
 
         <div className='mt-8 flex flex-col-reverse items-center justify-between border-t border-gray-100 pt-8 md:flex-row'>
           <p className='mt-4 text-sm text-gray-500 md:mt-0'>
-            © 2025 Pack & Go. All rights reserved.
+            © 2025 Trelio. All rights reserved.
           </p>
           <button
             onClick={scrollToTop}
