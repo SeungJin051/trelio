@@ -7,7 +7,6 @@ import { createServerClient } from '@supabase/ssr';
  * 서버 컴포넌트, API 라우트, 미들웨어에서 사용
  */
 export async function createServerSupabaseClient() {
-  const cookieStore = await cookies();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -18,8 +17,8 @@ export async function createServerSupabaseClient() {
     );
 
     // 빌드 시에만 사용되는 더미 클라이언트
-    // 실제 API 호출을 하지 않도록 안전한 더미 URL 사용
-    return createServerClient('https://localhost', 'dummy-key-for-build-only', {
+    // createServerClient에서 오류가 발생하지 않도록 최소한의 구현
+    return createServerClient('https://dummy.supabase.co', 'dummy-anon-key', {
       cookies: {
         getAll() {
           return [];
@@ -28,8 +27,15 @@ export async function createServerSupabaseClient() {
           // 빌드 시에는 쿠키 설정하지 않음
         },
       },
+      // 추가 옵션으로 API 호출을 방지
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
     });
   }
+
+  const cookieStore = await cookies();
 
   return createServerClient(url, anonKey, {
     cookies: {
