@@ -172,7 +172,7 @@ const LoginView = () => {
       <div className='h-[800px] w-[372px] bg-white p-8'>
         {/* 로고 및 헤더 */}
         <div className='mb-8'>
-          <div className='mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#3182F6]'>
+          <div className='mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-black'>
             <span className='text-xl font-bold text-white'>Trelio</span>
           </div>
           <Typography
