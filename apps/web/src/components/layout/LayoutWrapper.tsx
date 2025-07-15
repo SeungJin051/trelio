@@ -33,11 +33,7 @@ const LayoutWrapper = ({ children }: PropsWithChildren) => {
   return (
     <>
       {/* 로그인 페이지가 아닐 경우 심플헤더 컴포넌트 표시 */}
-      {isAuthPage ? (
-        <SimpleHeader />
-      ) : (
-        <Header onSidebarToggle={handleSidebarToggle} />
-      )}
+      {isAuthPage ? <SimpleHeader /> : <Header />}
 
       {/* 사이드바 (로그인 완료된 사용자만) */}
       {shouldShowSidebar && (
