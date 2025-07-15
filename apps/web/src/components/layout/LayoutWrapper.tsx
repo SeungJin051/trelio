@@ -1,10 +1,14 @@
 'use client';
 
-import { PropsWithChildren } from 'react';
+import { PropsWithChildren, useState } from 'react';
 
 import { usePathname } from 'next/navigation';
 
-import { Footer, Header, SimpleHeader } from '@/components';
+import { useSession } from '@/hooks/useSession';
+
+import { Footer } from './Footer';
+import { Header, SimpleHeader } from './Header';
+import { Sidebar } from './Sidebar';
 
 /**
  * 클라이언트 측 로직이 필요한 레이아웃 래퍼 컴포넌트
@@ -12,23 +16,44 @@ import { Footer, Header, SimpleHeader } from '@/components';
  */
 const LayoutWrapper = ({ children }: PropsWithChildren) => {
   const pathname = usePathname();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { isAuthenticated, isSignUpCompleted } = useSession();
 
   // URL 경로에서 현재 경로가 Auth 그룹인지 확인
   const isAuthPage =
     pathname.includes('log-in') || pathname.includes('sign-up');
 
+  // 사이드바를 표시할지 결정 (로그인 완료된 사용자만)
+  const shouldShowSidebar = isAuthenticated && isSignUpCompleted && !isAuthPage;
+
+  const handleSidebarToggle = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   return (
     <>
-      {/* 로그인 페이지가 아닐 경우 헤더 표시 */}
-      {!isAuthPage && <Header />}
-      {/* 로그인 페이지나 404 페이지일 경우 심플헤더 표시 */}
-      {isAuthPage || pathname.includes('not-found') ? <SimpleHeader /> : null}
-      {/* 화면 너비 제한 */}
-      <div className='mx-auto mt-[56px] min-h-dvh max-w-screen-xl'>
+      {/* 로그인 페이지가 아닐 경우 심플헤더 컴포넌트 표시 */}
+      {isAuthPage ? (
+        <SimpleHeader />
+      ) : (
+        <Header onSidebarToggle={handleSidebarToggle} />
+      )}
+
+      {/* 사이드바 (로그인 완료된 사용자만) */}
+      {shouldShowSidebar && (
+        <Sidebar isOpen={sidebarOpen} onToggle={handleSidebarToggle} />
+      )}
+
+      {/* 메인 콘텐츠 영역 */}
+      <div
+        className={`mx-auto mt-[64px] min-h-dvh px-6 transition-all duration-300 ${
+          shouldShowSidebar ? (sidebarOpen ? 'md:ml-80' : 'md:ml-16') : ''
+        }`}
+      >
         {children}
       </div>
-      {/* 로그인 페이지가 아닐 경우 푸터 표시 */}
-      {!isAuthPage && <Footer />}
+
+      <Footer />
     </>
   );
 };
