@@ -1,36 +1,31 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
 import type { User } from '@supabase/supabase-js';
 import { IconType } from 'react-icons';
-import {
-  FaCamera,
-  FaCheck,
-  FaChevronLeft,
-  FaHeart,
-  FaMountain,
-  FaPlane,
-  FaShoppingBag,
-  FaUpload,
-  FaUtensils,
-  FaWater,
-} from 'react-icons/fa';
+import { FaCamera, FaCheck, FaChevronLeft, FaUpload } from 'react-icons/fa';
 
 import { Avatar, Button, Icon, Input, Typography } from '@ui/components';
 
 import { Card } from '@/components';
-import { useToast } from '@/hooks/useToast';
+import { useToast } from '@/hooks';
 import { createClient } from '@/lib/supabase/client/supabase';
 import type {
-  DestinationInfo,
   PreferredDestination,
   TravelStyle,
-  TravelStyleInfo,
   UserProfile,
 } from '@/types/user/user';
+
+import {
+  DESTINATIONS,
+  FILE_UPLOAD_LIMITS,
+  TOTAL_STEPS,
+  TRAVEL_STYLES,
+} from './constants';
+import { useImageUpload } from './hooks/useImageUpload';
 
 const SignUpView = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -43,17 +38,33 @@ const SignUpView = () => {
     travel_styles: [],
   });
 
-  // 이미지 업로드 관련 상태
-  const [croppedImage, setCroppedImage] = useState<string | null>(null);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
   const router = useRouter();
   const toast = useToast();
   const supabase = createClient();
-  const totalSteps = 3;
-  const progress = (step / totalSteps) * 100;
+  const progress = (step / TOTAL_STEPS) * 100;
+
+  // 이미지 업로드 훅 사용
+  const {
+    croppedImage,
+    isProcessing,
+    fileInputRef,
+    canvasRef,
+    handleFileSelect,
+    triggerFileUpload,
+    resetImage,
+  } = useImageUpload({
+    maxSize: FILE_UPLOAD_LIMITS.MAX_SIZE,
+    allowedTypes: FILE_UPLOAD_LIMITS.ALLOWED_TYPES,
+    cropSize: FILE_UPLOAD_LIMITS.CROP_SIZE,
+    jpegQuality: FILE_UPLOAD_LIMITS.JPEG_QUALITY,
+    onImageCropped: (croppedImageUrl) => {
+      setProfile((prev) => ({
+        ...prev,
+        profile_image_url: croppedImageUrl,
+        profile_image_option: 'upload',
+      }));
+    },
+  });
 
   // 컴포넌트 마운트 시 현재 사용자 정보 확인
   useEffect(() => {
@@ -97,56 +108,6 @@ const SignUpView = () => {
     getCurrentUser();
   }, [supabase, router]);
 
-  const destinations: DestinationInfo[] = [
-    { id: 'southeast-asia', name: '동남아시아', icon: '🌴' },
-    { id: 'europe', name: '유럽', icon: '🏰' },
-    { id: 'japan', name: '일본', icon: '🗾' },
-    { id: 'korea', name: '국내', icon: '🇰🇷' },
-    { id: 'americas', name: '미주', icon: '🗽' },
-    { id: 'oceania', name: '오세아니아', icon: '🦘' },
-    { id: 'china', name: '중국', icon: '🏮' },
-    { id: 'middle-east', name: '중동/아프리카', icon: '🐪' },
-  ];
-
-  const travelStyles: TravelStyleInfo[] = [
-    {
-      id: 'healing',
-      name: '힐링여행',
-      icon: FaHeart,
-      color: 'bg-pink-50 border-pink-200 text-pink-700',
-    },
-    {
-      id: 'activity',
-      name: '액티비티',
-      icon: FaMountain,
-      color: 'bg-green-50 border-green-200 text-green-700',
-    },
-    {
-      id: 'culture',
-      name: '문화탐방',
-      icon: FaPlane,
-      color: 'bg-purple-50 border-purple-200 text-purple-700',
-    },
-    {
-      id: 'food',
-      name: '맛집투어',
-      icon: FaUtensils,
-      color: 'bg-orange-50 border-orange-200 text-orange-700',
-    },
-    {
-      id: 'shopping',
-      name: '쇼핑',
-      icon: FaShoppingBag,
-      color: 'bg-blue-50 border-blue-200 text-blue-700',
-    },
-    {
-      id: 'nature',
-      name: '자연경관',
-      icon: FaWater,
-      color: 'bg-teal-50 border-teal-200 text-teal-700',
-    },
-  ];
-
   const toggleDestination = (id: PreferredDestination) => {
     setProfile((prev) => ({
       ...prev,
@@ -182,7 +143,7 @@ const SignUpView = () => {
   };
 
   const handleNext = async () => {
-    if (step < totalSteps) {
+    if (step < TOTAL_STEPS) {
       setStep(step + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
@@ -199,7 +160,6 @@ const SignUpView = () => {
         id: user.id,
         email: user.email || '',
         nickname: profile.nickname,
-        // age_range, gender 제거
         profile_image_option: profile.profile_image_option,
         profile_image_url: profile.profile_image_url,
         preferred_destinations: profile.preferred_destinations,
@@ -244,92 +204,9 @@ const SignUpView = () => {
     }
   };
 
-  // 파일 선택 핸들러 (자동 크롭)
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // 파일 타입 검증
-    if (!file.type.startsWith('image/')) {
-      toast.error('이미지 파일만 업로드할 수 있습니다.');
-      return;
-    }
-
-    // 파일 크기 검증 (5MB 제한)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('파일 크기는 5MB 이하여야 합니다.');
-      return;
-    }
-
-    // 파일을 base64로 변환하여 즉시 크롭
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const imageUrl = e.target?.result as string;
-      cropImageAutomatically(imageUrl);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // 자동 크롭 기능 (모달 없이 즉시 처리)
-  const cropImageAutomatically = (imageUrl: string) => {
-    if (!canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const img = new Image();
-    img.onload = () => {
-      // 정사각형 크롭을 위한 크기 계산
-      const size = Math.min(img.width, img.height);
-      const startX = (img.width - size) / 2;
-      const startY = (img.height - size) / 2;
-
-      // 캔버스 크기 설정 (300x300으로 리사이즈)
-      canvas.width = 300;
-      canvas.height = 300;
-
-      // 이미지를 캔버스에 그리기
-      ctx.drawImage(
-        img,
-        startX,
-        startY,
-        size,
-        size, // 소스 영역
-        0,
-        0,
-        300,
-        300 // 대상 영역
-      );
-
-      // 크롭된 이미지를 base64로 변환
-      const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
-      setCroppedImage(croppedDataUrl);
-
-      // 프로필에 업로드된 이미지 설정
-      setProfile((prev) => ({
-        ...prev,
-        profile_image_url: croppedDataUrl,
-        profile_image_option: 'upload',
-      }));
-
-      toast.success('프로필 사진이 설정되었습니다.');
-    };
-
-    img.src = imageUrl;
-  };
-
-  // 파일 업로드 버튼 클릭 핸들러
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-
   // 소셜 프로필로 되돌리기
   const resetToSocialProfile = () => {
-    setCroppedImage(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    resetImage();
     setProfile((prev) => ({
       ...prev,
       profile_image_option: 'social',
@@ -339,16 +216,7 @@ const SignUpView = () => {
   };
 
   if (!user) {
-    return (
-      // <div className='flex items-center justify-center min-h-screen'>
-      //   <div className='text-center'>
-      //     <Typography variant='h3' className='mb-4'>
-      //       로그인 정보를 확인하는 중...
-      //     </Typography>
-      //   </div>
-      // </div>
-      null
-    );
+    return null;
   }
 
   const renderStep = () => {
@@ -377,8 +245,9 @@ const SignUpView = () => {
                 />
                 {profile.profile_image_option === 'upload' && (
                   <button
-                    onClick={handleUploadClick}
-                    className='absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg hover:bg-blue-600'
+                    onClick={triggerFileUpload}
+                    disabled={isProcessing}
+                    className='absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg hover:bg-blue-600 disabled:opacity-50'
                   >
                     <Icon as={FaCamera} className='h-4 w-4' />
                   </button>
@@ -457,7 +326,7 @@ const SignUpView = () => {
                         profile_image_option: 'upload',
                       }));
                       if (!croppedImage) {
-                        handleUploadClick();
+                        triggerFileUpload();
                       }
                     }}
                   >
@@ -524,7 +393,7 @@ const SignUpView = () => {
             </div>
 
             <div className='grid grid-cols-2 gap-3'>
-              {destinations.map((destination) => (
+              {DESTINATIONS.map((destination) => (
                 <Card
                   key={destination.id}
                   cardType='selectable'
@@ -571,7 +440,7 @@ const SignUpView = () => {
             </div>
 
             <div className='grid grid-cols-2 gap-3'>
-              {travelStyles.map((style) => (
+              {TRAVEL_STYLES.map((style) => (
                 <Card
                   key={style.id}
                   cardType='selectable'
@@ -629,7 +498,7 @@ const SignUpView = () => {
             </div>
           </div>
           <Typography variant='body2' className='text-gray-500'>
-            {step}/{totalSteps}
+            {step}/{TOTAL_STEPS}
           </Typography>
         </div>
       </div>
@@ -642,15 +511,17 @@ const SignUpView = () => {
         <div className='mt-8'>
           <Button
             onClick={handleNext}
-            disabled={!canProceed() || loading}
+            disabled={!canProceed() || loading || isProcessing}
             className='w-full'
             size='large'
           >
             {loading
               ? '가입 중...'
-              : step === totalSteps
-                ? '회원가입 완료'
-                : '다음'}
+              : isProcessing
+                ? '이미지 처리 중...'
+                : step === TOTAL_STEPS
+                  ? '회원가입 완료'
+                  : '다음'}
           </Button>
         </div>
 
