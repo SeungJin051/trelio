@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { IoAddOutline, IoNotificationsOutline } from 'react-icons/io5';
 
 import { Button } from '@ui/components/button';
+import { Icon } from '@ui/components/icon';
 
 // 메타데이터 정의
 const meta: Meta<typeof Button> = {
@@ -13,7 +15,7 @@ const meta: Meta<typeof Button> = {
   argTypes: {
     variant: {
       control: { type: 'select' },
-      options: ['filled', 'text', 'outlined'],
+      options: ['filled', 'text', 'outlined', 'ghost'],
       description: '버튼 스타일 변형',
     },
     colorTheme: {
@@ -183,5 +185,73 @@ export const WithClickEvent: Story = {
     colorTheme: 'green',
     size: 'medium',
     onClick: () => alert('버튼이 클릭되었습니다!'),
+  },
+};
+
+// Ghost 버튼
+export const Ghost: Story = {
+  args: {
+    children: 'Ghost 버튼',
+    variant: 'ghost',
+    colorTheme: 'gray',
+    size: 'medium',
+  },
+};
+
+// Ghost 버튼 with 아이콘
+export const GhostWithIcon: Story = {
+  render: (args) => (
+    <div className='flex gap-4'>
+      <Button {...args} leftIcon={<Icon as={IoAddOutline} size={20} />}>
+        추가
+      </Button>
+      <Button
+        {...args}
+        leftIcon={<Icon as={IoNotificationsOutline} size={20} />}
+      >
+        알림
+      </Button>
+    </div>
+  ),
+  args: {
+    variant: 'ghost',
+    colorTheme: 'gray',
+    size: 'medium',
+  },
+};
+
+// 모든 Variant 비교
+export const AllVariants: Story = {
+  render: (args) => (
+    <div className='grid grid-cols-4 gap-4'>
+      <div className='text-center'>
+        <h4 className='mb-2 text-sm font-medium'>Filled</h4>
+        <Button {...args} variant='filled'>
+          Filled
+        </Button>
+      </div>
+      <div className='text-center'>
+        <h4 className='mb-2 text-sm font-medium'>Outlined</h4>
+        <Button {...args} variant='outlined'>
+          Outlined
+        </Button>
+      </div>
+      <div className='text-center'>
+        <h4 className='mb-2 text-sm font-medium'>Text</h4>
+        <Button {...args} variant='text'>
+          Text
+        </Button>
+      </div>
+      <div className='text-center'>
+        <h4 className='mb-2 text-sm font-medium'>Ghost</h4>
+        <Button {...args} variant='ghost'>
+          Ghost
+        </Button>
+      </div>
+    </div>
+  ),
+  args: {
+    colorTheme: 'blue',
+    size: 'medium',
   },
 };
