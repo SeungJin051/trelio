@@ -49,7 +49,7 @@ const LayoutWrapper = ({ children }: PropsWithChildren) => {
 
       {/* 메인 콘텐츠 영역 */}
       <div
-        className={`mx-auto mt-[64px] min-h-dvh px-6 transition-all duration-300 ${
+        className={`mx-auto mt-[64px] min-h-dvh transition-all duration-300 ${
           shouldShowSidebar ? (sidebarOpen ? 'sm:pl-80' : 'sm:pl-16') : ''
         }`}
       >
