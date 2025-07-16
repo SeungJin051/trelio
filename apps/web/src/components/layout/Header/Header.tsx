@@ -11,10 +11,11 @@ import { FaExclamationTriangle } from 'react-icons/fa';
 import { IoCloseOutline } from 'react-icons/io5';
 import { IoAddOutline, IoNotificationsOutline } from 'react-icons/io5';
 
-import { Avatar, Icon } from '@ui/components';
+import { Avatar, Button, Icon } from '@ui/components';
 import { Typography } from '@ui/components/typography';
 
 import { TrelioLogo } from '@/components/common';
+import { NewTravelModal } from '@/components/common';
 import { useSession } from '@/hooks/useSession';
 
 interface NavItem {
@@ -75,10 +76,7 @@ const HeaderSkeleton = ({
       <div className='hidden min-h-12 md:flex md:flex-1 md:items-center md:justify-end md:space-x-4'>
         <div className='flex h-10 w-32 animate-pulse items-center justify-center rounded-lg bg-gray-200'></div>
         <div className='flex h-10 w-10 animate-pulse items-center justify-center rounded-full bg-gray-200'></div>
-        <div className='flex h-10 animate-pulse items-center space-x-3 rounded-full bg-gray-100 pr-4'>
-          <div className='ml-2 h-8 w-8 rounded-full bg-gray-200'></div>
-          <div className='h-4 w-16 rounded bg-gray-200'></div>
-        </div>
+        <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200'></div>
       </div>
     </nav>
   </header>
@@ -91,6 +89,7 @@ export const Header = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [newTravelModalOpen, setNewTravelModalOpen] = useState(false);
 
   const {
     isAuthenticated,
@@ -171,15 +170,17 @@ export const Header = ({
   const renderAuthenticatedHeader = () => (
     <div className='hidden md:flex md:flex-1 md:items-center md:justify-end md:space-x-4'>
       {/* 새 여행 계획 생성 버튼 */}
-      <Link
-        href='/travel/new'
-        className='flex items-center space-x-2 rounded-lg bg-[#3182F6] px-4 py-2 transition-colors hover:bg-[#2b74e0]'
+      <Button
+        onClick={() => setNewTravelModalOpen(true)}
+        colorTheme='blue'
+        size='medium'
+        className='flex items-center space-x-2'
+        leftIcon={<Icon as={IoAddOutline} size={20} />}
       >
-        <Icon as={IoAddOutline} color='white' size={18} />
         <Typography variant='body2' weight='medium' className='text-white'>
           새 여행 계획
         </Typography>
-      </Link>
+      </Button>
 
       {/* 알림 아이콘 */}
       <button
@@ -192,20 +193,17 @@ export const Header = ({
         <Icon as={IoNotificationsOutline} color='#374151' size={24} />
       </button>
 
-      {/* 아바타 및 닉네임 */}
+      {/* 아바타 */}
       <div className='profile-dropdown relative'>
         <button
           onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-          className='flex items-center space-x-3 rounded-full p-2 transition-colors hover:bg-gray-100'
+          className='rounded-full p-2 transition-colors hover:bg-gray-100'
         >
           <Avatar
             src={userProfile?.profile_image_url}
             alt={userProfile?.nickname || userProfile?.email || '사용자'}
             size='small'
           />
-          <Typography variant='body2' weight='medium' className='text-gray-900'>
-            {userProfile?.nickname || '사용자'}
-          </Typography>
         </button>
 
         <AnimatePresence>
@@ -255,12 +253,12 @@ export const Header = ({
   const renderMobileAuthenticatedHeader = () => (
     <div className='flex items-center space-x-2 md:hidden'>
       {/* 새 여행 계획 생성 버튼 (아이콘만) */}
-      <Link
-        href='/travel/new'
+      <button
+        onClick={() => setNewTravelModalOpen(true)}
         className='flex items-center justify-center rounded-lg bg-[#3182F6] p-2 transition-colors hover:bg-[#2b74e0]'
       >
         <Icon as={IoAddOutline} color='white' size={20} />
-      </Link>
+      </button>
 
       {/* 알림 아이콘 */}
       <button
@@ -371,14 +369,16 @@ export const Header = ({
       return (
         <div className='space-y-3'>
           {/* 새 여행 계획 생성 버튼 */}
-          <Link
-            href='/travel/new'
+          <button
+            onClick={() => {
+              setNewTravelModalOpen(true);
+              setMobileMenuOpen(false);
+            }}
             className='flex w-full items-center justify-center space-x-2 rounded-xl bg-[#3182F6] px-4 py-3 font-medium text-white transition-colors hover:bg-[#2b74e0]'
-            onClick={() => setMobileMenuOpen(false)}
           >
             <Icon as={IoAddOutline} size={20} />
             <span>새 여행 계획 생성</span>
-          </Link>
+          </button>
 
           {/* 알림 버튼 */}
           <button
@@ -610,6 +610,12 @@ export const Header = ({
           </>
         )}
       </AnimatePresence>
+
+      {/* 새 여행 계획 모달 */}
+      <NewTravelModal
+        isOpen={newTravelModalOpen}
+        onClose={() => setNewTravelModalOpen(false)}
+      />
     </header>
   );
 };
