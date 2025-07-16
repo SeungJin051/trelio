@@ -33,7 +33,14 @@ const LayoutWrapper = ({ children }: PropsWithChildren) => {
   return (
     <>
       {/* 로그인 페이지가 아닐 경우 심플헤더 컴포넌트 표시 */}
-      {isAuthPage ? <SimpleHeader /> : <Header />}
+      {isAuthPage ? (
+        <SimpleHeader />
+      ) : (
+        <Header
+          sidebarOpen={sidebarOpen}
+          shouldShowSidebar={shouldShowSidebar}
+        />
+      )}
 
       {/* 사이드바 (로그인 완료된 사용자만) */}
       {shouldShowSidebar && (
@@ -43,13 +50,11 @@ const LayoutWrapper = ({ children }: PropsWithChildren) => {
       {/* 메인 콘텐츠 영역 */}
       <div
         className={`mx-auto mt-[64px] min-h-dvh px-6 transition-all duration-300 ${
-          shouldShowSidebar ? (sidebarOpen ? 'md:ml-80' : 'md:ml-16') : ''
+          shouldShowSidebar ? (sidebarOpen ? 'sm:pl-80' : 'sm:pl-16') : ''
         }`}
       >
         {children}
       </div>
-
-      <Footer />
     </>
   );
 };
