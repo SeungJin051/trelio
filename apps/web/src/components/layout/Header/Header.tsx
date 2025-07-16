@@ -11,15 +11,21 @@ import { FaExclamationTriangle } from 'react-icons/fa';
 import { IoCloseOutline } from 'react-icons/io5';
 import { IoAddOutline, IoNotificationsOutline } from 'react-icons/io5';
 
-import { Avatar, Icon } from '@ui/components';
+import { Avatar, Button, Icon } from '@ui/components';
 import { Typography } from '@ui/components/typography';
 
 import { TrelioLogo } from '@/components/common';
+import { NewTravelModal } from '@/components/common';
 import { useSession } from '@/hooks/useSession';
 
 interface NavItem {
   name: string;
   href: string;
+}
+
+interface HeaderProps {
+  sidebarOpen?: boolean;
+  shouldShowSidebar?: boolean;
 }
 
 const navigation: NavItem[] = [
@@ -30,54 +36,60 @@ const navigation: NavItem[] = [
 ];
 
 // 헤더 스켈레톤 컴포넌트
-const HeaderSkeleton = () => (
-  <div className='hidden min-h-12 md:flex md:flex-1 md:items-center md:justify-end md:space-x-4'>
-    <div className='flex h-10 w-32 animate-pulse items-center justify-center rounded-lg bg-gray-200'></div>
-
-    <div className='flex h-10 w-10 animate-pulse items-center justify-center rounded-full bg-gray-200'></div>
-
-    <div className='flex h-10 animate-pulse items-center space-x-3 rounded-full bg-gray-100 pr-4'>
-      <div className='ml-2 h-8 w-8 rounded-full bg-gray-200'></div>
-      <div className='h-4 w-16 rounded bg-gray-200'></div>
-    </div>
-  </div>
-);
-
-// 모바일 헤더 스켈레톤 컴포넌트 (로그인 후)
-const MobileHeaderSkeleton = () => (
-  <div className='flex items-center space-x-2 md:hidden'>
-    <div className='flex h-9 w-9 animate-pulse items-center justify-center rounded-lg bg-gray-200'></div>
-
-    <div className='flex h-9 w-9 animate-pulse items-center justify-center rounded-full bg-gray-200'></div>
-
-    <div className='flex h-9 w-9 animate-pulse items-center justify-center rounded-full bg-gray-200'></div>
-  </div>
-);
-
-// 모바일 스켈레톤 컴포넌트
-const MobileBottomSkeleton = () => (
-  <div className='space-y-3'>
-    <div className='h-12 w-full animate-pulse rounded-xl bg-gray-200'></div>
-
-    <div className='h-12 w-full animate-pulse rounded-xl bg-gray-200'></div>
-
-    <div className='flex items-center space-x-3 px-4 py-2'>
-      <div className='h-10 w-10 animate-pulse rounded-full bg-gray-200'></div>
-      <div className='flex-1 space-y-2'>
-        <div className='h-4 w-20 animate-pulse rounded bg-gray-200'></div>
-        <div className='h-3 w-32 animate-pulse rounded bg-gray-200'></div>
+const HeaderSkeleton = ({
+  sidebarOpen = false,
+  shouldShowSidebar = false,
+}: {
+  sidebarOpen?: boolean;
+  shouldShowSidebar?: boolean;
+}) => (
+  <header
+    className={`fixed top-0 z-30 border-b border-gray-200 bg-white shadow-sm backdrop-blur-sm transition-all duration-300 ${
+      shouldShowSidebar
+        ? sidebarOpen
+          ? 'left-80 right-0'
+          : 'left-16 right-0'
+        : 'left-0 right-0'
+    }`}
+  >
+    <nav className='mx-auto flex items-center justify-between px-6 py-4'>
+      <div className='flex md:flex-1'>
+        <Link href='/' className='flex items-center'>
+          <span className='sr-only'>Trelio</span>
+          <div className='flex items-center justify-center md:justify-start'>
+            {/* 로고 스켈레톤 */}
+            <div className='h-10 w-10 animate-pulse rounded-full bg-gray-200'></div>
+            {/* 텍스트 스켈레톤 */}
+            <div className='ml-2 h-6 w-16 animate-pulse rounded bg-gray-200'></div>
+          </div>
+        </Link>
       </div>
-    </div>
 
-    <div className='h-12 w-full animate-pulse rounded-xl bg-gray-200'></div>
-    <div className='h-12 w-full animate-pulse rounded-xl bg-gray-200'></div>
-  </div>
+      {/* 모바일 스켈레톤 */}
+      <div className='flex items-center space-x-2 md:hidden'>
+        <div className='h-9 w-9 animate-pulse rounded-lg bg-gray-200'></div>
+        <div className='h-9 w-9 animate-pulse rounded-full bg-gray-200'></div>
+        <div className='h-9 w-9 animate-pulse rounded-full bg-gray-200'></div>
+      </div>
+
+      {/* 데스크톱 스켈레톤 */}
+      <div className='hidden min-h-12 md:flex md:flex-1 md:items-center md:justify-end md:space-x-4'>
+        <div className='flex h-10 w-32 animate-pulse items-center justify-center rounded-lg bg-gray-200'></div>
+        <div className='flex h-10 w-10 animate-pulse items-center justify-center rounded-full bg-gray-200'></div>
+        <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200'></div>
+      </div>
+    </nav>
+  </header>
 );
 
-export const Header = () => {
+export const Header = ({
+  sidebarOpen = false,
+  shouldShowSidebar = false,
+}: HeaderProps = {}) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [newTravelModalOpen, setNewTravelModalOpen] = useState(false);
 
   const {
     isAuthenticated,
@@ -109,6 +121,16 @@ export const Header = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // 로딩 중일 때 스켈레톤 표시
+  if (loading) {
+    return (
+      <HeaderSkeleton
+        sidebarOpen={sidebarOpen}
+        shouldShowSidebar={shouldShowSidebar}
+      />
+    );
+  }
 
   const handleSignOut = async () => {
     await signOut();
@@ -148,15 +170,17 @@ export const Header = () => {
   const renderAuthenticatedHeader = () => (
     <div className='hidden md:flex md:flex-1 md:items-center md:justify-end md:space-x-4'>
       {/* 새 여행 계획 생성 버튼 */}
-      <Link
-        href='/travel/new'
-        className='flex items-center space-x-2 rounded-lg bg-[#3182F6] px-4 py-2 transition-colors hover:bg-[#2b74e0]'
+      <Button
+        onClick={() => setNewTravelModalOpen(true)}
+        colorTheme='blue'
+        size='medium'
+        className='flex items-center space-x-2'
+        leftIcon={<Icon as={IoAddOutline} size={20} />}
       >
-        <Icon as={IoAddOutline} color='white' size={18} />
         <Typography variant='body2' weight='medium' className='text-white'>
           새 여행 계획
         </Typography>
-      </Link>
+      </Button>
 
       {/* 알림 아이콘 */}
       <button
@@ -169,20 +193,17 @@ export const Header = () => {
         <Icon as={IoNotificationsOutline} color='#374151' size={24} />
       </button>
 
-      {/* 아바타 및 닉네임 */}
+      {/* 아바타 */}
       <div className='profile-dropdown relative'>
         <button
           onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-          className='flex items-center space-x-3 rounded-full p-2 transition-colors hover:bg-gray-100'
+          className='rounded-full p-2 transition-colors hover:bg-gray-100'
         >
           <Avatar
             src={userProfile?.profile_image_url}
             alt={userProfile?.nickname || userProfile?.email || '사용자'}
             size='small'
           />
-          <Typography variant='body2' weight='medium' className='text-gray-900'>
-            {userProfile?.nickname || '사용자'}
-          </Typography>
         </button>
 
         <AnimatePresence>
@@ -232,12 +253,12 @@ export const Header = () => {
   const renderMobileAuthenticatedHeader = () => (
     <div className='flex items-center space-x-2 md:hidden'>
       {/* 새 여행 계획 생성 버튼 (아이콘만) */}
-      <Link
-        href='/travel/new'
+      <button
+        onClick={() => setNewTravelModalOpen(true)}
         className='flex items-center justify-center rounded-lg bg-[#3182F6] p-2 transition-colors hover:bg-[#2b74e0]'
       >
         <Icon as={IoAddOutline} color='white' size={20} />
-      </Link>
+      </button>
 
       {/* 알림 아이콘 */}
       <button
@@ -343,24 +364,21 @@ export const Header = () => {
 
   // 모바일 하단 영역 렌더링
   const renderMobileBottomArea = () => {
-    // 로딩 중일 때 스켈레톤 표시
-    if (loading) {
-      return <MobileBottomSkeleton />;
-    }
-
     if (isAuthenticated && userProfile && isSignUpCompleted) {
       // 로그인 완료 상태 - 새로운 모바일 레이아웃
       return (
         <div className='space-y-3'>
           {/* 새 여행 계획 생성 버튼 */}
-          <Link
-            href='/travel/new'
+          <button
+            onClick={() => {
+              setNewTravelModalOpen(true);
+              setMobileMenuOpen(false);
+            }}
             className='flex w-full items-center justify-center space-x-2 rounded-xl bg-[#3182F6] px-4 py-3 font-medium text-white transition-colors hover:bg-[#2b74e0]'
-            onClick={() => setMobileMenuOpen(false)}
           >
             <Icon as={IoAddOutline} size={20} />
             <span>새 여행 계획 생성</span>
-          </Link>
+          </button>
 
           {/* 알림 버튼 */}
           <button
@@ -443,11 +461,6 @@ export const Header = () => {
 
   // 헤더 오른쪽 영역 렌더링 로직
   const renderHeaderRightArea = () => {
-    // 로딩 중일 때 스켈레톤 표시
-    if (loading) {
-      return <HeaderSkeleton />;
-    }
-
     // 로그인 완료 상태
     if (isAuthenticated && isSignUpCompleted) {
       return renderAuthenticatedHeader();
@@ -459,11 +472,6 @@ export const Header = () => {
 
   // 모바일 오른쪽 영역 렌더링 로직
   const renderMobileRightArea = () => {
-    // 로딩 중일 때 스켈레톤 표시
-    if (loading) {
-      return <MobileHeaderSkeleton />;
-    }
-
     // 로그인 완료 상태
     if (isAuthenticated && isSignUpCompleted) {
       return renderMobileAuthenticatedHeader();
@@ -485,8 +493,14 @@ export const Header = () => {
 
   return (
     <header
-      className={`fixed left-0 right-0 top-0 z-50 border-b border-gray-200 bg-white transition-all duration-300 ${
+      className={`fixed top-0 z-30 border-b border-gray-200 bg-white transition-all duration-300 ${
         scrolled ? 'shadow-sm backdrop-blur-sm' : ''
+      } ${
+        isAuthenticated && isSignUpCompleted
+          ? sidebarOpen
+            ? 'left-80 right-0'
+            : 'left-16 right-0'
+          : 'left-0 right-0'
       }`}
     >
       <nav
@@ -497,7 +511,13 @@ export const Header = () => {
           <Link href='/' className='flex items-center'>
             <span className='sr-only'>Trelio</span>
             <div className='flex items-center justify-center md:justify-start'>
-              <TrelioLogo width={40} height={40} className='text-[#3182F6]' />
+              <TrelioLogo
+                width={40}
+                height={40}
+                color='#3182F6'
+                accentColor='#60A5FA'
+                className='text-[#3182F6]'
+              />
               <Typography
                 variant='h4'
                 weight='semiBold'
@@ -518,80 +538,84 @@ export const Header = () => {
 
       {/* 모바일 메뉴 (로그인 전 사용자만) */}
       <AnimatePresence>
-        {mobileMenuOpen &&
-          !loading &&
-          (!isAuthenticated || !isSignUpCompleted) && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className='fixed inset-0 z-40 bg-black/20 backdrop-blur-sm'
-                onClick={() => setMobileMenuOpen(false)}
-              />
+        {mobileMenuOpen && (!isAuthenticated || !isSignUpCompleted) && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className='fixed inset-0 z-40 bg-black/20 backdrop-blur-sm'
+              onClick={() => setMobileMenuOpen(false)}
+            />
 
-              <motion.div
-                initial={{ x: '100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                className='fixed inset-y-0 right-0 z-50 w-full max-w-sm bg-white shadow-lg'
-              >
-                <div className='flex h-full flex-col overflow-y-auto'>
-                  <div className='flex items-center justify-between border-b border-gray-100 px-6 py-4'>
-                    <Link
-                      href='/'
-                      className='flex items-center'
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <TrelioLogo
-                        width={32}
-                        height={32}
-                        className='text-[#3182F6]'
-                      />
-                      <span className='ml-2 text-lg font-medium text-gray-900'>
-                        Trelio
-                      </span>
-                    </Link>
-                    <button
-                      type='button'
-                      className='rounded-full p-2 text-gray-700 transition-colors hover:bg-gray-100'
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <span className='sr-only'>메뉴 닫기</span>
-                      <Icon as={IoCloseOutline} color='#374151' size={24} />
-                    </button>
-                  </div>
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className='fixed inset-y-0 right-0 z-50 w-full max-w-sm bg-white shadow-lg'
+            >
+              <div className='flex h-full flex-col overflow-y-auto'>
+                <div className='flex items-center justify-between border-b border-gray-100 px-6 py-4'>
+                  <Link
+                    href='/'
+                    className='flex items-center'
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <TrelioLogo
+                      width={32}
+                      height={32}
+                      className='text-[#3182F6]'
+                    />
+                    <span className='ml-2 text-lg font-medium text-gray-900'>
+                      Trelio
+                    </span>
+                  </Link>
+                  <button
+                    type='button'
+                    className='rounded-full p-2 text-gray-700 transition-colors hover:bg-gray-100'
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span className='sr-only'>메뉴 닫기</span>
+                    <Icon as={IoCloseOutline} color='#374151' size={24} />
+                  </button>
+                </div>
 
-                  {/* 네비게이션 메뉴 */}
-                  <div className='flex-1 px-6 py-6'>
-                    <div className='flex flex-col space-y-2'>
-                      {navigation.map((item) => (
-                        <Link
-                          key={item.name}
-                          href={item.href}
-                          className='flex items-center rounded-xl px-4 py-3 text-gray-700 transition-colors hover:bg-gray-50'
-                          onClick={() => {
-                            setMobileMenuOpen(false);
-                          }}
-                        >
-                          <Typography variant='body1' weight='medium'>
-                            {item.name}
-                          </Typography>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className='border-t border-gray-100 px-6 py-6'>
-                    {renderMobileBottomArea()}
+                {/* 네비게이션 메뉴 */}
+                <div className='flex-1 px-6 py-6'>
+                  <div className='flex flex-col space-y-2'>
+                    {navigation.map((item) => (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className='flex items-center rounded-xl px-4 py-3 text-gray-700 transition-colors hover:bg-gray-50'
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                        }}
+                      >
+                        <Typography variant='body1' weight='medium'>
+                          {item.name}
+                        </Typography>
+                      </Link>
+                    ))}
                   </div>
                 </div>
-              </motion.div>
-            </>
-          )}
+
+                <div className='border-t border-gray-100 px-6 py-6'>
+                  {renderMobileBottomArea()}
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
       </AnimatePresence>
+
+      {/* 새 여행 계획 모달 */}
+      <NewTravelModal
+        isOpen={newTravelModalOpen}
+        onClose={() => setNewTravelModalOpen(false)}
+      />
     </header>
   );
 };

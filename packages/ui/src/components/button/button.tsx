@@ -8,8 +8,9 @@ import clsx from 'clsx';
  * - filled: 색상이 채워진 버튼 (기본 스타일)
  * - text: 배경색 없이 텍스트만 있는 버튼
  * - outlined: 테두리만 있는 버튼
+ * - ghost: 투명한 배경, 호버 시에만 배경색 표시
  */
-export type ButtonVariant = 'filled' | 'text' | 'outlined';
+export type ButtonVariant = 'filled' | 'text' | 'outlined' | 'ghost';
 
 /**
  * 버튼 크기를 정의하는 타입
@@ -57,7 +58,7 @@ const sizeStyles: Record<ButtonSize, string> = {
 
 /**
  * 색상 테마별 버튼 스타일 정의
- * 각 색상마다 filled, outlined, text, active 상태의 스타일을 정의
+ * 각 색상마다 filled, outlined, text, ghost, active 상태의 스타일을 정의
  * - 배경색, 텍스트색, 호버 효과, 포커스 링 등을 정의
  */
 const themeStyles = {
@@ -67,6 +68,7 @@ const themeStyles = {
     outlined:
       'border border-blue-500 text-blue-500 hover:bg-blue-50 focus:ring-blue-500',
     text: 'text-blue-500 hover:bg-blue-50 focus:ring-blue-500',
+    ghost: 'text-blue-500 bg-transparent hover:bg-blue-50 focus:ring-blue-500',
     active: 'ring-2 ring-blue-500 ring-offset-1',
   },
   // 보라색 테마
@@ -76,6 +78,8 @@ const themeStyles = {
     outlined:
       'border border-purple-500 text-purple-500 hover:bg-purple-50 focus:ring-purple-500',
     text: 'text-purple-500 hover:bg-purple-50 focus:ring-purple-500',
+    ghost:
+      'text-purple-500 bg-transparent hover:bg-purple-50 focus:ring-purple-500',
     active: 'ring-2 ring-purple-500 ring-offset-1',
   },
   // 분홍색 테마
@@ -84,6 +88,7 @@ const themeStyles = {
     outlined:
       'border border-pink-500 text-pink-500 hover:bg-pink-50 focus:ring-pink-500',
     text: 'text-pink-500 hover:bg-pink-50 focus:ring-pink-500',
+    ghost: 'text-pink-500 bg-transparent hover:bg-pink-50 focus:ring-pink-500',
     active: 'ring-2 ring-pink-500 ring-offset-1',
   },
   // 주황색 테마
@@ -93,6 +98,8 @@ const themeStyles = {
     outlined:
       'border border-orange-500 text-orange-500 hover:bg-orange-50 focus:ring-orange-500',
     text: 'text-orange-500 hover:bg-orange-50 focus:ring-orange-500',
+    ghost:
+      'text-orange-500 bg-transparent hover:bg-orange-50 focus:ring-orange-500',
     active: 'ring-2 ring-orange-500 ring-offset-1',
   },
   // 초록색 테마
@@ -101,6 +108,8 @@ const themeStyles = {
     outlined:
       'border border-green-500 text-green-500 hover:bg-green-50 focus:ring-green-500',
     text: 'text-green-500 hover:bg-green-50 focus:ring-green-500',
+    ghost:
+      'text-green-500 bg-transparent hover:bg-green-50 focus:ring-green-500',
     active: 'ring-2 ring-green-500 ring-offset-1',
   },
   // 노란색 테마
@@ -110,6 +119,8 @@ const themeStyles = {
     outlined:
       'border border-yellow-500 text-yellow-500 hover:bg-yellow-50 focus:ring-yellow-500',
     text: 'text-yellow-500 hover:bg-yellow-50 focus:ring-yellow-500',
+    ghost:
+      'text-yellow-500 bg-transparent hover:bg-yellow-50 focus:ring-yellow-500',
     active: 'ring-2 ring-yellow-500 ring-offset-1',
   },
   // 회색 테마
@@ -118,6 +129,7 @@ const themeStyles = {
     outlined:
       'border border-gray-500 text-gray-500 hover:bg-gray-50 focus:ring-gray-500',
     text: 'text-gray-500 hover:bg-gray-50 focus:ring-gray-500',
+    ghost: 'text-gray-700 bg-transparent hover:bg-gray-100 focus:ring-gray-500',
     active: 'ring-2 ring-gray-500 ring-offset-1',
   },
   // 빨간색 테마
@@ -126,6 +138,7 @@ const themeStyles = {
     outlined:
       'border border-red-500 text-red-500 hover:bg-red-50 focus:ring-red-500',
     text: 'text-red-500 hover:bg-red-50 focus:ring-red-500',
+    ghost: 'text-red-700 bg-transparent hover:bg-red-50 focus:ring-red-500',
     active: 'ring-2 ring-red-500 ring-offset-1',
   },
 };
