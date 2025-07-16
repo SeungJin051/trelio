@@ -10,7 +10,7 @@ import {
 } from '@ui/components';
 
 const meta: Meta<typeof Progress> = {
-  title: '컴포넌트/Progress',
+  title: 'UI/Progress',
   component: Progress,
   parameters: {
     layout: 'centered',
