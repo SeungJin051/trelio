@@ -9,31 +9,27 @@ import { CiLogin, CiLogout, CiUser } from 'react-icons/ci';
 import { CiMenuBurger } from 'react-icons/ci';
 import { FaExclamationTriangle } from 'react-icons/fa';
 import { IoCloseOutline } from 'react-icons/io5';
-import { IoAddOutline, IoNotificationsOutline } from 'react-icons/io5';
+import {
+  IoAddOutline,
+  IoNotificationsOutline,
+  IoSearch,
+} from 'react-icons/io5';
+import { MdOutlineDateRange, MdOutlineList } from 'react-icons/md';
 
-import { Avatar, Button, Icon } from '@ui/components';
+import { Avatar, Badge, Button, Icon } from '@ui/components';
 import { Typography } from '@ui/components/typography';
 
 import { TrelioLogo } from '@/components/common';
 import { NewTravelModal } from '@/components/common';
-import { useSession } from '@/hooks/useSession';
+import { useMobile, useSession } from '@/hooks';
 
-interface NavItem {
-  name: string;
-  href: string;
-}
+import { filterOptions, mockTravelPlans, navigation } from './constants';
 
 interface HeaderProps {
   sidebarOpen?: boolean;
   shouldShowSidebar?: boolean;
+  onSidebarToggle?: () => void;
 }
-
-const navigation: NavItem[] = [
-  { name: '여행 목록', href: '/travel-list' },
-  { name: '요금제', href: '/price' },
-  { name: 'FAQ', href: '/faq' },
-  { name: '문의하기', href: '/contact' },
-];
 
 // 헤더 스켈레톤 컴포넌트
 const HeaderSkeleton = ({
@@ -52,7 +48,7 @@ const HeaderSkeleton = ({
         : 'left-0 right-0'
     }`}
   >
-    <nav className='mx-auto flex items-center justify-between px-6 py-4'>
+    <nav className='mx-auto flex items-center justify-between px-2 py-4'>
       <div className='flex md:flex-1'>
         <Link href='/' className='flex items-center'>
           <span className='sr-only'>Trelio</span>
@@ -87,10 +83,16 @@ export const Header = ({
   shouldShowSidebar = false,
 }: HeaderProps = {}) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileTravelMenuOpen, setMobileTravelMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [newTravelModalOpen, setNewTravelModalOpen] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<
+    'all' | 'in-progress' | 'completed'
+  >('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
+  const isMobile = useMobile();
   const {
     isAuthenticated,
     userProfile,
@@ -477,18 +479,27 @@ export const Header = ({
       return renderMobileAuthenticatedHeader();
     }
 
-    // 로그인 전 상태 - 햄버거 메뉴 버튼
-    return (
-      <div className='flex md:hidden'>
-        <button
-          type='button'
-          className='inline-flex items-center justify-center rounded-full p-2 text-gray-700 transition-colors hover:bg-gray-100'
-          onClick={() => setMobileMenuOpen(true)}
-        >
-          <Icon as={CiMenuBurger} color='#374151' size={24} />
-        </button>
-      </div>
-    );
+    // 로그인 전 상태 - 아무것도 표시하지 않음 (햄버거 메뉴는 이제 왼쪽에 있음)
+    return null;
+  };
+
+  // 필터링된 여행 계획
+  const filteredPlans = mockTravelPlans.filter((plan) => {
+    const matchesFilter =
+      activeFilter === 'all' || plan.status === activeFilter;
+    const matchesSearch = plan.title
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
+
+  // 날짜 포맷팅
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ko-KR', {
+      month: 'short',
+      day: 'numeric',
+    });
   };
 
   return (
@@ -496,7 +507,7 @@ export const Header = ({
       className={`fixed top-0 z-30 border-b border-gray-200 bg-white transition-all duration-300 ${
         scrolled ? 'shadow-sm backdrop-blur-sm' : ''
       } ${
-        isAuthenticated && isSignUpCompleted
+        isAuthenticated && isSignUpCompleted && !isMobile
           ? sidebarOpen
             ? 'left-80 right-0'
             : 'left-16 right-0'
@@ -507,7 +518,26 @@ export const Header = ({
         className='mx-auto flex items-center justify-between px-6 py-4'
         aria-label='Global'
       >
-        <div className='flex md:flex-1'>
+        <div className='flex items-center md:flex-1'>
+          {/* 모바일 햄버거 메뉴 (로고 왼쪽) */}
+          {isMobile && (
+            <button
+              onClick={() => {
+                if (isAuthenticated && isSignUpCompleted) {
+                  setMobileTravelMenuOpen(true);
+                } else {
+                  setMobileMenuOpen(true);
+                }
+              }}
+              className='mr-3 rounded-full p-2 text-gray-700 transition-colors hover:bg-gray-100'
+              title={
+                isAuthenticated && isSignUpCompleted ? '여행 계획 메뉴' : '메뉴'
+              }
+            >
+              <Icon as={CiMenuBurger} color='#374151' size={24} />
+            </button>
+          )}
+
           <Link href='/' className='flex items-center'>
             <span className='sr-only'>Trelio</span>
             <div className='flex items-center justify-center md:justify-start'>
@@ -604,6 +634,225 @@ export const Header = ({
 
                 <div className='border-t border-gray-100 px-6 py-6'>
                   {renderMobileBottomArea()}
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* 모바일 여행 계획 메뉴 */}
+      <AnimatePresence>
+        {mobileTravelMenuOpen && isAuthenticated && isSignUpCompleted && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className='fixed inset-0 z-40 bg-black/20 backdrop-blur-sm'
+              onClick={() => setMobileTravelMenuOpen(false)}
+            />
+
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className='fixed inset-y-0 left-0 z-50 w-full max-w-sm bg-white shadow-lg'
+            >
+              <div className='flex h-full flex-col overflow-y-auto'>
+                {/* 헤더 */}
+                <div className='flex items-center justify-between border-b border-gray-200 px-6 py-6'>
+                  <Typography
+                    variant='h6'
+                    weight='semiBold'
+                    className='text-gray-900'
+                  >
+                    내 여행 계획
+                  </Typography>
+                  <button
+                    onClick={() => setMobileTravelMenuOpen(false)}
+                    className='rounded-full p-1.5 text-gray-500 transition-colors hover:bg-gray-100'
+                    title='메뉴 닫기'
+                  >
+                    <Icon as={IoCloseOutline} size={24} />
+                  </button>
+                </div>
+
+                {/* 필터 */}
+                <div className='border-b border-gray-200 px-6 py-4'>
+                  <div className='flex space-x-2'>
+                    {filterOptions.map((option) => (
+                      <motion.button
+                        key={option.key}
+                        onClick={() => setActiveFilter(option.key)}
+                        className='flex-1'
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <Badge
+                          colorTheme={
+                            activeFilter === option.key ? 'blue' : 'gray'
+                          }
+                          size='medium'
+                          variant={
+                            activeFilter === option.key ? 'filled' : 'outlined'
+                          }
+                        >
+                          <div className='flex items-center space-x-1'>
+                            <Icon as={option.icon} size={14} />
+                            <span>{option.label}</span>
+                          </div>
+                        </Badge>
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 검색 */}
+                <div className='border-b border-gray-200 px-6 py-4'>
+                  <div className='relative'>
+                    <Icon
+                      as={IoSearch}
+                      size={18}
+                      className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400'
+                    />
+                    <input
+                      type='text'
+                      placeholder='여행 계획 검색...'
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className='w-full rounded-lg border border-gray-300 bg-gray-50 py-2 pl-10 pr-4 text-sm focus:border-[#3182F6] focus:bg-white focus:outline-none'
+                    />
+                  </div>
+                </div>
+
+                {/* 여행 계획 목록 */}
+                <div className='flex-1 overflow-y-auto px-6 py-4'>
+                  <div className='space-y-3'>
+                    {filteredPlans.length > 0 ? (
+                      filteredPlans.map((plan, index) => (
+                        <motion.div
+                          key={plan.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                        >
+                          <Link
+                            href={`/travel/${plan.id}`}
+                            className='block rounded-lg border border-gray-200 bg-white p-4 transition-colors hover:bg-gray-50 hover:shadow-sm'
+                            onClick={() => setMobileTravelMenuOpen(false)}
+                          >
+                            <div className='mb-3'>
+                              <Typography
+                                variant='body1'
+                                weight='semiBold'
+                                className='line-clamp-1 text-gray-900'
+                              >
+                                {plan.title}
+                              </Typography>
+                            </div>
+
+                            <div className='mb-3 flex items-center space-x-2 text-gray-600'>
+                              <Icon as={MdOutlineDateRange} size={16} />
+                              <Typography
+                                variant='body2'
+                                className='text-gray-600'
+                              >
+                                {formatDate(plan.startDate)} -{' '}
+                                {formatDate(plan.endDate)}
+                              </Typography>
+                            </div>
+
+                            <div className='flex items-center justify-between'>
+                              {/* 참여자 아바타 */}
+                              <div className='flex -space-x-2'>
+                                {plan.participantAvatars
+                                  .slice(0, 3)
+                                  .map((avatar, index) => (
+                                    <Avatar
+                                      key={index}
+                                      src={avatar}
+                                      alt={`참여자 ${index + 1}`}
+                                      size='small'
+                                    />
+                                  ))}
+                                {plan.participantAvatars.length > 3 && (
+                                  <div className='flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-600 ring-2 ring-white'>
+                                    +{plan.participantAvatars.length - 3}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* 상태 뱃지 */}
+                              <div
+                                className={`rounded-full px-2 py-1 text-xs font-medium ${
+                                  plan.status === 'completed'
+                                    ? 'bg-green-100 text-green-700'
+                                    : plan.status === 'in-progress'
+                                      ? 'bg-blue-100 text-blue-700'
+                                      : 'bg-gray-100 text-gray-700'
+                                }`}
+                              >
+                                {plan.status === 'completed'
+                                  ? '완료'
+                                  : plan.status === 'in-progress'
+                                    ? '진행 중'
+                                    : '예정'}
+                              </div>
+                            </div>
+                          </Link>
+                        </motion.div>
+                      ))
+                    ) : (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className='flex flex-col items-center justify-center py-12 text-center'
+                      >
+                        <div className='mb-4 rounded-full bg-gray-100 p-6'>
+                          <Icon
+                            as={MdOutlineList}
+                            size={32}
+                            className='text-gray-400'
+                          />
+                        </div>
+                        <Typography
+                          variant='body1'
+                          weight='medium'
+                          className='mb-2 text-gray-500'
+                        >
+                          여행 계획이 없습니다
+                        </Typography>
+                        <Typography variant='body2' className='text-gray-400'>
+                          새로운 여행 계획을 만들어보세요
+                        </Typography>
+                      </motion.div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 새 여행 계획 버튼 */}
+                <div className='border-t border-gray-100 px-6 py-6'>
+                  <Button
+                    onClick={() => {
+                      setNewTravelModalOpen(true);
+                      setMobileTravelMenuOpen(false);
+                    }}
+                    colorTheme='blue'
+                    size='medium'
+                    className='flex w-full items-center justify-center space-x-2'
+                    leftIcon={<Icon as={IoAddOutline} size={20} />}
+                  >
+                    <Typography
+                      variant='body2'
+                      weight='medium'
+                      className='text-white'
+                    >
+                      새 여행 계획 생성
+                    </Typography>
+                  </Button>
                 </div>
               </div>
             </motion.div>

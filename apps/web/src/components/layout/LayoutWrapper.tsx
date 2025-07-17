@@ -4,7 +4,7 @@ import { PropsWithChildren, useState } from 'react';
 
 import { usePathname } from 'next/navigation';
 
-import { useSession } from '@/hooks/useSession';
+import { useMobile, useSession } from '@/hooks';
 
 import { Footer } from './Footer';
 import { Header, SimpleHeader } from './Header';
@@ -16,6 +16,7 @@ import { Sidebar } from './Sidebar';
  */
 const LayoutWrapper = ({ children }: PropsWithChildren) => {
   const pathname = usePathname();
+  const isMobile = useMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isAuthenticated, isSignUpCompleted } = useSession();
 
@@ -23,8 +24,9 @@ const LayoutWrapper = ({ children }: PropsWithChildren) => {
   const isAuthPage =
     pathname.includes('log-in') || pathname.includes('sign-up');
 
-  // 사이드바를 표시할지 결정 (로그인 완료된 사용자만)
-  const shouldShowSidebar = isAuthenticated && isSignUpCompleted && !isAuthPage;
+  // 사이드바를 표시할지 결정 (로그인 완료된 사용자이고 데스크탑일 때만)
+  const shouldShowSidebar =
+    isAuthenticated && isSignUpCompleted && !isAuthPage && !isMobile;
 
   const handleSidebarToggle = () => {
     setSidebarOpen(!sidebarOpen);
@@ -39,10 +41,11 @@ const LayoutWrapper = ({ children }: PropsWithChildren) => {
         <Header
           sidebarOpen={sidebarOpen}
           shouldShowSidebar={shouldShowSidebar}
+          onSidebarToggle={handleSidebarToggle}
         />
       )}
 
-      {/* 사이드바 (로그인 완료된 사용자만) */}
+      {/* 사이드바 (로그인 완료된 사용자이고 데스크탑일 때만) */}
       {shouldShowSidebar && (
         <Sidebar isOpen={sidebarOpen} onToggle={handleSidebarToggle} />
       )}
@@ -50,7 +53,11 @@ const LayoutWrapper = ({ children }: PropsWithChildren) => {
       {/* 메인 콘텐츠 영역 */}
       <div
         className={`mx-auto mt-[64px] min-h-dvh transition-all duration-300 ${
-          shouldShowSidebar ? (sidebarOpen ? 'sm:pl-80' : 'sm:pl-16') : ''
+          shouldShowSidebar && !isMobile
+            ? sidebarOpen
+              ? 'sm:pl-80'
+              : 'sm:pl-16'
+            : ''
         }`}
       >
         {children}
