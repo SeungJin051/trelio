@@ -25,6 +25,7 @@ export const useSession = () => {
   const [error, setError] = useState<Error | null>(null);
   const [signUpStatus, setSignUpStatus] =
     useState<SignUpStatus>('unauthenticated');
+  const [initialized, setInitialized] = useState(false);
 
   const router = useRouter();
   const pathname = usePathname();
@@ -35,7 +36,7 @@ export const useSession = () => {
     []
   );
 
-  // 사용자 프로필 정보 가져오기 (의존성 제거)
+  // 사용자 프로필 정보 가져오기
   const fetchUserProfile = useCallback(async (user: User) => {
     try {
       const supabaseClient = createClient();
@@ -65,6 +66,7 @@ export const useSession = () => {
         setSignUpStatus('completed');
       }
     } catch (fetchError) {
+      console.error('프로필 조회 오류:', fetchError);
       // 오류 발생 시에도 기본 사용자 데이터 설정
       const basicUserData = {
         id: user.id,
@@ -75,6 +77,7 @@ export const useSession = () => {
     }
   }, []);
 
+  // 세션 초기화
   useEffect(() => {
     let isMounted = true;
     let authSubscription: { unsubscribe: () => void } | null = null;
@@ -87,9 +90,15 @@ export const useSession = () => {
         if (!isMounted) return;
 
         if (error) {
-          throw error;
+          console.error('세션 조회 오류:', error);
+          setError(error);
+          setSession(null);
+          setUserProfile(null);
+          setSignUpStatus('unauthenticated');
+          return;
         }
 
+        // 세션 설정
         setSession(data.session);
 
         // 세션이 있으면 프로필 정보 가져오기
@@ -104,10 +113,14 @@ export const useSession = () => {
         const {
           data: { subscription },
         } = supabase.auth.onAuthStateChange(
-          async (_event: AuthChangeEvent, newSession: Session | null) => {
+          async (event: AuthChangeEvent, newSession: Session | null) => {
             if (!isMounted) return;
 
+            console.log('Auth 상태 변경:', event);
+
+            // 세션 상태 업데이트
             setSession(newSession);
+
             if (newSession?.user) {
               await fetchUserProfile(newSession.user);
             } else {
@@ -118,17 +131,15 @@ export const useSession = () => {
         );
 
         authSubscription = subscription;
+        setInitialized(true);
       } catch (err) {
         if (!isMounted) return;
-        setError(
-          err instanceof Error
-            ? err
-            : new Error('세션 조회 중 오류가 발생했습니다')
-        );
-        // 에러 시에도 기본 상태로 설정
+        console.error('인증 초기화 오류:', err);
+        setError(err instanceof Error ? err : new Error('인증 초기화 실패'));
         setSession(null);
         setUserProfile(null);
         setSignUpStatus('unauthenticated');
+        setInitialized(true);
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -136,30 +147,21 @@ export const useSession = () => {
       }
     };
 
-    // 타임아웃 보호 (10초 후 강제 로딩 완료)
-    const loadingTimeout = setTimeout(() => {
-      if (isMounted && loading) {
-        setLoading(false);
-        setSignUpStatus('unauthenticated');
-      }
-    }, 10000);
-
     initializeAuth();
 
     // 클린업 함수
     return () => {
       isMounted = false;
-      clearTimeout(loadingTimeout);
       if (authSubscription) {
         authSubscription.unsubscribe();
       }
     };
-  }, []); // 의존성 배열 비우기
+  }, [fetchUserProfile]);
 
   // 회원가입 완료 여부에 따른 리다이렉트 처리
   useEffect(() => {
-    // 로딩 중이거나 예외 페이지인 경우 리다이렉트하지 않음
-    if (loading || excludedPaths.includes(pathname)) {
+    // 초기화되지 않았거나 로딩 중이거나 예외 페이지인 경우 리다이렉트하지 않음
+    if (!initialized || loading || excludedPaths.includes(pathname)) {
       return;
     }
 
@@ -167,14 +169,21 @@ export const useSession = () => {
     if (session && signUpStatus === 'incomplete') {
       router.push('/sign-up');
     }
-  }, [session, signUpStatus, loading, pathname, router, excludedPaths]);
+  }, [
+    session,
+    signUpStatus,
+    loading,
+    pathname,
+    router,
+    excludedPaths,
+    initialized,
+  ]);
 
   const signOut = useCallback(async () => {
     try {
       const supabase = createClient();
       await supabase.auth.signOut();
-      setUserProfile(null);
-      setSignUpStatus('unauthenticated');
+      // 상태는 onAuthStateChange에서 자동으로 업데이트됨
     } catch (err) {
       console.error('로그아웃 중 오류:', err);
     }
