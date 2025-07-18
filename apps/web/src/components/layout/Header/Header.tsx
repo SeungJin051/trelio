@@ -102,6 +102,26 @@ export const Header = ({
     signOut,
   } = useSession();
 
+  // 디버깅용 로그 (개발 환경에서만)
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 Header state:', {
+        isAuthenticated,
+        isSignUpCompleted,
+        isSignUpIncomplete,
+        loading,
+        hasUserProfile: !!userProfile,
+        userNickname: userProfile?.nickname,
+      });
+    }
+  }, [
+    isAuthenticated,
+    isSignUpCompleted,
+    isSignUpIncomplete,
+    loading,
+    userProfile,
+  ]);
+
   // 스크롤 감지
   useEffect(() => {
     const handleScroll = () => {
@@ -138,6 +158,10 @@ export const Header = ({
     await signOut();
     setProfileDropdownOpen(false);
   };
+
+  // 인증 상태에 따른 사이드바 표시 여부 결정
+  const shouldShowAuthenticatedSidebar =
+    isAuthenticated && isSignUpCompleted && !isMobile;
 
   // 로그인 전 헤더 렌더링
   const renderUnauthenticatedHeader = () => (
@@ -507,7 +531,7 @@ export const Header = ({
       className={`fixed top-0 z-30 border-b border-gray-200 bg-white transition-all duration-300 ${
         scrolled ? 'shadow-sm backdrop-blur-sm' : ''
       } ${
-        isAuthenticated && isSignUpCompleted && !isMobile
+        shouldShowAuthenticatedSidebar
           ? sidebarOpen
             ? 'left-80 right-0'
             : 'left-16 right-0'
