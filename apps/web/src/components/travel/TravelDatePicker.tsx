@@ -110,11 +110,11 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
         {/* 입력 필드 */}
         <div
           className={cn(
-            'flex w-full cursor-pointer items-center rounded-lg border bg-white px-4 py-3 text-base transition-all duration-200',
+            'flex w-full cursor-pointer items-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-base shadow-sm transition-all duration-200',
             isError
-              ? 'border-red-500 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-500/10'
-              : 'border-gray-200 focus-within:border-[#3182F6] focus-within:ring-2 focus-within:ring-[#3182F6]/10',
-            disabled ? 'cursor-not-allowed bg-gray-50 opacity-50' : ''
+              ? 'border-red-500 ring-1 ring-red-500 focus-within:ring-red-500'
+              : 'focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 hover:border-gray-400',
+            disabled ? 'cursor-not-allowed bg-gray-50 opacity-70' : ''
           )}
           onClick={() => {
             if (!disabled) {
@@ -127,9 +127,13 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
 
           <div className='flex-1'>
             {startDate && endDate ? (
-              <div>
-                <span className='text-gray-900'>
-                  {formatDate(startDate)} ~ {formatDate(endDate)}
+              <div className='flex items-center space-x-1'>
+                <span className='font-medium text-gray-800'>
+                  {formatDate(startDate)}
+                </span>
+                <span className='text-gray-500'>~</span>
+                <span className='font-medium text-gray-800'>
+                  {formatDate(endDate)}
                 </span>
                 {days > 0 && (
                   <span className='ml-2 text-sm text-gray-500'>({days}일)</span>
@@ -143,9 +147,12 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
 
         {/* 캘린더 */}
         {showCalendar && !disabled && (
-          <div className='absolute z-50 mt-2 w-auto rounded-lg border bg-white p-4 shadow-lg'>
-            <div className='mb-3'>
-              <Typography variant='body2' className='text-gray-600'>
+          <div className='absolute left-0 top-full z-50 mt-2 rounded-lg border border-gray-200 bg-white p-4 shadow-lg'>
+            <div className='mb-4'>
+              <Typography
+                variant='body2'
+                className='font-semibold text-gray-700'
+              >
                 {focusedInput === 'start'
                   ? '시작일을 선택해주세요'
                   : '종료일을 선택해주세요'}
@@ -154,21 +161,27 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
 
             <DatePicker
               selected={focusedInput === 'start' ? startDate : endDate}
-              onChange={(date) => handleDateSelect(date, focusedInput!)}
+              onChange={(date: Date | null) =>
+                handleDateSelect(date, focusedInput!)
+              }
               minDate={new Date()} // 오늘 이후만 선택 가능
               startDate={startDate}
               endDate={endDate}
               selectsStart={focusedInput === 'start'}
               selectsEnd={focusedInput === 'end'}
               inline
-              calendarClassName='custom-calendar'
+              calendarClassName='custom-calendar-toss' // Custom class for further styling
               locale='ko'
             />
 
             {startDate && endDate && (
-              <div className='mt-3 rounded-md bg-blue-50 p-2'>
-                <Typography variant='caption' className='text-blue-700'>
-                  선택된 기간: {days}일
+              <div className='mt-4 rounded-md bg-gray-50 px-3 py-2 text-center'>
+                <Typography
+                  variant='caption'
+                  className='font-medium text-gray-700'
+                >
+                  선택된 기간:{' '}
+                  <span className='font-bold text-blue-600'>{days}일</span>
                 </Typography>
               </div>
             )}

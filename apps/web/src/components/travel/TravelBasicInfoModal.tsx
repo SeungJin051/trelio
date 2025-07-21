@@ -14,8 +14,8 @@ import { useSession } from '@/hooks/useSession';
 import { useToast } from '@/hooks/useToast';
 import { createClient } from '@/lib/supabase/client/supabase';
 
-import TravelDatePicker from './DatePicker';
 import LocationInput from './LocationInput';
+import TravelDatePicker from './TravelDatePicker';
 
 interface TravelBasicInfo {
   title: string;

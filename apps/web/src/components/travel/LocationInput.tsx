@@ -7,11 +7,14 @@ import { IoCloseOutline, IoLocationOutline } from 'react-icons/io5';
 import { Typography } from '@ui/components';
 import { cn } from '@ui/utils/cn';
 
+import { countriesISO } from './constant';
+
 interface LocationSuggestion {
   place_id: string;
   description: string;
   main_text: string;
   secondary_text: string;
+  flag: string;
 }
 
 interface LocationInputProps {
@@ -43,49 +46,54 @@ const LocationInput: React.FC<LocationInputProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Google Places API 호출 함수 (실제 구현에서는 서버를 통해 API 키를 보호해야 함)
+  // 국가 데이터를 기반으로 검색 제안 생성
   const fetchPlaceSuggestions = async (input: string) => {
-    if (input.length < 2) {
+    if (input.length < 1) {
       setSuggestions([]);
       return;
     }
 
     setLoading(true);
+
     try {
-      // 실제 구현에서는 서버 API를 통해 Google Places API를 호출해야 합니다
-      // 여기서는 더미 데이터로 대체
-      await new Promise((resolve) => setTimeout(resolve, 300)); // 실제 API 호출 시뮬레이션
+      // 실제 검색 로직 시뮬레이션을 위한 짧은 지연
+      await new Promise((resolve) => setTimeout(resolve, 150));
 
-      const mockSuggestions: LocationSuggestion[] = [
-        {
-          place_id: '1',
-          description: '대한민국, 제주도',
-          main_text: '제주도',
-          secondary_text: '대한민국',
-        },
-        {
-          place_id: '2',
-          description: '대한민국, 서울특별시',
-          main_text: '서울특별시',
-          secondary_text: '대한민국',
-        },
-        {
-          place_id: '3',
-          description: '프랑스, 파리',
-          main_text: '파리',
-          secondary_text: '프랑스',
-        },
-        {
-          place_id: '4',
-          description: '일본, 도쿄',
-          main_text: '도쿄',
-          secondary_text: '일본',
-        },
-      ].filter((suggestion) =>
-        suggestion.description.toLowerCase().includes(input.toLowerCase())
-      );
+      const searchTerm = input.toLowerCase().trim();
 
-      setSuggestions(mockSuggestions);
+      // 유연한 검색 로직
+      const filteredCountries = countriesISO.filter((country) => {
+        const nameKoLower = country.nameKo.toLowerCase();
+        const nameEnLower = country.nameEn.toLowerCase();
+
+        // 1. 한국어 이름에서 검색
+        if (nameKoLower.includes(searchTerm)) return true;
+
+        // 2. 영어 이름에서 검색
+        if (nameEnLower.includes(searchTerm)) return true;
+
+        // 3. 개별 단어로 분리해서 검색 (공백, 쉼표 기준)
+        const searchWords = searchTerm
+          .split(/[\s,]+/)
+          .filter((word) => word.length > 0);
+
+        return searchWords.every(
+          (word) => nameKoLower.includes(word) || nameEnLower.includes(word)
+        );
+      });
+
+      // LocationSuggestion 형태로 변환
+      const suggestions: LocationSuggestion[] = filteredCountries
+        .slice(0, 8) // 최대 8개까지만 표시
+        .map((country) => ({
+          place_id: country.code,
+          description: country.nameKo,
+          main_text: country.nameKo,
+          secondary_text: country.nameEn,
+          flag: country.flag,
+        }));
+
+      setSuggestions(suggestions);
       setShowSuggestions(true);
     } catch (error) {
       console.error('Failed to fetch place suggestions:', error);
@@ -103,7 +111,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
 
     debounceRef.current = setTimeout(() => {
       fetchPlaceSuggestions(input);
-    }, 300); // 300ms 디바운스
+    }, 200); // 200ms 디바운스
   };
 
   // 입력값 변경 처리
@@ -233,7 +241,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
                         onClick={() => handleSuggestionSelect(suggestion)}
                         className='flex w-full items-center px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none'
                       >
-                        <IoLocationOutline className='mr-3 h-4 w-4 flex-shrink-0 text-gray-400' />
+                        <span className='mr-3 text-lg'>{suggestion.flag}</span>
                         <div className='min-w-0 flex-1'>
                           <div className='truncate text-sm font-medium text-gray-900'>
                             {suggestion.main_text}
@@ -254,11 +262,11 @@ const LocationInput: React.FC<LocationInputProps> = ({
         {showSuggestions &&
           suggestions.length === 0 &&
           !loading &&
-          inputValue.length >= 2 && (
+          inputValue.length >= 1 && (
             <div className='absolute z-50 mt-1 w-full rounded-lg border bg-white p-4 shadow-lg'>
               <div className='text-center'>
                 <Typography variant='body2' className='mb-2 text-gray-600'>
-                  검색 결과가 없습니다
+                  &ldquo;{inputValue}&rdquo;에 대한 검색 결과가 없습니다
                 </Typography>
                 <Typography variant='caption' className='text-gray-500'>
                   직접 입력하여 계속 진행하실 수 있습니다

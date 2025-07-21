@@ -24,17 +24,16 @@ const LayoutWrapper = ({ children }: PropsWithChildren) => {
   const isAuthPage =
     pathname.includes('log-in') || pathname.includes('sign-up');
 
-  // 사이드바를 표시할지 결정 (로그인 완료된 사용자이고 데스크탑일 때만)
-  const shouldShowSidebar =
-    isAuthenticated && isSignUpCompleted && !isAuthPage && !isMobile;
+  // 사이드바를 표시할지 결정 (로그인 완료된 사용자만)
+  const shouldShowSidebar = isAuthenticated && isSignUpCompleted && !isAuthPage;
 
   const handleSidebarToggle = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
   return (
-    <>
-      {/* 로그인 페이지가 아닐 경우 심플헤더 컴포넌트 표시 */}
+    <div className='min-h-screen bg-gray-50'>
+      {/* 헤더 */}
       {isAuthPage ? (
         <SimpleHeader />
       ) : (
@@ -45,24 +44,34 @@ const LayoutWrapper = ({ children }: PropsWithChildren) => {
         />
       )}
 
-      {/* 사이드바 (로그인 완료된 사용자이고 데스크탑일 때만) */}
+      {/* 사이드바 (로그인 완료된 사용자만) */}
       {shouldShowSidebar && (
         <Sidebar isOpen={sidebarOpen} onToggle={handleSidebarToggle} />
       )}
 
       {/* 메인 콘텐츠 영역 */}
-      <div
-        className={`mx-auto mt-[64px] min-h-dvh transition-all duration-300 ${
+      <main
+        className={`transition-all duration-300 ease-in-out ${
+          // 헤더 높이만큼 상단 여백 (모든 페이지 공통)
+          isAuthPage ? 'pt-20' : 'pt-20'
+        } ${
+          // 사이드바가 있는 경우 좌측 여백 적용
           shouldShowSidebar && !isMobile
             ? sidebarOpen
-              ? 'sm:pl-80'
-              : 'sm:pl-16'
-            : ''
-        }`}
+              ? 'md:pl-80'
+              : 'md:pl-16'
+            : 'pl-0'
+        } ${
+          // 최소 높이 설정 (헤더 높이 제외한 전체 화면)
+          'min-h-[calc(100vh-5rem)]'
+        } `}
       >
-        {children}
-      </div>
-    </>
+        <div className='h-full w-full'>{children}</div>
+      </main>
+
+      {/* 푸터 */}
+      {!isAuthenticated && <Footer />}
+    </div>
   );
 };
 

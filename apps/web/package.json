@@ -18,7 +18,6 @@
     "@supabase/supabase-js": "^2.49.5",
     "@tanstack/react-query": "^5.75.1",
     "@tanstack/react-query-devtools": "^5.75.1",
-    "@types/react-datepicker": "^7.0.0",
     "@types/uuid": "^10.0.0",
     "autoprefixer": "^10.0.1",
     "cropperjs": "^2.0.0",
