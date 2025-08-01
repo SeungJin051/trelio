@@ -539,7 +539,7 @@ export const Header = ({
       }`}
     >
       <nav
-        className='mx-auto flex items-center justify-between px-6 py-4'
+        className='mx-auto flex items-center justify-between px-6 py-3'
         aria-label='Global'
       >
         <div className='flex items-center md:flex-1'>
@@ -565,13 +565,7 @@ export const Header = ({
           <Link href='/' className='flex items-center'>
             <span className='sr-only'>Trelio</span>
             <div className='flex items-center justify-center md:justify-start'>
-              <TrelioLogo
-                width={40}
-                height={40}
-                color='#3182F6'
-                accentColor='#60A5FA'
-                className='text-[#3182F6]'
-              />
+              <TrelioLogo width={40} height={40} className='text-[#3182F6]' />
               <Typography
                 variant='h4'
                 weight='semiBold'

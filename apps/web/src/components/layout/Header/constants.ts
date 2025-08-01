@@ -20,7 +20,7 @@ export const navigation: NavItem[] = [
 // 여행 계획 필터 옵션
 export const filterOptions = [
   { key: 'all', label: '전체', icon: MdOutlineList },
-  { key: 'in-progress', label: '진행 중', icon: MdOutlineAccessTime },
+  { key: 'in-progress', label: '진행', icon: MdOutlineAccessTime },
   { key: 'completed', label: '완료', icon: MdOutlineCheckCircle },
 ] as const;
 
