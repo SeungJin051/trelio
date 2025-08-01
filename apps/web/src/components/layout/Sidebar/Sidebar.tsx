@@ -26,7 +26,7 @@ interface TravelPlan {
   start_date: string;
   end_date: string;
   location: string;
-  status: 'all' | 'in-progress' | 'completed';
+  status: 'upcoming' | 'in-progress' | 'completed';
   created_at: string;
   participantCount: number;
 }
@@ -38,7 +38,8 @@ interface SidebarProps {
 
 const filterOptions = [
   { key: 'all', label: '전체', icon: MdOutlineList },
-  { key: 'in-progress', label: '진행 중', icon: MdOutlineAccessTime },
+  { key: 'upcoming', label: '예정', icon: MdOutlineDateRange },
+  { key: 'in-progress', label: '진행', icon: MdOutlineAccessTime },
   { key: 'completed', label: '완료', icon: MdOutlineCheckCircle },
 ] as const;
 
@@ -103,7 +104,7 @@ const overlayVariants = {
 export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
   const { userProfile } = useSession();
   const [activeFilter, setActiveFilter] = useState<
-    'all' | 'in-progress' | 'completed'
+    'all' | 'upcoming' | 'in-progress' | 'completed'
   >('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [travelPlans, setTravelPlans] = useState<TravelPlan[]>([]);
@@ -149,13 +150,13 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
         const endDate = new Date(plan.end_date);
         const today = new Date();
 
-        let status: 'all' | 'in-progress' | 'completed';
+        let status: 'upcoming' | 'in-progress' | 'completed';
         if (endDate < today) {
           status = 'completed';
         } else if (startDate <= today && today <= endDate) {
           status = 'in-progress';
         } else {
-          status = 'all';
+          status = 'upcoming';
         }
 
         return {
@@ -385,7 +386,7 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
                                     ? 'bg-green-100 text-green-700'
                                     : plan.status === 'in-progress'
                                       ? 'bg-blue-100 text-blue-700'
-                                      : 'bg-gray-100 text-gray-700'
+                                      : 'bg-orange-100 text-orange-700'
                                 }`}
                               >
                                 {plan.status === 'completed'
