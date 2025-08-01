@@ -6,6 +6,15 @@
 // 참여자 권한 타입
 export type ParticipantRole = 'owner' | 'editor' | 'viewer';
 
+// 여행 상태 타입
+export type TravelStatus = 'upcoming' | 'in_progress' | 'completed';
+
+// 필터 타입
+export type FilterType = 'all' | 'upcoming' | 'in_progress' | 'completed';
+
+// 정렬 타입
+export type SortType = 'newest' | 'oldest' | 'alphabetical';
+
 // 여행 계획 기본 인터페이스
 export interface TravelPlan {
   id: string;
@@ -38,6 +47,20 @@ export interface TravelPlanParticipant {
   user_id: string;
   role: ParticipantRole;
   joined_at: string;
+}
+
+// 참여자 정보 (UI용)
+export interface Participant {
+  id: string;
+  user_id: string;
+  role: ParticipantRole;
+  joined_at: string;
+  user: {
+    id: string;
+    nickname?: string;
+    email: string;
+    avatar_url?: string;
+  };
 }
 
 // 여행 계획 참여자 생성 요청 타입
@@ -73,4 +96,23 @@ export interface TravelPlanDetail extends TravelPlan {
   dayCount: number;
   isOwner: boolean;
   currentUserRole: ParticipantRole;
+}
+
+// 여행 활동 인터페이스
+export interface Activity {
+  id: string;
+  travel_plan_id: string;
+  user_id: string;
+  action_type: string;
+  description: string;
+  metadata?: any;
+  created_at: string;
+  updated_at: string;
+  user?: {
+    nickname?: string;
+    email?: string;
+  };
+  travel_plan?: {
+    title: string;
+  };
 }

@@ -131,28 +131,6 @@ const TravelDetailView = () => {
       <div className='flex min-h-screen items-center justify-center'>
         <div className='text-center'>
           <div className='mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent'></div>
-          <Typography variant='body1' className='text-gray-600'>
-            여행 정보를 불러오는 중...
-          </Typography>
-        </div>
-      </div>
-    );
-  }
-
-  // 404 상태
-  if (notFound || !travelPlan) {
-    return (
-      <div className='flex min-h-screen items-center justify-center'>
-        <div className='text-center'>
-          <Typography variant='h3' className='mb-4 text-gray-900'>
-            여행을 찾을 수 없습니다
-          </Typography>
-          <Typography variant='body1' className='mb-6 text-gray-600'>
-            요청하신 여행 계획이 존재하지 않거나 접근 권한이 없습니다.
-          </Typography>
-          <Button onClick={() => router.push('/')} colorTheme='blue'>
-            홈으로 돌아가기
-          </Button>
         </div>
       </div>
     );
@@ -167,7 +145,7 @@ const TravelDetailView = () => {
               <Button
                 variant='ghost'
                 size='small'
-                onClick={() => router.back()}
+                onClick={() => router.push('/')}
                 leftIcon={<IoArrowBack className='h-4 w-4' />}
               >
                 뒤로가기
@@ -178,10 +156,10 @@ const TravelDetailView = () => {
                   weight='semiBold'
                   className='text-gray-900'
                 >
-                  {travelPlan.title}
+                  {travelPlan?.title}
                 </Typography>
                 <Typography variant='caption' className='text-gray-500'>
-                  {travelPlan.location}
+                  {travelPlan?.location}
                 </Typography>
               </div>
             </div>
@@ -225,7 +203,7 @@ const TravelDetailView = () => {
                       weight='medium'
                       className='text-gray-900'
                     >
-                      {travelPlan.location}
+                      {travelPlan?.location}
                     </Typography>
                   </div>
                 </div>
@@ -254,7 +232,7 @@ const TravelDetailView = () => {
                       시작일
                     </Typography>
                     <Typography variant='body2' className='text-gray-900'>
-                      {formatDate(travelPlan.start_date)}
+                      {formatDate(travelPlan?.start_date || '')}
                     </Typography>
                   </div>
                   <div>
@@ -262,7 +240,7 @@ const TravelDetailView = () => {
                       종료일
                     </Typography>
                     <Typography variant='body2' className='text-gray-900'>
-                      {formatDate(travelPlan.end_date)}
+                      {formatDate(travelPlan?.end_date || '')}
                     </Typography>
                   </div>
                 </div>

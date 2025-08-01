@@ -302,43 +302,6 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
                 </div>
               </div>
 
-              {/* 친구 초대하기 */}
-              <div>
-                <Typography
-                  variant='body2'
-                  weight='medium'
-                  className='mb-2 text-gray-700'
-                >
-                  친구 초대하기
-                </Typography>
-                <Typography
-                  variant='caption'
-                  className='mb-3 block text-gray-500'
-                >
-                  아래 공유 링크를 친구에게 전달하여 여행 계획에 초대할 수
-                  있습니다.
-                </Typography>
-
-                <div className='flex space-x-2'>
-                  <div className='flex-1'>
-                    <Input
-                      value='여행 계획 생성 후 링크가 제공됩니다'
-                      readOnly
-                      disabled
-                      leftIcon={<IoLinkOutline className='h-4 w-4' />}
-                    />
-                  </div>
-                  <Button
-                    variant='outlined'
-                    onClick={handleCopyShareLink}
-                    disabled={true} // 여행 계획 생성 전에는 비활성화
-                    leftIcon={<IoCopyOutline className='h-4 w-4' />}
-                  >
-                    복사
-                  </Button>
-                </div>
-              </div>
-
               {/* 초대된 사용자 기본 권한 */}
               <div>
                 <div className='flex items-center justify-between'>

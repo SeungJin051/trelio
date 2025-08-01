@@ -32,7 +32,7 @@ const LayoutWrapper = ({ children }: PropsWithChildren) => {
   };
 
   return (
-    <div className='min-h-screen bg-gray-50'>
+    <div className='min-h-screen bg-[#FAFAFA]'>
       {/* 헤더 */}
       {isAuthPage ? (
         <SimpleHeader />
