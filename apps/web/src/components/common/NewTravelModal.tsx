@@ -8,8 +8,8 @@ import { FaPencilAlt, FaRobot } from 'react-icons/fa';
 
 import { Icon, Typography } from '@ui/components';
 
-import { Modal } from '../basic';
-import { TravelBasicInfoModal } from '../travel';
+import { Modal } from '@/components/basic';
+import { TravelBasicInfoModal } from '@/components/travel';
 
 interface NewTravelModalProps {
   isOpen: boolean;

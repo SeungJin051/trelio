@@ -38,7 +38,7 @@ const MockHeader = ({
       }`}
     >
       <nav
-        className='mx-auto flex items-center justify-between px-6 py-4'
+        className='mx-auto flex items-center justify-between px-6 py-3'
         aria-label='Global'
       >
         <div className='flex md:flex-1'>
