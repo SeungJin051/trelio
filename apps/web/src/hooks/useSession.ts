@@ -116,7 +116,10 @@ export const useSession = () => {
           async (event: AuthChangeEvent, newSession: Session | null) => {
             if (!isMounted) return;
 
-            console.log('Auth 상태 변경:', event);
+            // INITIAL_SESSION 이벤트는 무시 (이미 위에서 처리했음)
+            if (event === 'INITIAL_SESSION') {
+              return;
+            }
 
             // 세션 상태 업데이트
             setSession(newSession);
