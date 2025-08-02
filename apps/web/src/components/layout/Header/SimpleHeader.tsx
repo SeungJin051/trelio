@@ -26,7 +26,7 @@ export const SimpleHeader = () => {
       }`}
     >
       <nav
-        className='mx-auto flex min-h-[72px] items-center justify-between px-6 py-4'
+        className='mx-auto flex h-20 items-center justify-between px-6'
         aria-label='Global'
       >
         <div className='flex md:flex-1'>

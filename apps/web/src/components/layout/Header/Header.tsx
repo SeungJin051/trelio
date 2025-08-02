@@ -48,7 +48,7 @@ const HeaderSkeleton = ({
         : 'left-0 right-0'
     }`}
   >
-    <nav className='mx-auto flex items-center justify-between px-2 py-4'>
+    <nav className='mx-auto flex h-20 items-center justify-between px-6'>
       <div className='flex md:flex-1'>
         <Link href='/' className='flex items-center'>
           <span className='sr-only'>Trelio</span>
@@ -159,10 +159,6 @@ export const Header = ({
     setProfileDropdownOpen(false);
   };
 
-  // 인증 상태에 따른 사이드바 표시 여부 결정
-  const shouldShowAuthenticatedSidebar =
-    isAuthenticated && isSignUpCompleted && !isMobile;
-
   // 로그인 전 헤더 렌더링
   const renderUnauthenticatedHeader = () => (
     <>
@@ -189,12 +185,23 @@ export const Header = ({
       <div className='hidden md:flex md:flex-1 md:justify-end'>
         {renderProfileArea()}
       </div>
+
+      {/* 모바일 햄버거 메뉴 버튼 */}
+      <div className='flex items-center md:hidden'>
+        <button
+          onClick={() => setMobileMenuOpen(true)}
+          className='rounded-full p-2 text-gray-700 transition-colors hover:bg-gray-100'
+          title='메뉴'
+        >
+          <Icon as={CiMenuBurger} color='#374151' size={24} />
+        </button>
+      </div>
     </>
   );
 
   // 로그인 후 헤더 렌더링
   const renderAuthenticatedHeader = () => (
-    <div className='hidden md:flex md:flex-1 md:items-center md:justify-end md:space-x-4'>
+    <div className='hidden md:flex md:flex-1 md:items-center md:justify-end md:space-x-3'>
       {/* 새 여행 계획 생성 버튼 */}
       <Button
         onClick={() => setNewTravelModalOpen(true)}
@@ -210,7 +217,7 @@ export const Header = ({
 
       {/* 알림 아이콘 */}
       <button
-        className='rounded-full p-2 transition-colors hover:bg-gray-100'
+        className='flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-gray-100'
         onClick={() => {
           // TODO: 알림 모달 열기
           console.log('알림 모달 열기');
@@ -223,7 +230,7 @@ export const Header = ({
       <div className='profile-dropdown relative'>
         <button
           onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-          className='rounded-full p-2 transition-colors hover:bg-gray-100'
+          className='flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-gray-100'
         >
           <Avatar
             src={userProfile?.profile_image_url}
@@ -281,14 +288,14 @@ export const Header = ({
       {/* 새 여행 계획 생성 버튼 (아이콘만) */}
       <button
         onClick={() => setNewTravelModalOpen(true)}
-        className='flex items-center justify-center rounded-lg bg-[#3182F6] p-2 transition-colors hover:bg-[#2b74e0]'
+        className='flex h-9 w-9 items-center justify-center rounded-lg bg-[#3182F6] transition-colors hover:bg-[#2b74e0]'
       >
         <Icon as={IoAddOutline} color='white' size={20} />
       </button>
 
       {/* 알림 아이콘 */}
       <button
-        className='rounded-full p-2 transition-colors hover:bg-gray-100'
+        className='flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-gray-100'
         onClick={() => {
           // TODO: 알림 모달 열기
           console.log('알림 모달 열기');
@@ -301,7 +308,7 @@ export const Header = ({
       <div className='profile-dropdown relative'>
         <button
           onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-          className='rounded-full p-1 transition-colors hover:bg-gray-100'
+          className='flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-gray-100'
         >
           <Avatar
             src={userProfile?.profile_image_url}
@@ -531,7 +538,7 @@ export const Header = ({
       className={`fixed top-0 z-30 border-b border-gray-200 bg-white transition-all duration-300 ${
         scrolled ? 'shadow-sm backdrop-blur-sm' : ''
       } ${
-        shouldShowAuthenticatedSidebar
+        shouldShowSidebar && !isMobile
           ? sidebarOpen
             ? 'left-80 right-0'
             : 'left-16 right-0'
@@ -539,24 +546,16 @@ export const Header = ({
       }`}
     >
       <nav
-        className='mx-auto flex items-center justify-between px-6 py-3'
+        className='mx-auto flex h-20 items-center justify-between px-6'
         aria-label='Global'
       >
         <div className='flex items-center md:flex-1'>
-          {/* 모바일 햄버거 메뉴 (로고 왼쪽) */}
-          {isMobile && (
+          {/* 모바일 햄버거 메뉴 (로고 왼쪽) - 로그인 완료 사용자만 */}
+          {isMobile && isAuthenticated && isSignUpCompleted && (
             <button
-              onClick={() => {
-                if (isAuthenticated && isSignUpCompleted) {
-                  setMobileTravelMenuOpen(true);
-                } else {
-                  setMobileMenuOpen(true);
-                }
-              }}
+              onClick={() => setMobileTravelMenuOpen(true)}
               className='mr-3 rounded-full p-2 text-gray-700 transition-colors hover:bg-gray-100'
-              title={
-                isAuthenticated && isSignUpCompleted ? '여행 계획 메뉴' : '메뉴'
-              }
+              title='여행 계획 메뉴'
             >
               <Icon as={CiMenuBurger} color='#374151' size={24} />
             </button>
