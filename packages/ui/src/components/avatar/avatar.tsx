@@ -1,10 +1,16 @@
 interface AvatarProps {
-  size?: 'small' | 'medium' | 'large';
   src?: string;
+  size?: 'small' | 'medium' | 'large';
   alt?: string;
+  className?: string;
 }
 
-export const Avatar = ({ size = 'medium', src, alt }: AvatarProps) => {
+export const Avatar = ({
+  size = 'medium',
+  src,
+  alt,
+  className,
+}: AvatarProps) => {
   const sizeClass =
     size === 'small'
       ? 'h-8 w-8 text-xs'
@@ -14,7 +20,7 @@ export const Avatar = ({ size = 'medium', src, alt }: AvatarProps) => {
 
   return (
     <div
-      className={`inline-flex items-center justify-center overflow-hidden rounded-full bg-gray-200 text-gray-500 ${sizeClass}`}
+      className={`inline-flex items-center justify-center overflow-hidden rounded-full bg-gray-200 text-gray-500 ${sizeClass} ${className || ''}`}
     >
       {src ? (
         <img src={src} alt={alt} className='h-full w-full object-cover' />
