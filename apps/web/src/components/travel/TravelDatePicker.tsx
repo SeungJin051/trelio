@@ -2,12 +2,16 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 
-import DatePicker from 'react-datepicker';
+import { ko } from 'date-fns/locale';
+import DatePicker, { registerLocale } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { IoCalendarOutline } from 'react-icons/io5';
 
 import { Typography } from '@ui/components';
 import { cn } from '@ui/utils/cn';
+
+// 한국어 로케일 등록
+registerLocale('ko', ko);
 
 interface TravelDatePickerProps {
   startDate: Date | null;
