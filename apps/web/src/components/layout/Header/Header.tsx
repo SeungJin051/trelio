@@ -14,7 +14,12 @@ import {
   IoNotificationsOutline,
   IoSearch,
 } from 'react-icons/io5';
-import { MdOutlineDateRange, MdOutlineList } from 'react-icons/md';
+import {
+  MdOutlineAccessTime,
+  MdOutlineCheckCircle,
+  MdOutlineDateRange,
+  MdOutlineList,
+} from 'react-icons/md';
 
 import { Avatar, Badge, Button, Icon } from '@ui/components';
 import { Typography } from '@ui/components/typography';
@@ -22,8 +27,20 @@ import { Typography } from '@ui/components/typography';
 import { TrelioLogo } from '@/components/common';
 import { NewTravelModal } from '@/components/common';
 import { useMobile, useSession } from '@/hooks';
+import { createClient } from '@/lib/supabase/client/supabase';
 
-import { filterOptions, mockTravelPlans, navigation } from './constants';
+import { filterOptions, navigation } from './constants';
+
+interface TravelPlan {
+  id: string;
+  title: string;
+  start_date: string;
+  end_date: string;
+  location: string;
+  status: 'upcoming' | 'in-progress' | 'completed';
+  created_at: string;
+  participantCount: number;
+}
 
 interface HeaderProps {
   sidebarOpen?: boolean;
@@ -88,9 +105,14 @@ export const Header = ({
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [newTravelModalOpen, setNewTravelModalOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<
-    'all' | 'in-progress' | 'completed'
+    'all' | 'upcoming' | 'in-progress' | 'completed'
   >('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // 여행 계획 데이터 상태 추가
+  const [travelPlans, setTravelPlans] = useState<TravelPlan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   const isMobile = useMobile();
   const {
@@ -98,29 +120,129 @@ export const Header = ({
     userProfile,
     isSignUpCompleted,
     isSignUpIncomplete,
-    loading,
     signOut,
   } = useSession();
+  const supabase = createClient();
 
-  // 디버깅용 로그 (개발 환경에서만)
+  // 모바일용 필터 옵션 (사이드바와 동일)
+  const mobileFilterOptions = [
+    { key: 'all', label: '전체', icon: MdOutlineList },
+    { key: 'upcoming', label: '예정', icon: MdOutlineDateRange },
+    { key: 'in-progress', label: '진행', icon: MdOutlineAccessTime },
+    { key: 'completed', label: '완료', icon: MdOutlineCheckCircle },
+  ] as const;
+
+  // 여행 계획 목록 가져오기 (Sidebar와 동일한 로직)
+  const fetchTravelPlans = async (forceRefresh = false) => {
+    if (!userProfile) {
+      setLoading(false);
+      return;
+    }
+
+    // 이미 데이터가 있고 강제 새로고침이 아닌 경우 스킵
+    if (!forceRefresh && travelPlans.length > 0 && hasInitialized) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // 사용자가 소유한 여행 계획만 가져오기
+      const { data: plansData, error: plansError } = await supabase
+        .from('travel_plans')
+        .select(
+          `
+          id,
+          title,
+          start_date,
+          end_date,
+          location,
+          created_at
+        `
+        )
+        .eq('owner_id', userProfile.id)
+        .order('created_at', { ascending: false });
+
+      if (plansError) {
+        console.error('여행 계획 조회 실패:', plansError);
+        setTravelPlans([]);
+        setLoading(false);
+        return;
+      }
+
+      // 데이터 변환 및 상태 결정
+      const transformedPlans: TravelPlan[] = (plansData || []).map((plan) => {
+        const startDate = new Date(plan.start_date);
+        const endDate = new Date(plan.end_date);
+        const today = new Date();
+
+        let status: 'upcoming' | 'in-progress' | 'completed';
+        if (endDate < today) {
+          status = 'completed';
+        } else if (startDate <= today && today <= endDate) {
+          status = 'in-progress';
+        } else {
+          status = 'upcoming';
+        }
+
+        return {
+          id: plan.id,
+          title: plan.title,
+          start_date: plan.start_date,
+          end_date: plan.end_date,
+          location: plan.location,
+          status,
+          created_at: plan.created_at,
+          participantCount: 1, // 일단 1명으로 설정 (소유자)
+        };
+      });
+
+      setTravelPlans(transformedPlans);
+      setHasInitialized(true);
+    } catch (error) {
+      setTravelPlans([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 컴포넌트 마운트 시 및 userProfile 변경 시 데이터 가져오기
+  useEffect(() => {
+    if (userProfile) {
+      fetchTravelPlans();
+    }
+  }, [userProfile]);
+
+  // 모바일 여행 메뉴가 열릴 때 데이터 새로고침
+  useEffect(() => {
+    if (mobileTravelMenuOpen && isMobile && userProfile) {
+      // 모바일에서 여행 메뉴가 열릴 때 항상 최신 데이터 확인
+      fetchTravelPlans(true);
+    }
+  }, [mobileTravelMenuOpen, isMobile, userProfile]);
+
+  // 필터링된 여행 계획
+  const filteredPlans = travelPlans.filter((plan) => {
+    const matchesFilter =
+      activeFilter === 'all' || plan.status === activeFilter;
+    const matchesSearch = plan.title
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
+
+  // 디버깅용 로그
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
       console.log('🔍 Header state:', {
         isAuthenticated,
         isSignUpCompleted,
         isSignUpIncomplete,
-        loading,
         hasUserProfile: !!userProfile,
         userNickname: userProfile?.nickname,
       });
     }
-  }, [
-    isAuthenticated,
-    isSignUpCompleted,
-    isSignUpIncomplete,
-    loading,
-    userProfile,
-  ]);
+  }, [isAuthenticated, isSignUpCompleted, isSignUpIncomplete, userProfile]);
 
   // 스크롤 감지
   useEffect(() => {
@@ -143,16 +265,6 @@ export const Header = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  // 로딩 중일 때 스켈레톤 표시
-  if (loading) {
-    return (
-      <HeaderSkeleton
-        sidebarOpen={sidebarOpen}
-        shouldShowSidebar={shouldShowSidebar}
-      />
-    );
-  }
 
   const handleSignOut = async () => {
     await signOut();
@@ -505,24 +617,33 @@ export const Header = ({
 
   // 모바일 오른쪽 영역 렌더링 로직
   const renderMobileRightArea = () => {
-    // 로그인 완료 상태
-    if (isAuthenticated && isSignUpCompleted) {
-      return renderMobileAuthenticatedHeader();
+    if (!isAuthenticated || !isSignUpCompleted) {
+      // 로그인 전 상태 - 아무것도 표시하지 않음 (햄버거 메뉴는 이제 왼쪽에 있음)
+      return null;
     }
 
-    // 로그인 전 상태 - 아무것도 표시하지 않음 (햄버거 메뉴는 이제 왼쪽에 있음)
-    return null;
-  };
+    // 로그인 후 모바일 헤더
+    return (
+      <div className='flex items-center space-x-2 md:hidden'>
+        {/* 새 여행 계획 생성 버튼 */}
+        <button
+          onClick={() => setNewTravelModalOpen(true)}
+          className='flex items-center justify-center rounded-lg bg-blue-500 px-3 py-2 text-white transition-colors hover:bg-blue-600'
+        >
+          <IoAddOutline className='mr-1 h-4 w-4' />
+          <span className='text-sm font-medium'>새 여행</span>
+        </button>
 
-  // 필터링된 여행 계획
-  const filteredPlans = mockTravelPlans.filter((plan) => {
-    const matchesFilter =
-      activeFilter === 'all' || plan.status === activeFilter;
-    const matchesSearch = plan.title
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
+        {/* 알림 버튼 */}
+        <button className='rounded-full p-2 text-gray-700 transition-colors hover:bg-gray-100'>
+          <IoNotificationsOutline className='h-5 w-5' />
+        </button>
+
+        {/* 프로필 영역 */}
+        {renderProfileArea()}
+      </div>
+    );
+  };
 
   // 날짜 포맷팅
   const formatDate = (dateString: string) => {
@@ -531,6 +652,11 @@ export const Header = ({
       month: 'short',
       day: 'numeric',
     });
+  };
+
+  // 데이터 새로고침 함수
+  const handleRefresh = () => {
+    fetchTravelPlans(true);
   };
 
   return (
@@ -667,8 +793,18 @@ export const Header = ({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className='fixed inset-0 z-40 bg-black/20 backdrop-blur-sm'
+              className='fixed inset-0 z-[90] bg-black/20 backdrop-blur-sm'
               onClick={() => setMobileTravelMenuOpen(false)}
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                width: '100vw',
+                height: '100vh',
+                zIndex: 90,
+              }}
             />
 
             <motion.div
@@ -676,7 +812,14 @@ export const Header = ({
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className='fixed inset-y-0 left-0 z-50 w-full max-w-sm bg-white shadow-lg'
+              className='fixed inset-y-0 left-0 z-[95] w-full max-w-sm bg-white shadow-lg'
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                height: '100vh',
+                zIndex: 95,
+              }}
             >
               <div className='flex h-full flex-col overflow-y-auto'>
                 {/* 헤더 */}
@@ -688,22 +831,55 @@ export const Header = ({
                   >
                     내 여행 계획
                   </Typography>
-                  <button
-                    onClick={() => setMobileTravelMenuOpen(false)}
-                    className='rounded-full p-1.5 text-gray-500 transition-colors hover:bg-gray-100'
-                    title='메뉴 닫기'
-                  >
-                    <Icon as={IoCloseOutline} size={24} />
-                  </button>
+                  <div className='flex items-center space-x-2'>
+                    {/* 새로고침 버튼 */}
+                    <motion.button
+                      onClick={handleRefresh}
+                      className='rounded-full p-1.5 text-gray-500 transition-colors hover:bg-gray-100 active:bg-gray-200'
+                      title='새로고침'
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      disabled={loading}
+                    >
+                      <svg
+                        className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`}
+                        fill='none'
+                        viewBox='0 0 24 24'
+                        stroke='currentColor'
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={2}
+                          d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
+                        />
+                      </svg>
+                    </motion.button>
+                    <button
+                      onClick={() => setMobileTravelMenuOpen(false)}
+                      className='rounded-full p-1.5 text-gray-500 transition-colors hover:bg-gray-100'
+                      title='메뉴 닫기'
+                    >
+                      <Icon as={IoCloseOutline} size={24} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* 필터 */}
                 <div className='border-b border-gray-200 px-6 py-4'>
                   <div className='flex space-x-2'>
-                    {filterOptions.map((option) => (
+                    {mobileFilterOptions.map((option) => (
                       <motion.button
                         key={option.key}
-                        onClick={() => setActiveFilter(option.key)}
+                        onClick={() =>
+                          setActiveFilter(
+                            option.key as
+                              | 'all'
+                              | 'upcoming'
+                              | 'in-progress'
+                              | 'completed'
+                          )
+                        }
                         className='flex-1'
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
@@ -748,81 +924,14 @@ export const Header = ({
                 {/* 여행 계획 목록 */}
                 <div className='flex-1 overflow-y-auto px-6 py-4'>
                   <div className='space-y-3'>
-                    {filteredPlans.length > 0 ? (
-                      filteredPlans.map((plan, index) => (
-                        <motion.div
-                          key={plan.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                        >
-                          <Link
-                            href={`/travel/${plan.id}`}
-                            className='block rounded-lg border border-gray-200 bg-white p-4 transition-colors hover:bg-gray-50 hover:shadow-sm'
-                            onClick={() => setMobileTravelMenuOpen(false)}
-                          >
-                            <div className='mb-3'>
-                              <Typography
-                                variant='body1'
-                                weight='semiBold'
-                                className='line-clamp-1 text-gray-900'
-                              >
-                                {plan.title}
-                              </Typography>
-                            </div>
-
-                            <div className='mb-3 flex items-center space-x-2 text-gray-600'>
-                              <Icon as={MdOutlineDateRange} size={16} />
-                              <Typography
-                                variant='body2'
-                                className='text-gray-600'
-                              >
-                                {formatDate(plan.startDate)} -{' '}
-                                {formatDate(plan.endDate)}
-                              </Typography>
-                            </div>
-
-                            <div className='flex items-center justify-between'>
-                              {/* 참여자 아바타 */}
-                              <div className='flex -space-x-2'>
-                                {plan.participantAvatars
-                                  .slice(0, 3)
-                                  .map((avatar, index) => (
-                                    <Avatar
-                                      key={index}
-                                      src={avatar}
-                                      alt={`참여자 ${index + 1}`}
-                                      size='small'
-                                    />
-                                  ))}
-                                {plan.participantAvatars.length > 3 && (
-                                  <div className='flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-600 ring-2 ring-white'>
-                                    +{plan.participantAvatars.length - 3}
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* 상태 뱃지 */}
-                              <div
-                                className={`rounded-full px-2 py-1 text-xs font-medium ${
-                                  plan.status === 'completed'
-                                    ? 'bg-green-100 text-green-700'
-                                    : plan.status === 'in-progress'
-                                      ? 'bg-blue-100 text-blue-700'
-                                      : 'bg-gray-100 text-gray-700'
-                                }`}
-                              >
-                                {plan.status === 'completed'
-                                  ? '완료'
-                                  : plan.status === 'in-progress'
-                                    ? '진행 중'
-                                    : '예정'}
-                              </div>
-                            </div>
-                          </Link>
-                        </motion.div>
-                      ))
-                    ) : (
+                    {loading ? (
+                      <div className='flex flex-col items-center justify-center py-12 text-center'>
+                        <div className='mb-4 h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent'></div>
+                        <Typography variant='body2' className='text-gray-500'>
+                          여행 계획을 불러오는 중...
+                        </Typography>
+                      </div>
+                    ) : filteredPlans.length === 0 ? (
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -840,12 +949,96 @@ export const Header = ({
                           weight='medium'
                           className='mb-2 text-gray-500'
                         >
-                          여행 계획이 없습니다
+                          {searchQuery
+                            ? '검색 결과가 없습니다'
+                            : '여행 계획이 없습니다'}
                         </Typography>
                         <Typography variant='body2' className='text-gray-400'>
-                          새로운 여행 계획을 만들어보세요
+                          {searchQuery
+                            ? '다른 키워드로 검색해보세요'
+                            : '새로운 여행 계획을 만들어보세요'}
                         </Typography>
                       </motion.div>
+                    ) : (
+                      filteredPlans.map((plan, index) => (
+                        <motion.div
+                          key={plan.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.03 }}
+                        >
+                          <Link
+                            href={`/travel/${plan.id}`}
+                            className='block rounded-lg border border-gray-200 bg-white p-4 transition-all hover:border-gray-300 hover:bg-gray-50 hover:shadow-md active:bg-gray-100'
+                            onClick={() => {
+                              // 모바일에서는 링크 클릭 시 메뉴 닫기
+                              setTimeout(() => {
+                                setMobileTravelMenuOpen(false);
+                              }, 100);
+                            }}
+                          >
+                            <div className='mb-3'>
+                              <Typography
+                                variant='body1'
+                                weight='semiBold'
+                                className='line-clamp-1 text-gray-900'
+                              >
+                                {plan.title}
+                              </Typography>
+                              <Typography
+                                variant='caption'
+                                className='text-gray-500'
+                              >
+                                {plan.location}
+                              </Typography>
+                            </div>
+
+                            <div className='mb-3 flex items-center space-x-2 text-gray-600'>
+                              <Icon as={MdOutlineDateRange} size={16} />
+                              <Typography
+                                variant='body2'
+                                className='text-gray-600'
+                              >
+                                {formatDate(plan.start_date)} -{' '}
+                                {formatDate(plan.end_date)}
+                              </Typography>
+                            </div>
+
+                            <div className='flex items-center justify-between'>
+                              {/* 참여자 정보 */}
+                              <div className='flex items-center space-x-2'>
+                                <Avatar
+                                  src={userProfile?.profile_image_url}
+                                  alt={userProfile?.nickname || '나'}
+                                  size='small'
+                                />
+                                {plan.participantCount > 1 && (
+                                  <span className='text-xs text-gray-500'>
+                                    +{plan.participantCount - 1}명
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* 상태 뱃지 */}
+                              <div
+                                className={`rounded-full px-2 py-1 text-xs font-medium ${
+                                  plan.status === 'completed'
+                                    ? 'bg-green-100 text-green-700'
+                                    : plan.status === 'in-progress'
+                                      ? 'bg-blue-100 text-blue-700'
+                                      : 'bg-orange-100 text-orange-700'
+                                }`}
+                              >
+                                {plan.status === 'completed'
+                                  ? '완료'
+                                  : plan.status === 'in-progress'
+                                    ? '진행 중'
+                                    : '예정'}
+                              </div>
+                            </div>
+                          </Link>
+                        </motion.div>
+                      ))
                     )}
                   </div>
                 </div>
