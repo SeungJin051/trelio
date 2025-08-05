@@ -190,9 +190,7 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
 
       setTravelPlans(transformedPlans);
       setHasInitialized(true);
-      console.log('변환된 여행 계획:', transformedPlans);
     } catch (error) {
-      console.error('여행 계획 조회 중 오류:', error);
       setTravelPlans([]);
     } finally {
       setLoading(false);
