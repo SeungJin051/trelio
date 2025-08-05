@@ -34,7 +34,7 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { userProfile } = useSession();
+  const { userProfile, session } = useSession();
   const router = useRouter();
   const toast = useToast();
   const supabase = createClient();
@@ -78,13 +78,13 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
 
   // 중복 제목 체크
   const checkDuplicateTitle = async (title: string): Promise<boolean> => {
-    if (!userProfile) return false;
+    if (!session?.user) return false;
 
     try {
       const { data, error } = await supabase
         .from('travel_plans')
         .select('id')
-        .eq('owner_id', userProfile.id)
+        .eq('owner_id', session.user.id)
         .eq('title', title.trim())
         .single();
 
@@ -103,7 +103,7 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
 
   // 여행 계획 생성
   const handleCreateTrip = async () => {
-    if (!userProfile) {
+    if (!session?.user) {
       toast.error('로그인이 필요합니다.');
       return;
     }
@@ -132,7 +132,7 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
       const { data: travelPlan, error: planError } = await supabase
         .from('travel_plans')
         .insert({
-          owner_id: userProfile.id,
+          owner_id: session.user.id,
           title: basicInfo.title.trim(),
           location: basicInfo.location.trim(),
           start_date: basicInfo.startDate!.toISOString().split('T')[0],
@@ -156,7 +156,7 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
         .from('travel_plan_participants')
         .insert({
           plan_id: travelPlan.id,
-          user_id: userProfile.id,
+          user_id: session.user.id,
           role: 'owner',
           joined_at: new Date().toISOString(),
         });
@@ -171,10 +171,9 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
       // 모달 닫기
       onClose();
 
-      // 여행 계획 상세 페이지로 이동
-      router.push(`/travel/${travelPlan.id}`);
+      // 메인 페이지로 이동
+      router.push('/');
     } catch (error) {
-      console.error('Travel creation error:', error);
       toast.error('여행 계획 생성 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
