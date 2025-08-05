@@ -37,7 +37,7 @@ export const TravelHeader: React.FC<TravelHeaderProps> = ({
           <Button
             variant='ghost'
             size='small'
-            onClick={() => router.push('/main')}
+            onClick={() => router.push('/')}
             className='p-2'
           >
             <IoArrowBack className='h-5 w-5' />
