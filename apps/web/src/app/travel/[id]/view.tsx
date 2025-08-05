@@ -22,6 +22,16 @@ import { TravelBlock } from '@/types/travel/blocks';
 import { BriefingBoard, TabContainer, TravelHeader } from './components';
 import { TabItem, TRAVEL_DETAIL_CONSTANTS } from './constants';
 
+interface TodoItem {
+  id: string;
+  title: string;
+  isCompleted: boolean;
+  assigneeId?: string;
+  assigneeName?: string;
+  assigneeAvatar?: string;
+  createdAt: string;
+}
+
 const TravelDetailView = () => {
   const params = useParams();
   const router = useRouter();
@@ -35,6 +45,34 @@ const TravelDetailView = () => {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+
+  // TODO: 실제 데이터는 API에서 가져와야 함
+  const [todos, setTodos] = useState<TodoItem[]>([
+    {
+      id: '1',
+      title: '렌터카 예약',
+      isCompleted: true,
+      assigneeId: 'user1',
+      assigneeName: '민준',
+      assigneeAvatar: undefined,
+      createdAt: '2024-01-15',
+    },
+    {
+      id: '2',
+      title: '여행자 보험 가입',
+      isCompleted: false,
+      assigneeId: 'user2',
+      assigneeName: '지혜',
+      assigneeAvatar: undefined,
+      createdAt: '2024-01-15',
+    },
+    {
+      id: '3',
+      title: '맛집 리스트 최종 확정',
+      isCompleted: false,
+      createdAt: '2024-01-15',
+    },
+  ]);
 
   const planId = params.id as string;
 
@@ -186,7 +224,7 @@ const TravelDetailView = () => {
             여행을 찾을 수 없습니다
           </Typography>
           <Button
-            onClick={() => router.push('/main')}
+            onClick={() => router.push('/')}
             colorTheme='blue'
             size='medium'
           >
@@ -207,6 +245,54 @@ const TravelDetailView = () => {
 
   const handleSettings = () => {
     setShowSettingsModal(true);
+  };
+
+  const handleBudgetClick = () => {
+    // TODO: 예산 상세 모달 또는 페이지로 이동
+    console.log('Budget detail clicked');
+  };
+
+  const handleReadinessClick = () => {
+    // TODO: 준비율 상세 모달 또는 페이지로 이동
+    console.log('Readiness detail clicked');
+  };
+
+  const handleAddTodo = (title: string) => {
+    const newTodo: TodoItem = {
+      id: Date.now().toString(),
+      title,
+      isCompleted: false,
+      createdAt: new Date().toISOString(),
+    };
+    setTodos((prev) => [...prev, newTodo]);
+  };
+
+  const handleToggleTodo = (id: string) => {
+    setTodos((prev) =>
+      prev.map((todo) =>
+        todo.id === id ? { ...todo, isCompleted: !todo.isCompleted } : todo
+      )
+    );
+  };
+
+  const handleAssignTodo = (todoId: string, assigneeId: string) => {
+    const assignee = participants.find((p) => p.id === assigneeId);
+    setTodos((prev) =>
+      prev.map((todo) =>
+        todo.id === todoId
+          ? {
+              ...todo,
+              assigneeId,
+              assigneeName: assignee?.nickname,
+              assigneeAvatar: assignee?.profile_image_url,
+            }
+          : todo
+      )
+    );
+  };
+
+  const handleDeleteTodo = (id: string) => {
+    setTodos((prev) => prev.filter((todo) => todo.id !== id));
   };
 
   const handleBlockClick = (blockId: string) => {
@@ -316,8 +402,15 @@ const TravelDetailView = () => {
                 onInviteParticipants={handleInviteParticipants}
                 onExport={handleExport}
                 onSettings={handleSettings}
+                onBudgetClick={handleBudgetClick}
+                onReadinessClick={handleReadinessClick}
                 onBlockClick={handleBlockClick}
                 onHotTopicClick={handleHotTopicClick}
+                todos={todos}
+                onAddTodo={handleAddTodo}
+                onToggleTodo={handleToggleTodo}
+                onAssignTodo={handleAssignTodo}
+                onDeleteTodo={handleDeleteTodo}
               />
             </div>
           ) : (
@@ -347,18 +440,20 @@ const TravelDetailView = () => {
           )}
         </div>
 
-        {/* 플로팅 액션 버튼 */}
-        <div className='fixed bottom-16 left-1/2 z-50 -translate-x-1/2 transform'>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className='flex h-14 w-14 transform items-center justify-center rounded-full bg-blue-500 text-white shadow-lg transition-all duration-300 hover:scale-105 hover:bg-blue-600 hover:shadow-xl active:scale-95'
-          >
-            <IoAddOutline className='h-6 w-6' />
-          </button>
-          <div className='pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 transform whitespace-nowrap rounded-lg bg-gray-800 px-3 py-1 text-xs text-white opacity-0 transition-opacity duration-200 hover:opacity-100'>
-            일정 추가 {canEdit ? '✅' : '❌권한없음'}
+        {/* 플로팅 액션 버튼 - 대시보드에서는 숨김 */}
+        {selectedDay !== 0 && (
+          <div className='fixed bottom-16 left-1/2 z-50 -translate-x-1/2 transform'>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className='flex h-14 w-14 transform items-center justify-center rounded-full bg-blue-500 text-white shadow-lg transition-all duration-300 hover:scale-105 hover:bg-blue-600 hover:shadow-xl active:scale-95'
+            >
+              <IoAddOutline className='h-6 w-6' />
+            </button>
+            <div className='pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 transform whitespace-nowrap rounded-lg bg-gray-800 px-3 py-1 text-xs text-white opacity-0 transition-opacity duration-200 hover:opacity-100'>
+              일정 추가 {canEdit ? '✅' : '❌권한없음'}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* 모달들 */}
