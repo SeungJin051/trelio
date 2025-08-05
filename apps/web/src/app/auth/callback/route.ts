@@ -1,3 +1,23 @@
+/**
+ * @api {get} /auth/callback OAuth 인증 콜백 처리
+ * @apiName AuthCallback
+ * @apiGroup Authentication
+ *
+ * @apiQuery {String} code OAuth 인증 코드
+ * @apiQuery {String} [next] 인증 후 리다이렉트할 페이지 URL
+ *
+ * @apiSuccess {Redirect} 302 인증 성공 시 리다이렉트
+ * @apiSuccess {String} Location 리다이렉트 URL
+ *
+ * @apiError {Redirect} 302 인증 실패 시 로그인 페이지로 리다이렉트
+ * @apiError {String} error 에러 메시지
+ *
+ * @apiDescription OAuth 로그인 후 Supabase에서 리다이렉트되는 콜백 엔드포인트입니다.
+ * 인증 코드를 세션으로 교환하고, 사용자 프로필 존재 여부에 따라 적절한 페이지로 리다이렉트합니다.
+ * - 프로필이 존재하는 경우: 메인 페이지('/')
+ * - 프로필이 없는 경우: 회원가입 페이지('/sign-up')
+ * - 인증 실패 시: 로그인 페이지('/log-in')
+ */
 import { NextRequest, NextResponse } from 'next/server';
 
 import { createServerSupabaseClient } from '@/lib/supabase/client/supabase-server';
