@@ -146,10 +146,6 @@ export const Header = ({
 
     try {
       setLoading(true);
-      console.log('Header: 여행 계획 데이터 로딩 시작...', {
-        isMobile,
-        mobileTravelMenuOpen,
-      });
 
       // 사용자가 소유한 여행 계획만 가져오기
       const { data: plansData, error: plansError } = await supabase
@@ -173,8 +169,6 @@ export const Header = ({
         setLoading(false);
         return;
       }
-
-      console.log('Header: 로딩된 여행 계획 데이터:', plansData);
 
       // 데이터 변환 및 상태 결정
       const transformedPlans: TravelPlan[] = (plansData || []).map((plan) => {
@@ -205,9 +199,7 @@ export const Header = ({
 
       setTravelPlans(transformedPlans);
       setHasInitialized(true);
-      console.log('Header: 변환된 여행 계획:', transformedPlans);
     } catch (error) {
-      console.error('여행 계획 조회 중 오류:', error);
       setTravelPlans([]);
     } finally {
       setLoading(false);

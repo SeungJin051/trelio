@@ -137,7 +137,6 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
 
     try {
       setLoading(true);
-      console.log('여행 계획 데이터 로딩 시작...', { isMobile, isOpen });
 
       // 사용자가 소유한 여행 계획만 가져오기
       const { data: plansData, error: plansError } = await supabase
@@ -161,8 +160,6 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
         setLoading(false);
         return;
       }
-
-      console.log('로딩된 여행 계획 데이터:', plansData);
 
       // 데이터 변환 및 상태 결정
       const transformedPlans: TravelPlan[] = (plansData || []).map((plan) => {
