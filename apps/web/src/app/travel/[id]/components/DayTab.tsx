@@ -37,7 +37,7 @@ export const DayTab = forwardRef<HTMLButtonElement, DayTabProps>(
     const getTabContent = () => {
       if (isDashboard) {
         return (
-          <div className='text-center'>
+          <div className='flex h-full flex-col items-center justify-center'>
             <div className='mb-1 flex items-center justify-center'>
               <IoGridOutline className='mr-1 h-3 w-3 sm:h-4 sm:w-4' />
               <Typography
@@ -61,7 +61,7 @@ export const DayTab = forwardRef<HTMLButtonElement, DayTabProps>(
       }
 
       return (
-        <div className='text-center'>
+        <div className='flex h-full flex-col items-center justify-center'>
           <Typography
             variant='body2'
             className={`text-xs font-medium sm:text-sm ${
@@ -82,16 +82,15 @@ export const DayTab = forwardRef<HTMLButtonElement, DayTabProps>(
               })}
             </Typography>
           )}
-          {tab.totalCost && tab.totalCost.amount > 0 && (
-            <Typography
-              variant='caption'
-              className='block text-xs text-gray-400'
-            >
+          {tab.totalCost && tab.totalCost.amount > 0 ? (
+            <Typography variant='caption' className='text-xs text-gray-400'>
               {formatCurrency(
                 tab.totalCost.amount,
                 (tab.totalCost.currency || 'KRW') as any
               )}
             </Typography>
+          ) : (
+            <div className='h-3'></div> // 비용이 없을 때도 공간 확보
           )}
         </div>
       );
@@ -108,7 +107,11 @@ export const DayTab = forwardRef<HTMLButtonElement, DayTabProps>(
               ? 'border-blue-300 bg-blue-50 text-blue-500'
               : 'border-transparent text-gray-500 hover:text-gray-700'
         }`}
-        style={{ minWidth: '80px', maxWidth: '120px' }}
+        style={{
+          minWidth: '80px',
+          maxWidth: '120px',
+          height: '80px', // 고정 높이 설정
+        }}
       >
         {getTabContent()}
       </button>
