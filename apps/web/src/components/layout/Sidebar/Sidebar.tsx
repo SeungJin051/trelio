@@ -49,19 +49,15 @@ const sidebarVariants = {
   open: {
     width: 320,
     transition: {
-      type: 'spring',
-      stiffness: 400,
-      damping: 40,
-      mass: 1,
+      duration: 0.25,
+      ease: 'easeOut',
     },
   },
   closed: {
     width: 64,
     transition: {
-      type: 'spring',
-      stiffness: 400,
-      damping: 40,
-      mass: 1,
+      duration: 0.25,
+      ease: 'easeIn',
     },
   },
 };
@@ -71,17 +67,16 @@ const contentVariants = {
     opacity: 1,
     x: 0,
     transition: {
-      delay: 0.15,
-      duration: 0.25,
-      ease: [0.25, 0.46, 0.45, 0.94],
+      duration: 0.2,
+      ease: 'easeOut',
     },
   },
   closed: {
     opacity: 0,
-    x: -20,
+    x: -5,
     transition: {
       duration: 0.15,
-      ease: [0.25, 0.46, 0.45, 0.94],
+      ease: 'easeIn',
     },
   },
 };
@@ -90,13 +85,15 @@ const overlayVariants = {
   open: {
     opacity: 1,
     transition: {
-      duration: 0.2,
+      duration: 0.15,
+      ease: 'easeOut',
     },
   },
   closed: {
     opacity: 0,
     transition: {
-      duration: 0.15,
+      duration: 0.1,
+      ease: 'easeIn',
     },
   },
 };
@@ -109,19 +106,40 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [travelPlans, setTravelPlans] = useState<TravelPlan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
   const supabase = createClient();
 
+  // 모바일 감지
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   // 여행 계획 목록 가져오기
-  const fetchTravelPlans = async () => {
+  const fetchTravelPlans = async (forceRefresh = false) => {
     if (!userProfile) {
       setLoading(false);
+
+      return;
+    }
+
+    // 이미 데이터가 있고 강제 새로고침이 아닌 경우 스킵
+    if (!forceRefresh && travelPlans.length > 0 && hasInitialized) {
       return;
     }
 
     try {
       setLoading(true);
+      console.log('여행 계획 데이터 로딩 시작...', { isMobile, isOpen });
 
-      // 사용자가 소유한 여행 계획만 가져오기 (가장 간단한 방법)
+      // 사용자가 소유한 여행 계획만 가져오기
       const { data: plansData, error: plansError } = await supabase
         .from('travel_plans')
         .select(
@@ -143,6 +161,8 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
         setLoading(false);
         return;
       }
+
+      console.log('로딩된 여행 계획 데이터:', plansData);
 
       // 데이터 변환 및 상태 결정
       const transformedPlans: TravelPlan[] = (plansData || []).map((plan) => {
@@ -172,6 +192,8 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
       });
 
       setTravelPlans(transformedPlans);
+      setHasInitialized(true);
+      console.log('변환된 여행 계획:', transformedPlans);
     } catch (error) {
       console.error('여행 계획 조회 중 오류:', error);
       setTravelPlans([]);
@@ -182,8 +204,18 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
 
   // 컴포넌트 마운트 시 및 userProfile 변경 시 데이터 가져오기
   useEffect(() => {
-    fetchTravelPlans();
+    if (userProfile) {
+      fetchTravelPlans();
+    }
   }, [userProfile]);
+
+  // 모바일에서 사이드바가 열릴 때 데이터 새로고침
+  useEffect(() => {
+    if (isOpen && isMobile && userProfile) {
+      // 모바일에서 사이드바가 열릴 때 항상 최신 데이터 확인
+      fetchTravelPlans(true);
+    }
+  }, [isOpen, isMobile, userProfile]);
 
   // 필터링된 여행 계획
   const filteredPlans = travelPlans.filter((plan) => {
@@ -204,6 +236,21 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
     });
   };
 
+  // 모바일에서 링크 클릭 처리
+  const handlePlanClick = () => {
+    if (isMobile) {
+      // 모바일에서는 약간의 지연 후 사이드바 닫기 (페이지 전환을 위해)
+      setTimeout(() => {
+        onToggle();
+      }, 100);
+    }
+  };
+
+  // 데이터 새로고침 함수
+  const handleRefresh = () => {
+    fetchTravelPlans(true);
+  };
+
   return (
     <>
       {/* 모바일 오버레이 (사이드바가 열렸을 때만) */}
@@ -214,7 +261,7 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
             initial='closed'
             animate='open'
             exit='closed'
-            className='fixed inset-0 z-30 bg-black/20 backdrop-blur-sm sm:hidden'
+            className='fixed inset-0 z-[70] bg-black/20 backdrop-blur-sm sm:hidden'
             onClick={onToggle}
           />
         )}
@@ -226,7 +273,14 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
           variants={sidebarVariants}
           initial={false}
           animate={isOpen ? 'open' : 'closed'}
-          className='fixed left-0 top-0 z-40 h-screen overflow-hidden border-r border-gray-200 bg-white shadow-lg'
+          className='fixed left-0 top-0 z-[80] h-screen overflow-hidden border-r border-gray-200 bg-white shadow-lg sm:z-40 lg:z-40'
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            height: '100vh',
+            zIndex: isMobile ? 80 : 40,
+          }}
         >
           <AnimatePresence mode='wait'>
             {isOpen ? (
@@ -247,13 +301,42 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
                   >
                     내 여행 계획
                   </Typography>
-                  <button
-                    onClick={onToggle}
-                    className='rounded-full p-1.5 text-gray-500 transition-colors hover:bg-gray-100'
-                    title='사이드바 닫기'
-                  >
-                    <Icon as={HiOutlineMenuAlt2} size={18} />
-                  </button>
+                  <div className='flex items-center space-x-2'>
+                    {/* 새로고침 버튼 (모바일에서만 표시) */}
+                    {isMobile && (
+                      <motion.button
+                        onClick={handleRefresh}
+                        className='rounded-full p-1.5 text-gray-500 transition-colors hover:bg-gray-100 active:bg-gray-200'
+                        title='새로고침'
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        disabled={loading}
+                      >
+                        <svg
+                          className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`}
+                          fill='none'
+                          viewBox='0 0 24 24'
+                          stroke='currentColor'
+                        >
+                          <path
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                            strokeWidth={2}
+                            d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
+                          />
+                        </svg>
+                      </motion.button>
+                    )}
+                    <motion.button
+                      onClick={onToggle}
+                      className='rounded-full p-1.5 text-gray-500 transition-colors hover:bg-gray-100 active:bg-gray-200'
+                      title='사이드바 닫기'
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Icon as={HiOutlineMenuAlt2} size={18} />
+                    </motion.button>
+                  </div>
                 </div>
 
                 {/* 필터 */}
@@ -263,7 +346,7 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
                       <motion.button
                         key={option.key}
                         onClick={() => setActiveFilter(option.key)}
-                        className='flex-1'
+                        className='flex-1 touch-manipulation'
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
@@ -278,7 +361,9 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
                         >
                           <div className='flex items-center space-x-1'>
                             <Icon as={option.icon} size={14} />
-                            <span>{option.label}</span>
+                            <span className='text-xs sm:text-sm'>
+                              {option.label}
+                            </span>
                           </div>
                         </Badge>
                       </motion.button>
@@ -299,13 +384,13 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
                       placeholder='여행 계획 검색...'
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className='w-full rounded-lg border border-gray-300 bg-gray-50 py-2 pl-10 pr-4 text-sm focus:border-[#3182F6] focus:bg-white focus:outline-none'
+                      className='w-full touch-manipulation rounded-lg border border-gray-300 bg-gray-50 py-2 pl-10 pr-4 text-sm focus:border-[#3182F6] focus:bg-white focus:outline-none'
                     />
                   </div>
                 </div>
 
                 {/* 여행 계획 목록 */}
-                <div className='flex-1 overflow-y-auto px-6 py-4'>
+                <div className='scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex-1 overflow-y-auto px-6 py-4'>
                   <div className='space-y-3'>
                     {loading ? (
                       // 로딩 상태
@@ -325,17 +410,12 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
                           key={plan.id}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05 }}
+                          transition={{ delay: index * 0.03 }}
                         >
                           <Link
                             href={`/travel/${plan.id}`}
-                            className='block rounded-lg border border-gray-200 bg-white p-4 transition-all hover:border-gray-300 hover:bg-gray-50 hover:shadow-md'
-                            onClick={() => {
-                              // 모바일에서는 링크 클릭 시 사이드바 닫기
-                              if (window.innerWidth < 768) {
-                                onToggle();
-                              }
-                            }}
+                            className='block touch-manipulation rounded-lg border border-gray-200 bg-white p-4 transition-all hover:border-gray-300 hover:bg-gray-50 hover:shadow-md active:bg-gray-100'
+                            onClick={handlePlanClick}
                           >
                             <div className='mb-3'>
                               <Typography
@@ -436,13 +516,15 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
                 key='closed'
                 className='flex h-full w-16 flex-col items-center py-4'
               >
-                <button
+                <motion.button
                   onClick={onToggle}
-                  className='rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-100'
+                  className='rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-100 active:bg-gray-200'
                   title='사이드바 열기'
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   <Icon as={HiOutlineMenu} size={24} />
-                </button>
+                </motion.button>
               </motion.div>
             )}
           </AnimatePresence>

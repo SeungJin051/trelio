@@ -33,15 +33,3 @@ export interface TravelPlan {
   status: 'all' | 'in-progress' | 'completed';
   participantAvatars: string[];
 }
-
-// 임시 여행 계획 데이터
-export const mockTravelPlans: TravelPlan[] = [
-  {
-    id: '1',
-    title: '제주도 여행',
-    startDate: '2024-03-15',
-    endDate: '2024-03-18',
-    status: 'in-progress',
-    participantAvatars: ['/avatar1.jpg', '/avatar2.jpg'],
-  },
-];
