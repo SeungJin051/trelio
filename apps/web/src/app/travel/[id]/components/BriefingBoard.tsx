@@ -19,6 +19,8 @@ import { Avatar, Badge, Button, Progress, Typography } from '@ui/components';
 
 import { formatCurrency } from '@/lib/currency';
 
+import { SharedTodoWidget } from './SharedTodoWidget';
+
 interface ActivityItem {
   id: string;
   type: 'block_add' | 'block_edit' | 'comment' | 'participant_join';
@@ -56,11 +58,26 @@ interface BriefingBoardProps {
     commentCount: number;
     blockId: string;
   }>;
+  todos: Array<{
+    id: string;
+    title: string;
+    isCompleted: boolean;
+    assigneeId?: string;
+    assigneeName?: string;
+    assigneeAvatar?: string;
+    createdAt: string;
+  }>;
   onInviteParticipants: () => void;
   onExport: () => void;
   onSettings: () => void;
   onBlockClick: (blockId: string) => void;
   onHotTopicClick: (blockId: string) => void;
+  onBudgetClick?: () => void;
+  onReadinessClick?: () => void;
+  onAddTodo: (title: string) => void;
+  onToggleTodo: (id: string) => void;
+  onAssignTodo: (todoId: string, assigneeId: string) => void;
+  onDeleteTodo: (id: string) => void;
 }
 
 export const BriefingBoard: React.FC<BriefingBoardProps> = ({
@@ -73,11 +90,18 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
   currency,
   readinessScore,
   hotTopics,
+  todos,
   onInviteParticipants,
   onExport,
   onSettings,
   onBlockClick,
   onHotTopicClick,
+  onBudgetClick,
+  onReadinessClick,
+  onAddTodo,
+  onToggleTodo,
+  onAssignTodo,
+  onDeleteTodo,
 }) => {
   // D-Day 계산
   const getDDay = () => {
@@ -194,124 +218,144 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
           {/* Removed weather display */}
         </div>
 
-        {/* 퀵 액션 카드 */}
-        <div className='rounded-2xl bg-white p-6 shadow-sm'>
-          <Typography variant='h6' className='mb-4 font-semibold text-gray-900'>
-            빠른 액션
-          </Typography>
-          <div className='grid grid-cols-1 gap-3 sm:grid-cols-3'>
-            <Button
-              onClick={onInviteParticipants}
-              colorTheme='blue'
-              size='medium'
-              className='h-12 w-full justify-start rounded-xl'
-              leftIcon={<IoAddOutline className='h-5 w-5' />}
-            >
-              <span className='ml-2'>동반자 초대하기</span>
-            </Button>
-            <Button
-              onClick={onExport}
-              colorTheme='gray'
-              size='medium'
-              className='h-12 w-full justify-start rounded-xl'
-              leftIcon={<IoDownloadOutline className='h-5 w-5' />}
-            >
-              <span className='ml-2'>내보내기</span>
-            </Button>
-            <Button
-              onClick={onSettings}
-              colorTheme='gray'
-              size='medium'
-              className='h-12 w-full justify-start rounded-xl'
-              leftIcon={<IoSettingsOutline className='h-5 w-5' />}
-            >
-              <span className='ml-2'>설정</span>
-            </Button>
-          </div>
-        </div>
-
         {/* 실시간 현황과 핵심 요약 그리드 */}
         <div className='grid grid-cols-1 gap-6 lg:grid-cols-2'>
-          {/* 실시간 현황 */}
-          <div className='rounded-2xl bg-white p-6 shadow-sm'>
-            <Typography
-              variant='h6'
-              className='mb-4 font-semibold text-gray-900'
-            >
-              실시간 현황
-            </Typography>
+          {/* 좌측 컬럼 - 사람과 활동 */}
+          <div className='space-y-6'>
+            {/* 참여자 섹션 */}
+            <div className='rounded-2xl bg-white p-6 shadow-sm'>
+              <Typography
+                variant='h6'
+                className='mb-4 font-semibold text-gray-900'
+              >
+                참여자
+              </Typography>
 
-            {/* 참여자 목록 */}
-            <div className='mb-6'>
-              <div className='mb-3 flex items-center justify-between'>
-                <Typography
-                  variant='body2'
-                  className='font-medium text-gray-700'
-                >
-                  참여자
-                </Typography>
-                <Badge colorTheme='blue' size='small'>
-                  {participants.length}명
-                </Badge>
-              </div>
-              <div className='flex flex-wrap gap-3'>
-                {participants.map((participant) => (
+              {/* 참여자 아바타 목록 */}
+              <div className='flex items-center gap-2'>
+                {participants.map((participant, index) => (
                   <div key={participant.id} className='group relative'>
                     <div className='relative'>
                       <Avatar
                         src={participant.profile_image_url}
                         alt={participant.nickname}
                         size='medium'
-                        className={
+                        className={`transition-all duration-200 hover:scale-110 ${
                           participant.isOnline
                             ? 'ring-2 ring-green-400'
                             : 'ring-2 ring-gray-200'
-                        }
+                        }`}
                       />
                       {participant.isOnline && (
                         <div className='absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-white bg-green-400'></div>
                       )}
                     </div>
-                    <div className='mt-1 text-center'>
-                      <Typography
-                        variant='caption'
-                        className='block font-medium text-gray-900'
-                      >
-                        {participant.nickname}
-                      </Typography>
-                      <Typography
-                        variant='caption'
-                        className={`text-xs ${participant.isOnline ? 'text-green-600' : 'text-gray-500'}`}
+                    {/* 호버 툴팁 */}
+                    <div className='absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 transform whitespace-nowrap rounded-lg bg-gray-800 px-3 py-2 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100'>
+                      <div className='font-medium'>{participant.nickname}</div>
+                      <div
+                        className={`text-xs ${participant.isOnline ? 'text-green-400' : 'text-gray-400'}`}
                       >
                         {participant.isOnline ? '온라인' : '오프라인'}
-                      </Typography>
-                    </div>
-                    {participant.currentActivity && (
-                      <div className='absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 transform whitespace-nowrap rounded-lg bg-gray-800 px-3 py-2 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100'>
-                        {participant.currentActivity}
                       </div>
-                    )}
+                      {participant.currentActivity && (
+                        <div className='mt-1 text-gray-300'>
+                          {participant.currentActivity}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {/* 초대 버튼 */}
+                <button
+                  onClick={onInviteParticipants}
+                  className='flex h-10 w-10 items-center justify-center rounded-full border-2 border-dashed border-gray-300 bg-gray-50 text-gray-500 transition-all duration-200 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-500'
+                  title='참여자 초대하기'
+                >
+                  <IoAddOutline className='h-5 w-5' />
+                </button>
+              </div>
+
+              {/* 참여자 이름 목록 (모바일용) */}
+              <div className='mt-3 flex flex-wrap gap-2'>
+                {participants.map((participant) => (
+                  <div
+                    key={participant.id}
+                    className='flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1'
+                  >
+                    <div
+                      className={`h-2 w-2 rounded-full ${
+                        participant.isOnline ? 'bg-green-400' : 'bg-gray-400'
+                      }`}
+                    ></div>
+                    <Typography variant='caption' className='text-gray-700'>
+                      {participant.nickname}
+                    </Typography>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* 최근 변경사항 */}
-            <div>
+            {/* 빠른 액션 */}
+            <div className='rounded-2xl bg-white p-6 shadow-sm'>
               <Typography
-                variant='body2'
-                className='mb-3 font-medium text-gray-700'
+                variant='h6'
+                className='mb-4 font-semibold text-gray-900'
               >
-                최근 활동
+                빠른 액션
+              </Typography>
+              <div className='grid grid-cols-1 gap-3'>
+                <Button
+                  onClick={onInviteParticipants}
+                  colorTheme='blue'
+                  size='medium'
+                  className='h-14 w-full justify-start rounded-xl shadow-sm transition-all duration-200 hover:shadow-md'
+                  leftIcon={<IoAddOutline className='h-5 w-5' />}
+                >
+                  <div className='ml-3 text-left'>
+                    <div className='font-semibold'>동반자 초대하기</div>
+                    <div className='text-xs text-blue-100'>
+                      새로운 여행 친구를 초대하세요
+                    </div>
+                  </div>
+                </Button>
+                <div className='grid grid-cols-2 gap-3'>
+                  <Button
+                    onClick={onExport}
+                    colorTheme='gray'
+                    size='medium'
+                    className='h-12 w-full justify-start rounded-xl shadow-sm transition-all duration-200 hover:shadow-md'
+                    leftIcon={<IoDownloadOutline className='h-4 w-4' />}
+                  >
+                    <span className='ml-2 text-sm'>내보내기</span>
+                  </Button>
+                  <Button
+                    onClick={onSettings}
+                    colorTheme='gray'
+                    size='medium'
+                    className='h-12 w-full justify-start rounded-xl shadow-sm transition-all duration-200 hover:shadow-md'
+                    leftIcon={<IoSettingsOutline className='h-4 w-4' />}
+                  >
+                    <span className='ml-2 text-sm'>설정</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* 최근 변경사항 */}
+            <div className='rounded-2xl bg-white p-6 shadow-sm'>
+              <Typography
+                variant='h6'
+                className='mb-4 font-semibold text-gray-900'
+              >
+                최근 변경사항
               </Typography>
               <div className='space-y-3'>
                 {recentActivities.map((activity) => (
                   <div
                     key={activity.id}
-                    className='cursor-pointer rounded-xl bg-gray-50 p-3 transition-all hover:bg-gray-100 hover:shadow-sm'
-                    onClick={() =>
-                      activity.blockId && onBlockClick(activity.blockId)
-                    }
+                    className='rounded-lg border border-gray-200 p-3'
                   >
                     <div className='flex items-start space-x-3'>
                       <Avatar
@@ -319,7 +363,7 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
                         alt={activity.user.nickname}
                         size='small'
                       />
-                      <div className='min-w-0 flex-1'>
+                      <div className='flex-1'>
                         <Typography
                           variant='body2'
                           className='font-medium text-gray-900'
@@ -346,48 +390,56 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
             </div>
           </div>
 
-          {/* 핵심 요약 */}
-          <div className='rounded-2xl bg-white p-6 shadow-sm'>
-            <Typography
-              variant='h6'
-              className='mb-4 font-semibold text-gray-900'
-            >
-              핵심 요약
-            </Typography>
-
+          {/* 우측 컬럼 - 진행상황 */}
+          <div className='space-y-6'>
             {/* 여행 준비율 */}
-            <div className='mb-6'>
-              <div className='mb-3 flex items-center justify-between'>
+            <div className='rounded-2xl bg-white p-6 shadow-sm'>
+              <div className='mb-4 flex items-center justify-between'>
                 <Typography
-                  variant='body2'
-                  className='font-medium text-gray-700'
+                  variant='h6'
+                  className='font-semibold text-gray-900'
                 >
                   여행 준비율
                 </Typography>
-                <Typography variant='body2' className='font-bold text-blue-600'>
+                <Typography variant='h6' className='font-bold text-blue-600'>
                   {readinessScore}%
                 </Typography>
               </div>
-              <Progress
-                value={readinessScore}
-                size='medium'
-                colorTheme='blue'
-              />
-              <div className='mt-2 flex items-center space-x-2 text-sm text-gray-500'>
-                <IoCheckmarkCircleOutline className='h-4 w-4' />
-                <span>체크리스트 {readinessScore}% 완료</span>
-              </div>
+              <button
+                onClick={onReadinessClick}
+                className='w-full cursor-pointer rounded-lg p-3 transition-all duration-200 hover:bg-gray-50'
+                disabled={!onReadinessClick}
+              >
+                <Progress
+                  value={readinessScore}
+                  size='medium'
+                  colorTheme='blue'
+                />
+                <div className='mt-2 flex items-center space-x-2 text-sm text-gray-500'>
+                  <IoCheckmarkCircleOutline className='h-4 w-4' />
+                  <span>체크리스트 {readinessScore}% 완료</span>
+                  {onReadinessClick && (
+                    <span className='ml-auto text-xs text-blue-500'>
+                      상세보기 →
+                    </span>
+                  )}
+                </div>
+              </button>
             </div>
 
             {/* 예산 현황 */}
-            <div className='mb-6'>
+            <div className='rounded-2xl bg-white p-6 shadow-sm'>
               <Typography
-                variant='body2'
-                className='mb-3 font-medium text-gray-700'
+                variant='h6'
+                className='mb-4 font-semibold text-gray-900'
               >
                 예산 현황
               </Typography>
-              <div className='rounded-xl bg-gradient-to-r from-green-50 to-blue-50 p-4'>
+              <button
+                onClick={onBudgetClick}
+                className='w-full cursor-pointer rounded-xl bg-gradient-to-r from-green-50 to-blue-50 p-4 transition-all duration-200 hover:from-green-100 hover:to-blue-100'
+                disabled={!onBudgetClick}
+              >
                 <div className='mb-3 flex items-center justify-between'>
                   <Typography variant='h5' className='font-bold text-gray-900'>
                     {formatCurrency(totalBudget, currency as any)}
@@ -415,21 +467,36 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
                   >
                     {Math.round((totalBudget / 2000000) * 100)}% 사용
                   </Typography>
-                  <Typography variant='body2' className='text-gray-600'>
-                    목표: {formatCurrency(2000000, currency as any)}
-                  </Typography>
+                  <div className='flex items-center gap-2'>
+                    <Typography variant='body2' className='text-gray-600'>
+                      목표: {formatCurrency(2000000, currency as any)}
+                    </Typography>
+                    {onBudgetClick && (
+                      <span className='text-xs text-blue-500'>상세보기 →</span>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </button>
             </div>
 
-            {/* 의견 조율이 필요한 항목 */}
+            {/* 공동 할 일 */}
+            <SharedTodoWidget
+              todos={todos}
+              participants={participants}
+              onAddTodo={onAddTodo}
+              onToggleTodo={onToggleTodo}
+              onAssignTodo={onAssignTodo}
+              onDeleteTodo={onDeleteTodo}
+            />
+
+            {/* 토론 중인 항목 */}
             {hotTopics.length > 0 && (
-              <div>
-                <div className='mb-3 flex items-center space-x-2'>
+              <div className='rounded-2xl bg-white p-6 shadow-sm'>
+                <div className='mb-4 flex items-center space-x-2'>
                   <IoChatbubbleOutline className='h-5 w-5 text-orange-500' />
                   <Typography
-                    variant='body2'
-                    className='font-medium text-gray-700'
+                    variant='h6'
+                    className='font-semibold text-gray-900'
                   >
                     토론 중인 항목
                   </Typography>
