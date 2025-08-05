@@ -156,39 +156,59 @@ export const useRecentActivities = (limit: number = 10) => {
 
         const planIds = participantData.map((p) => p.plan_id);
 
-        // travel_activities 테이블에서 활동 데이터 가져오기
-        const { data, error } = await supabase
+        // travel_activities 테이블에서 활동 데이터 가져오기 (관계 없이)
+        const { data: activities, error: activitiesError } = await supabase
           .from('travel_activities')
-          .select(
-            `
-            *,
-            user_profiles(nickname, email),
-            travel_plans(title)
-          `
-          )
-          .in('travel_plan_id', planIds)
+          .select('*')
+          .in('plan_id', planIds)
           .order('created_at', { ascending: false })
           .limit(limit);
 
-        if (error) {
+        if (activitiesError) {
+          console.error('Recent activities 조회 오류:', activitiesError);
           return [];
         }
 
-        return (
-          (data?.map((activity: Record<string, unknown>) => ({
-            id: activity.id,
-            travel_plan_id: activity.travel_plan_id,
-            user_id: activity.user_id,
-            action_type: activity.action_type,
-            description: activity.description,
-            metadata: activity.metadata,
-            created_at: activity.created_at,
-            updated_at: activity.updated_at,
-            user: activity.user_profiles,
-            travel_plan: activity.travel_plans,
-          })) as Activity[]) || []
+        if (!activities || activities.length === 0) return [];
+
+        // 각 활동에 대해 사용자 프로필과 여행 계획 정보를 별도로 가져오기
+        const activitiesWithDetails = await Promise.all(
+          activities.map(async (activity) => {
+            // 사용자 프로필 정보 가져오기
+            const { data: userProfile } = await supabase
+              .from('user_profiles')
+              .select('nickname, email')
+              .eq('id', activity.user_id)
+              .single();
+
+            // 여행 계획 정보 가져오기
+            const { data: travelPlan } = await supabase
+              .from('travel_plans')
+              .select('title')
+              .eq('id', activity.plan_id)
+              .single();
+
+            return {
+              id: activity.id,
+              travel_plan_id: activity.plan_id, // plan_id를 travel_plan_id로 매핑
+              user_id: activity.user_id,
+              action_type: activity.type, // type을 action_type으로 매핑
+              description: activity.content, // content를 description으로 매핑
+              metadata: null, // metadata 컬럼이 없으므로 null
+              created_at: activity.created_at,
+              updated_at: activity.created_at, // updated_at 컬럼이 없으므로 created_at 사용
+              user: userProfile || {
+                nickname: '사용자',
+                email: 'unknown@example.com',
+              },
+              travel_plan: travelPlan || { title: '알 수 없는 여행' },
+            };
+          })
         );
+
+        return activitiesWithDetails;
       } catch (err) {
+        console.error('Recent activities 조회 중 예외 발생:', err);
         return []; // 에러 발생 시 빈 배열 반환
       }
     },
