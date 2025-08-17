@@ -1,31 +1,30 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
-  IoAirplaneOutline,
-  IoBedOutline,
-  IoBookmarkOutline,
-  IoCarOutline,
-  IoCopyOutline,
-  IoDocumentTextOutline,
   IoEllipsisVerticalOutline,
-  IoFlagOutline,
-  IoGameControllerOutline,
   IoLocationOutline,
-  IoPencilOutline,
-  IoRestaurantOutline,
-  IoShareOutline,
   IoSwapVerticalOutline,
   IoTimeOutline,
-  IoTrashOutline,
   IoWalletOutline,
 } from 'react-icons/io5';
 
 import { Typography } from '@ui/components';
 
 import { formatCurrency } from '@/lib/currency';
-import { BlockType, TravelBlock } from '@/types/travel/blocks';
+import { TravelBlock } from '@/types/travel/blocks';
+
+import ActivityCard from './activity/ActivityCard';
+import BoardingPassCard from './flight/BoardingPassCard';
+import FoodCard from './food/FoodCard';
+import MemoCard from './memo/MemoCard';
+import TransitCard from './move/TransitCard';
+import {
+  getBlockColor,
+  getBlockIcon,
+  getBlockLabel,
+} from './utils/BlockPresentation';
 
 interface TravelBlockItemProps {
   block: TravelBlock;
@@ -38,45 +37,6 @@ interface TravelBlockItemProps {
   onBookmark?: (block: TravelBlock) => void;
   onReport?: (block: TravelBlock) => void;
 }
-
-// 블록 타입별 아이콘 매핑 함수
-const getBlockIcon = (blockType: BlockType) => {
-  const iconMap = {
-    flight: <IoAirplaneOutline className='h-5 w-5' />,
-    move: <IoCarOutline className='h-5 w-5' />,
-    food: <IoRestaurantOutline className='h-5 w-5' />,
-    hotel: <IoBedOutline className='h-5 w-5' />,
-    activity: <IoGameControllerOutline className='h-5 w-5' />,
-    memo: <IoDocumentTextOutline className='h-5 w-5' />,
-  };
-  return iconMap[blockType] || <IoDocumentTextOutline className='h-5 w-5' />;
-};
-
-// 블록 타입별 색상 매핑 함수
-const getBlockColor = (blockType: BlockType) => {
-  const colorMap = {
-    flight: 'text-sky-500 bg-sky-50 border-sky-200',
-    move: 'text-blue-500 bg-blue-50 border-blue-200',
-    food: 'text-orange-500 bg-orange-50 border-orange-200',
-    hotel: 'text-purple-500 bg-purple-50 border-purple-200',
-    activity: 'text-green-500 bg-green-50 border-green-200',
-    memo: 'text-gray-500 bg-gray-50 border-gray-200',
-  };
-  return colorMap[blockType] || 'text-gray-500 bg-gray-50 border-gray-200';
-};
-
-// 블록 타입별 라벨 매핑 함수
-const getBlockLabel = (blockType: BlockType) => {
-  const labelMap = {
-    flight: '항공',
-    move: '이동',
-    food: '식사',
-    hotel: '숙소',
-    activity: '액티비티',
-    memo: '메모',
-  };
-  return labelMap[blockType] || '기타';
-};
 
 export const TravelBlockItem: React.FC<TravelBlockItemProps> = ({
   block,
@@ -148,7 +108,7 @@ export const TravelBlockItem: React.FC<TravelBlockItemProps> = ({
             <div
               className={`rounded-lg border p-2 ${getBlockColor(block.blockType)}`}
             >
-              {getBlockIcon(block.blockType)}
+              {getBlockIcon(block.blockType, 'sm')}
             </div>
             <div>
               <Typography
@@ -188,6 +148,82 @@ export const TravelBlockItem: React.FC<TravelBlockItemProps> = ({
           </Typography>
         )}
 
+        {/* 타입별 프리젠테이션 */}
+        {block.blockType === 'flight' && (
+          <div className='mb-3'>
+            <BoardingPassCard
+              data={{
+                title: block.title,
+                flightNumber: block.meta?.flightNumber,
+                departureAirport: block.meta?.departureAirport,
+                arrivalAirport: block.meta?.arrivalAirport,
+                seatNumber: block.meta?.seatNumber,
+                startTime: block.timeRange?.startTime,
+                endTime: block.timeRange?.endTime,
+              }}
+              compact
+            />
+          </div>
+        )}
+
+        {/* 타입별 프리젠테이션 */}
+        {block.blockType === 'move' && (
+          <div className='mb-3'>
+            <TransitCard
+              data={{
+                title: block.title,
+                transportType: block.meta?.transportType,
+                fromAddress: block.meta?.fromLocation?.address,
+                toAddress: block.meta?.toLocation?.address,
+                startTime: block.timeRange?.startTime,
+                endTime: block.timeRange?.endTime,
+              }}
+              compact
+            />
+          </div>
+        )}
+        {block.blockType === 'food' && (
+          <div className='mb-3'>
+            <FoodCard
+              data={{
+                title: block.title,
+                mealType: block.meta?.mealType,
+                cuisine: block.meta?.cuisine,
+                address: block.location?.address,
+                startTime: block.timeRange?.startTime,
+                endTime: block.timeRange?.endTime,
+              }}
+              compact
+            />
+          </div>
+        )}
+        {block.blockType === 'activity' && (
+          <div className='mb-3'>
+            <ActivityCard
+              data={{
+                title: block.title,
+                activityType: block.meta?.activityType,
+                reservationRequired: block.meta?.reservationRequired,
+                address: block.location?.address,
+                startTime: block.timeRange?.startTime,
+                endTime: block.timeRange?.endTime,
+              }}
+              compact
+            />
+          </div>
+        )}
+        {block.blockType === 'memo' && (
+          <div className='mb-3'>
+            <MemoCard
+              data={{
+                title: block.title,
+                description: block.description,
+              }}
+              compact
+            />
+          </div>
+        )}
+
         {/* 메타데이터 영역 */}
         <div className='space-y-2'>
           {/* 시간 정보 */}
@@ -210,7 +246,7 @@ export const TravelBlockItem: React.FC<TravelBlockItemProps> = ({
           )}
 
           {/* 비용 정보 */}
-          {block.cost?.amount && (
+          {block.cost && block.cost.amount !== undefined && (
             <div className='flex items-center space-x-2 text-sm'>
               <IoWalletOutline className='h-4 w-4 text-gray-400' />
               <span className='font-semibold text-gray-700'>
@@ -219,36 +255,7 @@ export const TravelBlockItem: React.FC<TravelBlockItemProps> = ({
             </div>
           )}
         </div>
-
-        {/* 블록 타입별 추가 정보 */}
-        {block.meta && (
-          <div className='mt-3 border-t border-gray-100 pt-3'>
-            {block.meta.transportType && (
-              <div className='flex items-center space-x-2 text-xs text-gray-500'>
-                <span className='font-medium'>교통수단:</span>
-                <span>{block.meta.transportType}</span>
-              </div>
-            )}
-            {block.meta.mealType && (
-              <div className='flex items-center space-x-2 text-xs text-gray-500'>
-                <span className='font-medium'>식사:</span>
-                <span>{block.meta.mealType}</span>
-              </div>
-            )}
-            {block.meta.activityType && (
-              <div className='flex items-center space-x-2 text-xs text-gray-500'>
-                <span className='font-medium'>종류:</span>
-                <span>{block.meta.activityType}</span>
-              </div>
-            )}
-            {block.meta.roomType && (
-              <div className='flex items-center space-x-2 text-xs text-gray-500'>
-                <span className='font-medium'>객실:</span>
-                <span>{block.meta.roomType}</span>
-              </div>
-            )}
-          </div>
-        )}
+        <div className='mt-3 border-t border-gray-100 pt-3' />
       </div>
     </div>
   );

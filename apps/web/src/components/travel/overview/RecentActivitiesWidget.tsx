@@ -101,14 +101,11 @@ const RecentActivitiesWidget: React.FC = () => {
               onClick={() => handleActivityClick(activity)}
               className='flex cursor-pointer items-start space-x-3 rounded-lg p-3 transition-colors hover:bg-gray-50'
             >
-              {/* 액션 아이콘 */}
               <div
                 className={`flex h-8 w-8 items-center justify-center rounded-full ${getActivityColor(activity.action_type)}`}
               >
                 {getActivityIcon(activity.action_type)}
               </div>
-
-              {/* 활동 내용 */}
               <div className='min-w-0 flex-1'>
                 <Typography variant='body2' className='mb-1 text-gray-900'>
                   <span className='font-medium'>
@@ -133,7 +130,6 @@ const RecentActivitiesWidget: React.FC = () => {
         </div>
       )}
 
-      {/* 더보기 링크 */}
       {activities.length > 0 && (
         <div className='mt-4 border-t border-gray-100 pt-4'>
           <button

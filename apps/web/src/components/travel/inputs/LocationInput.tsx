@@ -7,7 +7,7 @@ import { IoCloseOutline, IoLocationOutline } from 'react-icons/io5';
 import { Typography } from '@ui/components';
 import { cn } from '@ui/utils/cn';
 
-import { countriesISO } from './constant';
+import { countriesISO } from '../constants';
 
 interface LocationSuggestion {
   place_id: string;
@@ -46,45 +46,29 @@ const LocationInput: React.FC<LocationInputProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 국가 데이터를 기반으로 검색 제안 생성
   const fetchPlaceSuggestions = async (input: string) => {
     if (input.length < 1) {
       setSuggestions([]);
       return;
     }
-
     setLoading(true);
-
     try {
-      // 실제 검색 로직 시뮬레이션을 위한 짧은 지연
       await new Promise((resolve) => setTimeout(resolve, 150));
-
       const searchTerm = input.toLowerCase().trim();
-
-      // 유연한 검색 로직
       const filteredCountries = countriesISO.filter((country) => {
         const nameKoLower = country.nameKo.toLowerCase();
         const nameEnLower = country.nameEn.toLowerCase();
-
-        // 1. 한국어 이름에서 검색
         if (nameKoLower.includes(searchTerm)) return true;
-
-        // 2. 영어 이름에서 검색
         if (nameEnLower.includes(searchTerm)) return true;
-
-        // 3. 개별 단어로 분리해서 검색 (공백, 쉼표 기준)
         const searchWords = searchTerm
           .split(/[\s,]+/)
           .filter((word) => word.length > 0);
-
         return searchWords.every(
           (word) => nameKoLower.includes(word) || nameEnLower.includes(word)
         );
       });
-
-      // LocationSuggestion 형태로 변환
       const suggestions: LocationSuggestion[] = filteredCountries
-        .slice(0, 8) // 최대 8개까지만 표시
+        .slice(0, 8)
         .map((country) => ({
           place_id: country.code,
           description: country.nameKo,
@@ -92,7 +76,6 @@ const LocationInput: React.FC<LocationInputProps> = ({
           secondary_text: country.nameEn,
           flag: country.flag,
         }));
-
       setSuggestions(suggestions);
       setShowSuggestions(true);
     } catch (error) {
@@ -103,22 +86,18 @@ const LocationInput: React.FC<LocationInputProps> = ({
     }
   };
 
-  // 디바운스된 검색
   const debouncedSearch = (input: string) => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
-
     debounceRef.current = setTimeout(() => {
       fetchPlaceSuggestions(input);
-    }, 200); // 200ms 디바운스
+    }, 200);
   };
 
-  // 입력값 변경 처리
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setInputValue(newValue);
-
     if (newValue.trim()) {
       debouncedSearch(newValue);
     } else {
@@ -127,7 +106,6 @@ const LocationInput: React.FC<LocationInputProps> = ({
     }
   };
 
-  // 제안 항목 선택
   const handleSuggestionSelect = (suggestion: LocationSuggestion) => {
     setInputValue(suggestion.description);
     onChange(suggestion.description);
@@ -135,7 +113,6 @@ const LocationInput: React.FC<LocationInputProps> = ({
     setSuggestions([]);
   };
 
-  // 외부 클릭 감지
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -145,19 +122,16 @@ const LocationInput: React.FC<LocationInputProps> = ({
         setShowSuggestions(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
-  // value prop 변경 시 inputValue 동기화
   useEffect(() => {
     setInputValue(value);
   }, [value]);
 
-  // 컴포넌트 언마운트 시 디바운스 타이머 정리
   useEffect(() => {
     return () => {
       if (debounceRef.current) {
@@ -173,7 +147,6 @@ const LocationInput: React.FC<LocationInputProps> = ({
     setSuggestions([]);
   };
 
-  // 폼 제출 시 onChange 호출
   const handleBlur = () => {
     onChange(inputValue);
   };
@@ -188,12 +161,9 @@ const LocationInput: React.FC<LocationInputProps> = ({
           {label}
         </label>
       )}
-
       <div className='relative'>
-        {/* 입력 필드 */}
         <div className='relative'>
           <IoLocationOutline className='absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400' />
-
           <input
             type='text'
             value={inputValue}
@@ -209,7 +179,6 @@ const LocationInput: React.FC<LocationInputProps> = ({
               disabled ? 'cursor-not-allowed bg-gray-50 opacity-50' : ''
             )}
           />
-
           {hasValue && !disabled && (
             <button
               type='button'
@@ -221,8 +190,6 @@ const LocationInput: React.FC<LocationInputProps> = ({
             </button>
           )}
         </div>
-
-        {/* 자동완성 제안 목록 */}
         {showSuggestions &&
           (suggestions.length > 0 || loading) &&
           !disabled && (
@@ -257,8 +224,6 @@ const LocationInput: React.FC<LocationInputProps> = ({
               )}
             </div>
           )}
-
-        {/* 제안이 없을 때 직접 입력 안내 */}
         {showSuggestions &&
           suggestions.length === 0 &&
           !loading &&
@@ -275,8 +240,6 @@ const LocationInput: React.FC<LocationInputProps> = ({
             </div>
           )}
       </div>
-
-      {/* 도움말 텍스트 또는 에러 메시지 */}
       {helperText && !errorText && (
         <p className='mt-1.5 text-xs text-gray-500'>{helperText}</p>
       )}

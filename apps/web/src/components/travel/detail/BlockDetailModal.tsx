@@ -2,14 +2,8 @@ import React from 'react';
 
 import { createPortal } from 'react-dom';
 import {
-  IoAirplaneOutline,
-  IoBedOutline,
-  IoCarOutline,
   IoCloseOutline,
-  IoDocumentTextOutline,
-  IoGameControllerOutline,
   IoLocationOutline,
-  IoRestaurantOutline,
   IoTimeOutline,
   IoWalletOutline,
 } from 'react-icons/io5';
@@ -17,7 +11,18 @@ import {
 import { Button, Typography } from '@ui/components';
 
 import { formatCurrency } from '@/lib/currency';
-import { BlockType, TravelBlock } from '@/types/travel/blocks';
+import { TravelBlock } from '@/types/travel/blocks';
+
+import ActivityCard from './activity/ActivityCard';
+import BoardingPassCard from './flight/BoardingPassCard';
+import FoodCard from './food/FoodCard';
+import MemoCard from './memo/MemoCard';
+import TransitCard from './move/TransitCard';
+import {
+  getBlockColor,
+  getBlockIcon,
+  getBlockLabel,
+} from './utils/BlockPresentation';
 
 interface BlockDetailModalProps {
   isOpen: boolean;
@@ -28,44 +33,7 @@ interface BlockDetailModalProps {
   canEdit?: boolean;
 }
 
-// 블록 타입별 아이콘 매핑 함수
-const getBlockIcon = (blockType: BlockType) => {
-  const iconMap = {
-    flight: <IoAirplaneOutline className='h-6 w-6' />,
-    move: <IoCarOutline className='h-6 w-6' />,
-    food: <IoRestaurantOutline className='h-6 w-6' />,
-    hotel: <IoBedOutline className='h-6 w-6' />,
-    activity: <IoGameControllerOutline className='h-6 w-6' />,
-    memo: <IoDocumentTextOutline className='h-6 w-6' />,
-  };
-  return iconMap[blockType] || <IoDocumentTextOutline className='h-6 w-6' />;
-};
-
-// 블록 타입별 색상 매핑 함수
-const getBlockColor = (blockType: BlockType) => {
-  const colorMap = {
-    flight: 'text-sky-500 bg-sky-50 border-sky-200',
-    move: 'text-blue-500 bg-blue-50 border-blue-200',
-    food: 'text-orange-500 bg-orange-50 border-orange-200',
-    hotel: 'text-purple-500 bg-purple-50 border-purple-200',
-    activity: 'text-green-500 bg-green-50 border-green-200',
-    memo: 'text-gray-500 bg-gray-50 border-gray-200',
-  };
-  return colorMap[blockType] || 'text-gray-500 bg-gray-50 border-gray-200';
-};
-
-// 블록 타입별 라벨 매핑 함수
-const getBlockLabel = (blockType: BlockType) => {
-  const labelMap = {
-    flight: '항공',
-    move: '이동',
-    food: '식사',
-    hotel: '숙소',
-    activity: '액티비티',
-    memo: '메모',
-  };
-  return labelMap[blockType] || '기타';
-};
+// 프리젠테이션 유틸은 import로 대체
 
 export const BlockDetailModal: React.FC<BlockDetailModalProps> = ({
   isOpen,
@@ -121,6 +89,64 @@ export const BlockDetailModal: React.FC<BlockDetailModalProps> = ({
 
         {/* 컨텐츠 */}
         <div className='space-y-6 p-6'>
+          {block.blockType === 'flight' && (
+            <BoardingPassCard
+              data={{
+                title: block.title,
+                flightNumber: block.meta?.flightNumber,
+                departureAirport: block.meta?.departureAirport,
+                arrivalAirport: block.meta?.arrivalAirport,
+                seatNumber: block.meta?.seatNumber,
+                startTime: block.timeRange?.startTime,
+                endTime: block.timeRange?.endTime,
+              }}
+            />
+          )}
+          {block.blockType === 'move' && (
+            <TransitCard
+              data={{
+                title: block.title,
+                transportType: block.meta?.transportType,
+                fromAddress: block.meta?.fromLocation?.address,
+                toAddress: block.meta?.toLocation?.address,
+                startTime: block.timeRange?.startTime,
+                endTime: block.timeRange?.endTime,
+              }}
+            />
+          )}
+          {block.blockType === 'food' && (
+            <FoodCard
+              data={{
+                title: block.title,
+                mealType: block.meta?.mealType,
+                cuisine: block.meta?.cuisine,
+                address: block.location?.address,
+                startTime: block.timeRange?.startTime,
+                endTime: block.timeRange?.endTime,
+              }}
+            />
+          )}
+          {block.blockType === 'activity' && (
+            <ActivityCard
+              data={{
+                title: block.title,
+                activityType: block.meta?.activityType,
+                reservationRequired: block.meta?.reservationRequired,
+                address: block.location?.address,
+                startTime: block.timeRange?.startTime,
+                endTime: block.timeRange?.endTime,
+              }}
+            />
+          )}
+          {block.blockType === 'memo' && (
+            <MemoCard
+              data={{
+                title: block.title,
+                description: block.description,
+                tags: block.meta?.tags,
+              }}
+            />
+          )}
           {/* 설명 */}
           {block.description && (
             <div>
@@ -179,7 +205,7 @@ export const BlockDetailModal: React.FC<BlockDetailModalProps> = ({
             )}
 
             {/* 비용 정보 */}
-            {block.cost?.amount && (
+            {block.cost && block.cost.amount !== undefined && (
               <div className='flex items-center space-x-3 rounded-xl bg-gray-50 p-4'>
                 <IoWalletOutline className='h-5 w-5 text-gray-400' />
                 <div>

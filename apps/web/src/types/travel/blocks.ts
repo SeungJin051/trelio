@@ -46,6 +46,12 @@ export interface Cost {
 
 // 블록별 메타데이터 인터페이스 (타입별 추가 정보)
 export interface BlockMeta {
+  // 항공 블록 전용 메타데이터
+  flightNumber?: string; // 항공편명 (예: KE123)
+  departureAirport?: string; // 출발 공항명/코드
+  arrivalAirport?: string; // 도착 공항명/코드
+  seatNumber?: string; // 좌석 번호 (예: 12A)
+
   // 이동 블록 전용 메타데이터
   transportType?: // 교통수단 종류
   | 'walk' // 도보

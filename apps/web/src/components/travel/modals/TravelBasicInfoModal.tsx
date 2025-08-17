@@ -10,12 +10,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { Button, Input, Switch, Typography } from '@ui/components';
 
 import { Modal } from '@/components/basic';
+import LocationInput from '@/components/travel/inputs/LocationInput';
+import TravelDatePicker from '@/components/travel/inputs/TravelDatePicker';
 import { useSession } from '@/hooks/useSession';
 import { useToast } from '@/hooks/useToast';
 import { createClient } from '@/lib/supabase/client/supabase';
-
-import LocationInput from './LocationInput';
-import TravelDatePicker from './TravelDatePicker';
 
 interface TravelBasicInfo {
   title: string;
@@ -45,7 +44,7 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
     location: '',
     startDate: null,
     endDate: null,
-    allowEdit: true, // 기본값: 편집 가능
+    allowEdit: true,
   });
 
   const [errors, setErrors] = useState<{
@@ -54,32 +53,25 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
     dates?: string;
   }>({});
 
-  // 유효성 검사
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {};
-
     if (!basicInfo.title.trim()) {
       newErrors.title = '여행 제목을 입력해주세요.';
     } else if (basicInfo.title.trim().length > 50) {
       newErrors.title = '여행 제목은 50자 이내로 입력해주세요.';
     }
-
     if (!basicInfo.location.trim()) {
       newErrors.location = '나라 및 지역을 입력해주세요.';
     }
-
     if (!basicInfo.startDate || !basicInfo.endDate) {
       newErrors.dates = '여행 시작일과 종료일을 선택해주세요.';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // 중복 제목 체크
   const checkDuplicateTitle = async (title: string): Promise<boolean> => {
     if (!session?.user) return false;
-
     try {
       const { data, error } = await supabase
         .from('travel_plans')
@@ -87,36 +79,28 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
         .eq('owner_id', session.user.id)
         .eq('title', title.trim())
         .single();
-
       if (error && error.code !== 'PGRST116') {
-        // PGRST116: 데이터가 없음 (중복 없음)
         console.error('Title duplication check failed:', error);
         return false;
       }
-
-      return !!data; // 데이터가 있으면 중복
+      return !!data;
     } catch (error) {
       console.error('Title duplication check error:', error);
       return false;
     }
   };
 
-  // 여행 계획 생성
   const handleCreateTrip = async () => {
     if (!session?.user) {
       toast.error('로그인이 필요합니다.');
       return;
     }
-
     if (!validateForm()) {
       toast.error('입력 정보를 확인해주세요.');
       return;
     }
-
     setLoading(true);
-
     try {
-      // 중복 제목 체크
       const isDuplicate = await checkDuplicateTitle(basicInfo.title);
       if (isDuplicate) {
         setErrors({ title: '이미 같은 제목의 여행이 있습니다.' });
@@ -124,11 +108,7 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
         setLoading(false);
         return;
       }
-
-      // 공유 링크 ID 생성
       const shareLinkId = uuidv4();
-
-      // 여행 계획 생성
       const { data: travelPlan, error: planError } = await supabase
         .from('travel_plans')
         .insert({
@@ -144,14 +124,11 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
         })
         .select()
         .single();
-
       if (planError) {
         console.error('Travel plan creation failed:', planError);
         toast.error('여행 계획 생성에 실패했습니다.');
         return;
       }
-
-      // 참여자 레코드 생성 (오너)
       const { error: participantError } = await supabase
         .from('travel_plan_participants')
         .insert({
@@ -160,18 +137,11 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
           role: 'owner',
           joined_at: new Date().toISOString(),
         });
-
       if (participantError) {
         console.error('Participant creation failed:', participantError);
-        // 여행 계획은 생성되었으므로 에러 로그만 남기고 계속 진행
       }
-
       toast.success('여행 계획이 생성되었습니다!');
-
-      // 모달 닫기
       onClose();
-
-      // 메인 페이지로 이동
       router.push('/');
     } catch (error) {
       toast.error('여행 계획 생성 중 오류가 발생했습니다.');
@@ -180,13 +150,9 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
     }
   };
 
-  // 공유 링크 복사
   const handleCopyShareLink = () => {
     if (!userProfile) return;
-
-    // 임시 공유 링크 (실제로는 여행 계획 생성 후 제공)
     const shareLink = `${window.location.origin}/travel/join/temp-link`;
-
     navigator.clipboard
       .writeText(shareLink)
       .then(() => {
@@ -214,9 +180,7 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
         <Typography variant='body2' className='mb-8 text-center text-gray-500'>
           새로운 여행의 기본적인 정보를 입력해주세요.
         </Typography>
-
         <div className='space-y-6'>
-          {/* 여행 기본 정보 섹션 */}
           <div>
             <Typography
               variant='h6'
@@ -225,53 +189,45 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
             >
               여행 기본 정보
             </Typography>
-
             <div className='space-y-4'>
-              {/* 여행 제목 */}
               <Input
                 label='여행 제목'
                 placeholder='예: 제주도 힐링 여행, 유럽 배낭여행'
                 value={basicInfo.title}
                 onChange={(e) => {
                   setBasicInfo((prev) => ({ ...prev, title: e.target.value }));
-                  if (errors.title) {
+                  if (errors.title)
                     setErrors((prev) => ({ ...prev, title: undefined }));
-                  }
                 }}
                 errorText={errors.title}
                 maxLength={50}
               />
-
-              {/* 나라 및 지역 */}
               <LocationInput
                 label='나라 및 지역'
                 value={basicInfo.location}
                 onChange={(value) => {
                   setBasicInfo((prev) => ({ ...prev, location: value }));
-                  if (errors.location) {
+                  if (errors.location)
                     setErrors((prev) => ({ ...prev, location: undefined }));
-                  }
                 }}
                 errorText={errors.location}
               />
-
-              {/* 여행 날짜 */}
               <TravelDatePicker
                 label='여행 기간'
                 startDate={basicInfo.startDate}
                 endDate={basicInfo.endDate}
-                onDateChange={(startDate, endDate) => {
+                onDateChange={(
+                  startDate: Date | null,
+                  endDate: Date | null
+                ) => {
                   setBasicInfo((prev) => ({ ...prev, startDate, endDate }));
-                  if (errors.dates) {
+                  if (errors.dates)
                     setErrors((prev) => ({ ...prev, dates: undefined }));
-                  }
                 }}
                 errorText={errors.dates}
               />
             </div>
           </div>
-
-          {/* 참여자 설정 섹션 */}
           <div>
             <Typography
               variant='h6'
@@ -280,9 +236,7 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
             >
               참여자 설정
             </Typography>
-
             <div className='space-y-4'>
-              {/* 만드는 사람 (오너) */}
               <div className='rounded-lg border border-gray-200 p-4'>
                 <div className='flex items-center'>
                   <IoPersonOutline className='mr-3 h-5 w-5 text-gray-400' />
@@ -300,8 +254,6 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
                   </div>
                 </div>
               </div>
-
-              {/* 초대된 사용자 기본 권한 */}
               <div>
                 <div className='flex items-center justify-between'>
                   <div>
@@ -329,8 +281,6 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
             </div>
           </div>
         </div>
-
-        {/* 하단 버튼 */}
         <div className='mt-8 flex space-x-3'>
           <Button
             variant='outlined'

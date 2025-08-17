@@ -1,15 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
 import {
   IoAddOutline,
   IoCalendarOutline,
   IoChatbubbleOutline,
   IoCheckmarkCircleOutline,
   IoDownloadOutline,
-  IoLocationOutline,
-  IoPeopleOutline,
   IoSettingsOutline,
   IoTimeOutline,
   IoWalletOutline,

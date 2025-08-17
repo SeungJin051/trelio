@@ -4,8 +4,8 @@ import React from 'react';
 
 import { Typography } from '@ui/components';
 
-import RecentActivitiesWidget from '@/components/travel/RecentActivitiesWidget';
-import TravelPlansList from '@/components/travel/TravelPlansList';
+import RecentActivitiesWidget from '@/components/travel/overview/RecentActivitiesWidget';
+import TravelPlansList from '@/components/travel/overview/TravelPlansList';
 
 const AfterLoginHomeView = () => {
   return (

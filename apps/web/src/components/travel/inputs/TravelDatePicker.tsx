@@ -10,7 +10,6 @@ import { IoCalendarOutline } from 'react-icons/io5';
 import { Typography } from '@ui/components';
 import { cn } from '@ui/utils/cn';
 
-// 한국어 로케일 등록
 registerLocale('ko', ko);
 
 interface TravelDatePickerProps {
@@ -40,7 +39,6 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
   );
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // 날짜 계산 함수
   const calculateDays = (start: Date | null, end: Date | null): number => {
     if (!start || !end) return 0;
     const diffTime = Math.abs(end.getTime() - start.getTime());
@@ -48,7 +46,6 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
     return diffDays;
   };
 
-  // 날짜 포맷팅 함수
   const formatDate = (date: Date | null): string => {
     if (!date) return '';
     return date.toLocaleDateString('ko-KR', {
@@ -58,7 +55,6 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
     });
   };
 
-  // 외부 클릭 감지
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -69,7 +65,6 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
         setFocusedInput(null);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
@@ -78,18 +73,14 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
 
   const handleDateSelect = (date: Date | null, type: 'start' | 'end') => {
     if (type === 'start') {
-      // 시작일 선택
       if (endDate && date && date > endDate) {
-        // 시작일이 종료일보다 늦으면 종료일을 시작일과 같게 설정 (당일치기)
         onDateChange(date, date);
       } else {
         onDateChange(date, endDate);
       }
       setFocusedInput('end');
     } else {
-      // 종료일 선택
       if (startDate && date && date < startDate) {
-        // 종료일이 시작일보다 빠르면 시작일을 종료일과 같게 설정
         onDateChange(date, date);
       } else {
         onDateChange(startDate, date);
@@ -109,9 +100,7 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
           {label}
         </label>
       )}
-
       <div className='relative'>
-        {/* 입력 필드 */}
         <div
           className={cn(
             'flex w-full cursor-pointer items-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-base shadow-sm transition-all duration-200',
@@ -128,7 +117,6 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
           }}
         >
           <IoCalendarOutline className='mr-3 h-5 w-5 text-gray-400' />
-
           <div className='flex-1'>
             {startDate && endDate ? (
               <div className='flex items-center space-x-1'>
@@ -148,8 +136,6 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
             )}
           </div>
         </div>
-
-        {/* 캘린더 */}
         {showCalendar && !disabled && (
           <div className='absolute left-0 top-full z-50 mt-2 rounded-lg border border-gray-200 bg-white p-4 shadow-lg'>
             <div className='mb-4'>
@@ -162,22 +148,20 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
                   : '종료일을 선택해주세요'}
               </Typography>
             </div>
-
             <DatePicker
               selected={focusedInput === 'start' ? startDate : endDate}
               onChange={(date: Date | null) =>
                 handleDateSelect(date, focusedInput!)
               }
-              minDate={new Date()} // 오늘 이후만 선택 가능
+              minDate={new Date()}
               startDate={startDate}
               endDate={endDate}
               selectsStart={focusedInput === 'start'}
               selectsEnd={focusedInput === 'end'}
               inline
-              calendarClassName='custom-calendar-toss' // Custom class for further styling
+              calendarClassName='custom-calendar-toss'
               locale='ko'
             />
-
             {startDate && endDate && (
               <div className='mt-4 rounded-md bg-gray-50 px-3 py-2 text-center'>
                 <Typography
@@ -192,8 +176,6 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
           </div>
         )}
       </div>
-
-      {/* 도움말 텍스트 또는 에러 메시지 */}
       {helperText && !errorText && (
         <p className='mt-1.5 text-xs text-gray-500'>{helperText}</p>
       )}
