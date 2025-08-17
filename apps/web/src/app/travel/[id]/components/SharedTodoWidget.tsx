@@ -90,7 +90,6 @@ export const SharedTodoWidget: React.FC<SharedTodoWidgetProps> = ({
               placeholder='새로운 할 일을 입력하세요...'
               className='w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-200'
             />
-            <IoAddOutline className='absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400' />
           </div>
           <Button
             onClick={handleAddTodo}
