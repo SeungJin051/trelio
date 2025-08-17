@@ -1,3 +1,10 @@
+/*
+  BlockCreateModal.tsx
+  - 새 일정(블록) 생성 모달 컴포넌트
+  - 공통 필드(제목/설명/위치/시간/비용) + 타입별 필드(항공/이동/숙소/식사/액티비티)를 렌더링
+  - 제출 시 CreateBlockRequest를 구성하여 상위(onCreateBlock)로 전달
+  - SSR 환경에서도 안전하게 동작하도록 createPortal 사용
+*/
 import React, { useEffect, useState } from 'react';
 
 import { createPortal } from 'react-dom';
