@@ -15,10 +15,7 @@ import { Typography } from '@ui/components';
 import { formatCurrency } from '@/lib/currency';
 import { TravelBlock } from '@/types/travel/blocks';
 
-import ActivityCard from './activity/ActivityCard';
 import BoardingPassCard from './flight/BoardingPassCard';
-import FoodCard from './food/FoodCard';
-import MemoCard from './memo/MemoCard';
 import TransitCard from './move/TransitCard';
 import {
   getBlockColor,
@@ -182,47 +179,7 @@ export const TravelBlockItem: React.FC<TravelBlockItemProps> = ({
             />
           </div>
         )}
-        {block.blockType === 'food' && (
-          <div className='mb-3'>
-            <FoodCard
-              data={{
-                title: block.title,
-                mealType: block.meta?.mealType,
-                cuisine: block.meta?.cuisine,
-                address: block.location?.address,
-                startTime: block.timeRange?.startTime,
-                endTime: block.timeRange?.endTime,
-              }}
-              compact
-            />
-          </div>
-        )}
-        {block.blockType === 'activity' && (
-          <div className='mb-3'>
-            <ActivityCard
-              data={{
-                title: block.title,
-                activityType: block.meta?.activityType,
-                reservationRequired: block.meta?.reservationRequired,
-                address: block.location?.address,
-                startTime: block.timeRange?.startTime,
-                endTime: block.timeRange?.endTime,
-              }}
-              compact
-            />
-          </div>
-        )}
-        {block.blockType === 'memo' && (
-          <div className='mb-3'>
-            <MemoCard
-              data={{
-                title: block.title,
-                description: block.description,
-              }}
-              compact
-            />
-          </div>
-        )}
+        {/* food, activity 타입 카드 중첩 노출 제거 */}
 
         {/* 메타데이터 영역 */}
         <div className='space-y-2'>

@@ -13,10 +13,7 @@ import { Button, Typography } from '@ui/components';
 import { formatCurrency } from '@/lib/currency';
 import { TravelBlock } from '@/types/travel/blocks';
 
-import ActivityCard from './activity/ActivityCard';
 import BoardingPassCard from './flight/BoardingPassCard';
-import FoodCard from './food/FoodCard';
-import MemoCard from './memo/MemoCard';
 import TransitCard from './move/TransitCard';
 import {
   getBlockColor,
@@ -114,39 +111,7 @@ export const BlockDetailModal: React.FC<BlockDetailModalProps> = ({
               }}
             />
           )}
-          {block.blockType === 'food' && (
-            <FoodCard
-              data={{
-                title: block.title,
-                mealType: block.meta?.mealType,
-                cuisine: block.meta?.cuisine,
-                address: block.location?.address,
-                startTime: block.timeRange?.startTime,
-                endTime: block.timeRange?.endTime,
-              }}
-            />
-          )}
-          {block.blockType === 'activity' && (
-            <ActivityCard
-              data={{
-                title: block.title,
-                activityType: block.meta?.activityType,
-                reservationRequired: block.meta?.reservationRequired,
-                address: block.location?.address,
-                startTime: block.timeRange?.startTime,
-                endTime: block.timeRange?.endTime,
-              }}
-            />
-          )}
-          {block.blockType === 'memo' && (
-            <MemoCard
-              data={{
-                title: block.title,
-                description: block.description,
-                tags: block.meta?.tags,
-              }}
-            />
-          )}
+          {/* food, activity 타입 카드 중첩 노출 제거 */}
           {/* 설명 */}
           {block.description && (
             <div>
