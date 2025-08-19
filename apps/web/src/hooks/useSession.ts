@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -26,6 +26,7 @@ export const useSession = () => {
   const [signUpStatus, setSignUpStatus] =
     useState<SignUpStatus>('unauthenticated');
   const [initialized, setInitialized] = useState(false);
+  const latestRequestIdRef = useRef(0);
 
   const router = useRouter();
   const pathname = usePathname();
@@ -38,15 +39,29 @@ export const useSession = () => {
 
   // 사용자 프로필 정보 가져오기
   const fetchUserProfile = useCallback(async (user: User) => {
+    const requestId = ++latestRequestIdRef.current;
     try {
       const supabaseClient = createClient();
       const { data: profile, error } = await supabaseClient
         .from('user_profiles')
         .select('nickname, profile_image_url')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
+
+      if (requestId !== latestRequestIdRef.current) return; // 오래된 결과 무시
 
       if (error) {
+        console.error('프로필 조회 오류:', error);
+        const basicUserData = {
+          id: user.id,
+          email: user.email,
+        };
+        setUserProfile(basicUserData);
+        setSignUpStatus('incomplete');
+        return;
+      }
+
+      if (!profile) {
         // 프로필이 없는 경우 (새 사용자)
         const basicUserData = {
           id: user.id,
@@ -54,20 +69,21 @@ export const useSession = () => {
         };
         setUserProfile(basicUserData);
         setSignUpStatus('incomplete');
-      } else {
-        // 프로필이 있는 경우 (기존 사용자)
-        const userData = {
-          id: user.id,
-          email: user.email,
-          nickname: profile.nickname,
-          profile_image_url: profile.profile_image_url,
-        };
-        setUserProfile(userData);
-        setSignUpStatus('completed');
+        return;
       }
+
+      // 프로필이 있는 경우 (기존 사용자)
+      const userData = {
+        id: user.id,
+        email: user.email,
+        nickname: profile.nickname,
+        profile_image_url: profile.profile_image_url,
+      };
+      setUserProfile(userData);
+      setSignUpStatus('completed');
     } catch (fetchError) {
+      if (requestId !== latestRequestIdRef.current) return; // 오래된 결과 무시
       console.error('프로필 조회 오류:', fetchError);
-      // 오류 발생 시에도 기본 사용자 데이터 설정
       const basicUserData = {
         id: user.id,
         email: user.email,
@@ -99,6 +115,7 @@ export const useSession = () => {
         }
 
         // 세션 설정
+        setError(null);
         setSession(data.session);
 
         // 세션이 있으면 프로필 정보 가져오기
@@ -122,6 +139,7 @@ export const useSession = () => {
             }
 
             // 세션 상태 업데이트
+            setError(null);
             setSession(newSession);
 
             if (newSession?.user) {
@@ -161,7 +179,7 @@ export const useSession = () => {
     };
   }, [fetchUserProfile]);
 
-  // 회원가입 완료 여부에 따른 리다이렉트 처리
+  // 회원가입 완료 여부 및 인증 상태에 따른 리다이렉트 처리
   useEffect(() => {
     // 초기화되지 않았거나 로딩 중이거나 예외 페이지인 경우 리다이렉트하지 않음
     if (!initialized || loading || excludedPaths.includes(pathname)) {
@@ -171,6 +189,12 @@ export const useSession = () => {
     // 세션이 있고 회원가입이 미완료인 경우 sign-up으로 리다이렉트
     if (session && signUpStatus === 'incomplete') {
       router.push('/sign-up');
+      return;
+    }
+
+    // 세션이 없고 예외 페이지가 아닌 경우 log-in으로 리다이렉트
+    if (!session) {
+      router.push('/log-in');
     }
   }, [
     session,
@@ -182,6 +206,12 @@ export const useSession = () => {
     initialized,
   ]);
 
+  const refreshProfile = useCallback(async () => {
+    if (session?.user) {
+      await fetchUserProfile(session.user);
+    }
+  }, [session?.user, fetchUserProfile]);
+
   const signOut = useCallback(async () => {
     try {
       const supabase = createClient();
@@ -192,15 +222,26 @@ export const useSession = () => {
     }
   }, []);
 
+  const isAuthenticated = useMemo(() => !!session, [session]);
+  const isSignUpCompleted = useMemo(
+    () => signUpStatus === 'completed',
+    [signUpStatus]
+  );
+  const isSignUpIncomplete = useMemo(
+    () => signUpStatus === 'incomplete',
+    [signUpStatus]
+  );
+
   return {
     session,
     userProfile,
     loading,
     error,
     signUpStatus,
-    isAuthenticated: !!session,
-    isSignUpCompleted: signUpStatus === 'completed',
-    isSignUpIncomplete: signUpStatus === 'incomplete',
+    isAuthenticated,
+    isSignUpCompleted,
+    isSignUpIncomplete,
+    refreshProfile,
     signOut,
   };
 };
