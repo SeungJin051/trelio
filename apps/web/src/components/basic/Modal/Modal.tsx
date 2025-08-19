@@ -31,7 +31,7 @@ export interface ModalProps {
   onPrimaryAction?: () => void;
   onSecondaryAction?: () => void;
   children?: React.ReactNode;
-  width?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  width?: 'sm' | 'md' | 'lg' | 'xl' | 'full' | 'responsive';
 }
 
 const modalVariants: Variants = {
@@ -72,6 +72,7 @@ const widthClasses = {
   lg: 'max-w-lg',
   xl: 'max-w-xl',
   full: 'max-w-4xl',
+  responsive: 'sm:max-w-xl md:max-w-2xl lg:max-w-3xl',
 };
 
 export const Modal = ({

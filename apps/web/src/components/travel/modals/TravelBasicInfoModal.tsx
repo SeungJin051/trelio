@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Button, Input, Switch, Typography } from '@ui/components';
 
 import { Modal } from '@/components/basic';
+import { countriesISO } from '@/components/travel/constants/countries';
 import LocationInput from '@/components/travel/inputs/LocationInput';
 import TravelDatePicker from '@/components/travel/inputs/TravelDatePicker';
 import { useSession } from '@/hooks/useSession';
@@ -61,7 +62,16 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
       newErrors.title = '여행 제목은 50자 이내로 입력해주세요.';
     }
     if (!basicInfo.location.trim()) {
-      newErrors.location = '나라 및 지역을 입력해주세요.';
+      newErrors.location = '나라(국가)를 입력해주세요.';
+    } else {
+      const normalize = (s: string) => s.trim().toLowerCase();
+      const input = normalize(basicInfo.location);
+      const isValidCountry = countriesISO.some(
+        (c) => normalize(c.nameKo) === input || normalize(c.nameEn) === input
+      );
+      if (!isValidCountry) {
+        newErrors.location = '국가 목록에서 정확한 국가를 선택해주세요.';
+      }
     }
     if (!basicInfo.startDate || !basicInfo.endDate) {
       newErrors.dates = '여행 시작일과 종료일을 선택해주세요.';
@@ -150,19 +160,6 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
     }
   };
 
-  const handleCopyShareLink = () => {
-    if (!userProfile) return;
-    const shareLink = `${window.location.origin}/travel/join/temp-link`;
-    navigator.clipboard
-      .writeText(shareLink)
-      .then(() => {
-        toast.success('링크가 복사되었습니다.');
-      })
-      .catch(() => {
-        toast.error('링크 복사에 실패했습니다.');
-      });
-  };
-
   const canProceed =
     basicInfo.title.trim() &&
     basicInfo.location.trim() &&
@@ -174,21 +171,11 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title='새 여행 계획 시작하기'
-      width='lg'
+      width='responsive'
     >
-      <div className='p-6'>
-        <Typography variant='body2' className='mb-8 text-center text-gray-500'>
-          새로운 여행의 기본적인 정보를 입력해주세요.
-        </Typography>
-        <div className='space-y-6'>
-          <div>
-            <Typography
-              variant='h6'
-              weight='semiBold'
-              className='mb-4 text-gray-900'
-            >
-              여행 기본 정보
-            </Typography>
+      <div className='flex flex-col'>
+        <div className='max-h-[70vh] overflow-y-auto px-6 py-6'>
+          <div className='space-y-8'>
             <div className='space-y-4'>
               <Input
                 label='여행 제목'
@@ -203,7 +190,9 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
                 maxLength={50}
               />
               <LocationInput
-                label='나라 및 지역'
+                label='나라(국가)'
+                placeholder='예: 대한민국 / United States'
+                helperText='국가만 선택할 수 있어요'
                 value={basicInfo.location}
                 onChange={(value) => {
                   setBasicInfo((prev) => ({ ...prev, location: value }));
@@ -227,61 +216,39 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
                 errorText={errors.dates}
               />
             </div>
-          </div>
-          <div>
-            <Typography
-              variant='h6'
-              weight='semiBold'
-              className='mb-4 text-gray-900'
-            >
-              참여자 설정
-            </Typography>
-            <div className='space-y-4'>
-              <div className='rounded-lg border border-gray-200 p-4'>
-                <div className='flex items-center'>
-                  <IoPersonOutline className='mr-3 h-5 w-5 text-gray-400' />
-                  <div className='flex-1'>
-                    <Typography
-                      variant='body2'
-                      weight='medium'
-                      className='text-gray-900'
-                    >
-                      {userProfile?.nickname || userProfile?.email || '사용자'}
-                    </Typography>
-                    <Typography variant='caption' className='text-blue-600'>
-                      오너
-                    </Typography>
+            <div>
+              <Typography
+                variant='h6'
+                weight='semiBold'
+                className='mb-4 text-gray-900'
+              >
+                참여자 설정
+              </Typography>
+              <div className='space-y-4'>
+                <div className='rounded-lg border border-gray-200 p-4'>
+                  <div className='flex items-center'>
+                    <IoPersonOutline className='mr-3 h-5 w-5 text-gray-400' />
+                    <div className='flex-1'>
+                      <Typography
+                        variant='body2'
+                        weight='medium'
+                        className='text-gray-900'
+                      >
+                        {userProfile?.nickname ||
+                          userProfile?.email ||
+                          '사용자'}
+                      </Typography>
+                      <Typography variant='caption' className='text-blue-600'>
+                        오너
+                      </Typography>
+                    </div>
                   </div>
-                </div>
-              </div>
-              <div>
-                <div className='flex items-center justify-between'>
-                  <div>
-                    <Typography
-                      variant='body2'
-                      weight='medium'
-                      className='text-gray-700'
-                    >
-                      초대된 사용자 기본 권한
-                    </Typography>
-                    <Typography variant='caption' className='text-gray-500'>
-                      초대된 친구들이 이 여행 계획을 수정할 수 있도록
-                      허용할까요?
-                    </Typography>
-                  </div>
-                  <Switch
-                    checked={basicInfo.allowEdit}
-                    onChange={(checked) =>
-                      setBasicInfo((prev) => ({ ...prev, allowEdit: checked }))
-                    }
-                    label={basicInfo.allowEdit ? '편집 가능' : '보기만 가능'}
-                  />
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <div className='mt-8 flex space-x-3'>
+        <div className='flex space-x-3 border-t px-6 py-4'>
           <Button
             variant='outlined'
             colorTheme='gray'
