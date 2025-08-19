@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useParams, useRouter } from 'next/navigation';
 
@@ -131,13 +131,14 @@ const TravelDetailView = () => {
     return [dashboardTab, ...dayTabs];
   }, [timeline.days]);
 
-  // 에러 처리
+  // 에러 처리: 동일 에러 중복 토스트 방지 및 무한 루프 방지
+  const hasShownErrorRef = useRef(false);
   useEffect(() => {
-    if (error) {
+    if (error && !hasShownErrorRef.current) {
+      hasShownErrorRef.current = true;
       toast.error('여행 정보를 불러오는데 실패했습니다.');
-      console.error('Travel detail error:', error);
     }
-  }, [error, toast]);
+  }, [error]);
 
   // 총 예산 계산
   const totalBudget = useMemo(() => {
