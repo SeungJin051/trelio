@@ -11,6 +11,7 @@ import { FaCamera, FaCheck, FaChevronLeft, FaUpload } from 'react-icons/fa';
 import { Avatar, Button, Icon, Input, Typography } from '@ui/components';
 
 import { Card } from '@/components';
+import LocationInput from '@/components/travel/inputs/LocationInput';
 import { useToast } from '@/hooks';
 import { createClient } from '@/lib/supabase/client/supabase';
 import type {
@@ -19,12 +20,7 @@ import type {
   UserProfile,
 } from '@/types/user/user';
 
-import {
-  DESTINATIONS,
-  FILE_UPLOAD_LIMITS,
-  TOTAL_STEPS,
-  TRAVEL_STYLES,
-} from './constants';
+import { FILE_UPLOAD_LIMITS, TOTAL_STEPS, TRAVEL_STYLES } from './constants';
 import { useImageUpload } from './hooks/useImageUpload';
 
 const SignUpView = () => {
@@ -37,6 +33,7 @@ const SignUpView = () => {
     preferred_destinations: [],
     travel_styles: [],
   });
+  const [nationality, setNationality] = useState('');
 
   const router = useRouter();
   const toast = useToast();
@@ -108,15 +105,6 @@ const SignUpView = () => {
     getCurrentUser();
   }, [supabase, router]);
 
-  const toggleDestination = (id: PreferredDestination) => {
-    setProfile((prev) => ({
-      ...prev,
-      preferred_destinations: prev.preferred_destinations.includes(id)
-        ? prev.preferred_destinations.filter((item) => item !== id)
-        : [...prev.preferred_destinations, id],
-    }));
-  };
-
   const toggleStyle = (id: TravelStyle) => {
     setProfile((prev) => ({
       ...prev,
@@ -134,7 +122,7 @@ const SignUpView = () => {
           profile.profile_image_option !== null
         );
       case 2:
-        return profile.preferred_destinations.length > 0;
+        return nationality.trim() !== '';
       case 3:
         return profile.travel_styles.length > 0;
       default:
@@ -164,6 +152,7 @@ const SignUpView = () => {
         profile_image_url: profile.profile_image_url,
         preferred_destinations: profile.preferred_destinations,
         travel_styles: profile.travel_styles,
+        nationality: nationality || null,
         provider: user.app_metadata?.provider || 'unknown',
       });
 
@@ -385,42 +374,20 @@ const SignUpView = () => {
                 variant='h2'
                 className='text-2xl font-bold text-gray-900'
               >
-                선호하는 여행지는?
+                어느 나라 사람이신가요?
               </Typography>
               <Typography variant='body1' className='text-gray-600'>
-                관심 있는 여행지를 모두 선택해주세요 (복수 선택 가능)
+                국적을 선택해주세요
               </Typography>
             </div>
 
-            <div className='grid grid-cols-2 gap-3'>
-              {DESTINATIONS.map((destination) => (
-                <Card
-                  key={destination.id}
-                  cardType='selectable'
-                  selected={profile.preferred_destinations.includes(
-                    destination.id
-                  )}
-                  onClick={() => toggleDestination(destination.id)}
-                >
-                  <div className='flex flex-col items-center space-y-2 p-4'>
-                    <span className='text-2xl'>{destination.icon}</span>
-                    <Typography
-                      variant='body2'
-                      className='text-center font-medium'
-                    >
-                      {destination.name}
-                    </Typography>
-                    {profile.preferred_destinations.includes(
-                      destination.id
-                    ) && (
-                      <div className='flex h-5 w-5 items-center justify-center rounded-full bg-blue-500'>
-                        <Icon as={FaCheck} className='h-3 w-3 text-white' />
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              ))}
-            </div>
+            <LocationInput
+              value={nationality}
+              onChange={setNationality}
+              label='국적'
+              placeholder='예: 대한민국 / United States'
+              helperText='국가명을 입력하고 목록에서 선택하세요'
+            />
           </div>
         );
 
