@@ -13,6 +13,7 @@ type UserProfile = {
   email: string | undefined;
   nickname?: string;
   profile_image_url?: string;
+  nationality?: string;
 };
 
 // 회원가입 완료 상태 타입
@@ -44,7 +45,7 @@ export const useSession = () => {
       const supabaseClient = createClient();
       const { data: profile, error } = await supabaseClient
         .from('user_profiles')
-        .select('nickname, profile_image_url')
+        .select('nickname, profile_image_url, nationality')
         .eq('id', user.id)
         .maybeSingle();
 
@@ -78,6 +79,7 @@ export const useSession = () => {
         email: user.email,
         nickname: profile.nickname,
         profile_image_url: profile.profile_image_url,
+        nationality: profile.nationality ?? undefined,
       };
       setUserProfile(userData);
       setSignUpStatus('completed');
