@@ -23,6 +23,9 @@ export interface TravelPlan {
   location: string;
   start_date: string; // YYYY-MM-DD 형식
   end_date: string; // YYYY-MM-DD 형식
+  target_budget: number; // 목표 예산
+  budget_currency: string; // 예산 통화 (KRW, USD, JPY 등)
+  destination_country?: string; // 목적지 국가 코드 (ISO 3166-1 alpha-3)
   share_link_id: string;
   default_permission: 'editor' | 'viewer';
   created_at: string;
@@ -36,6 +39,9 @@ export interface CreateTravelPlanRequest {
   location: string;
   start_date: string;
   end_date: string;
+  target_budget?: number;
+  budget_currency?: string;
+  destination_country?: string;
   share_link_id: string;
   default_permission: 'editor' | 'viewer';
 }
@@ -96,6 +102,58 @@ export interface TravelPlanDetail extends TravelPlan {
   dayCount: number;
   isOwner: boolean;
   currentUserRole: ParticipantRole;
+}
+
+// 여행 투두 우선순위 타입
+export type TodoPriority = 0 | 1 | 2 | 3 | 4 | 5;
+
+// 여행 투두 인터페이스
+export interface TravelTodo {
+  id: string;
+  plan_id: string;
+  title: string;
+  description?: string;
+  is_completed: boolean;
+  assigned_user_id?: string;
+  created_by: string;
+  due_date?: string; // YYYY-MM-DD 형식
+  priority: TodoPriority;
+  created_at: string;
+  updated_at: string;
+}
+
+// 여행 투두 생성 요청 타입
+export interface CreateTodoRequest {
+  plan_id: string;
+  title: string;
+  description?: string;
+  assigned_user_id?: string;
+  due_date?: string;
+  priority?: TodoPriority;
+}
+
+// 여행 투두 업데이트 요청 타입
+export interface UpdateTodoRequest {
+  title?: string;
+  description?: string;
+  is_completed?: boolean;
+  assigned_user_id?: string;
+  due_date?: string;
+  priority?: TodoPriority;
+}
+
+// UI용 투두 인터페이스 (담당자 정보 포함)
+export interface TodoWithAssignee extends TravelTodo {
+  assignee?: {
+    id: string;
+    nickname: string;
+    profile_image_url?: string;
+  };
+  creator: {
+    id: string;
+    nickname: string;
+    profile_image_url?: string;
+  };
 }
 
 // 여행 활동 인터페이스
