@@ -173,33 +173,93 @@ export const convertCurrency = async (
  * @returns 통화 코드
  */
 export const getCurrencyByNationality = (nationality?: string): string => {
-  const currencyMap: Record<string, string> = {
-    // 주요 국가들
-    KOR: 'KRW', // 한국
-    USA: 'USD', // 미국
-    JPN: 'JPY', // 일본
-    CHN: 'CNY', // 중국
-    GBR: 'GBP', // 영국
-    EUR: 'EUR', // 유럽연합 (임시)
-    DEU: 'EUR', // 독일
-    FRA: 'EUR', // 프랑스
-    ITA: 'EUR', // 이탈리아
-    ESP: 'EUR', // 스페인
-    AUS: 'AUD', // 호주
-    CAN: 'CAD', // 캐나다
-    CHE: 'CHF', // 스위스
-    SGP: 'SGD', // 싱가포르
-    HKG: 'HKD', // 홍콩
-    TWN: 'TWD', // 대만
-    THA: 'THB', // 태국
-    VNM: 'VND', // 베트남
-    MYS: 'MYR', // 말레이시아
-    IDN: 'IDR', // 인도네시아
-    PHL: 'PHP', // 필리핀
-    IND: 'INR', // 인도
+  // 자주 쓰는 국가명(한글/영문) → ISO2 코드 간단 매핑
+  const nameToAlpha2: Record<string, string> = {
+    대한민국: 'KR',
+    한국: 'KR',
+    'Korea, Republic of': 'KR',
+    'South Korea': 'KR',
+    일본: 'JP',
+    Japan: 'JP',
+    미국: 'US',
+    'United States': 'US',
+    USA: 'US',
+    중국: 'CN',
+    China: 'CN',
+    영국: 'GB',
+    'United Kingdom': 'GB',
+    영연방: 'GB',
+    독일: 'DE',
+    Germany: 'DE',
+    프랑스: 'FR',
+    France: 'FR',
+    캐나다: 'CA',
+    Canada: 'CA',
+    호주: 'AU',
+    Australia: 'AU',
+  };
+  // ISO2(국가코드) → ISO4217(통화) 매핑
+  const alpha2ToCurrency: Record<string, string> = {
+    KR: 'KRW',
+    US: 'USD',
+    JP: 'JPY',
+    CN: 'CNY',
+    GB: 'GBP',
+    DE: 'EUR',
+    FR: 'EUR',
+    IT: 'EUR',
+    ES: 'EUR',
+    AU: 'AUD',
+    CA: 'CAD',
+    CH: 'CHF',
+    SG: 'SGD',
+    HK: 'HKD',
+    TW: 'TWD',
+    TH: 'THB',
+    VN: 'VND',
+    MY: 'MYR',
+    ID: 'IDR',
+    PH: 'PHP',
+    IN: 'INR',
   };
 
-  return currencyMap[nationality || 'KOR'] || 'USD';
+  // ISO3(국가코드) → ISO4217(통화) 매핑
+  const alpha3ToCurrency: Record<string, string> = {
+    KOR: 'KRW',
+    USA: 'USD',
+    JPN: 'JPY',
+    CHN: 'CNY',
+    GBR: 'GBP',
+    DEU: 'EUR',
+    FRA: 'EUR',
+    ITA: 'EUR',
+    ESP: 'EUR',
+    AUS: 'AUD',
+    CAN: 'CAD',
+    CHE: 'CHF',
+    SGP: 'SGD',
+    HKG: 'HKD',
+    TWN: 'TWD',
+    THA: 'THB',
+    VNM: 'VND',
+    MYS: 'MYR',
+    IDN: 'IDR',
+    PHL: 'PHP',
+    IND: 'INR',
+  };
+
+  // 국가명이 들어오는 경우를 우선 처리
+  const byName = nationality && nameToAlpha2[nationality.trim()];
+  const code = (byName || nationality)?.toUpperCase();
+  if (!code) return 'KRW';
+
+  if (code.length === 2) {
+    return alpha2ToCurrency[code] || 'KRW';
+  }
+  if (code.length === 3) {
+    return alpha3ToCurrency[code] || 'KRW';
+  }
+  return 'KRW';
 };
 
 /**
@@ -210,6 +270,7 @@ export const getCurrencyByNationality = (nationality?: string): string => {
 export const getCurrencyByDestination = (
   destinationCountry?: string
 ): string => {
+  // 목적지 코드가 countriesISO의 ISO2 코드이므로 우선 ISO2 매핑을 시도
   return getCurrencyByNationality(destinationCountry);
 };
 
