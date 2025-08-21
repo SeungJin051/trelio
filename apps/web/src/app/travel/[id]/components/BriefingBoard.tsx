@@ -543,168 +543,142 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
                     </div>
                   ) : (
                     <>
-                      <div className='mb-3 flex items-center justify-between'>
-                        <div className='flex-1'>
-                          <div className='flex items-center justify-between'>
-                            <div>
+                      {/* 상단 요약: 사용/남음 (이중 통화 표시) */}
+                      <div className='mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2'>
+                        {/* 사용 */}
+                        <div className='rounded-xl border border-gray-100 bg-gray-50 p-3'>
+                          <Typography
+                            variant='caption'
+                            className='text-gray-500'
+                          >
+                            사용
+                          </Typography>
+                          <div className='mt-1 space-y-1'>
+                            {/* 원래 통화 */}
+                            <div className='flex flex-wrap items-baseline gap-1'>
                               <Typography
-                                variant='h5'
-                                className='font-bold text-gray-900'
+                                variant='h6'
+                                className='break-all font-mono font-extrabold text-gray-900'
                               >
-                                {budgetInfo.formattedTargetBudget}
+                                {
+                                  budgetInfo.originalBudgetInfo
+                                    .formattedSpentAmount
+                                }
                               </Typography>
-                              {budgetInfo.currency !==
-                                budgetInfo.originalCurrency && (
-                                <Typography
-                                  variant='caption'
-                                  className='text-gray-500'
-                                >
-                                  (환율: 1{budgetInfo.originalCurrency} ={' '}
-                                  {budgetInfo.exchangeRate.toFixed(2)}
-                                  {budgetInfo.currency})
-                                </Typography>
-                              )}
+                              <span className='shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] text-gray-600'>
+                                {budgetInfo.originalCurrency}
+                              </span>
                             </div>
-                            {/* 원래 통화로 표시 */}
+                            {/* 변환 통화 (다를 때만) */}
                             {budgetInfo.currency !==
                               budgetInfo.originalCurrency && (
-                              <div className='text-right'>
+                              <div className='flex flex-wrap items-baseline gap-1'>
                                 <Typography
                                   variant='h6'
-                                  className='font-bold text-blue-600'
+                                  className='break-all font-mono font-extrabold text-gray-900'
                                 >
-                                  {
-                                    budgetInfo.originalBudgetInfo
-                                      .formattedRemainingBudget
-                                  }
+                                  {budgetInfo.formattedSpentAmount}
                                 </Typography>
-                                <Typography
-                                  variant='caption'
-                                  className='text-blue-500'
-                                >
-                                  {
-                                    budgetInfo.originalBudgetInfo
-                                      .formattedTargetBudget
-                                  }{' '}
-                                  중 남음
-                                </Typography>
+                                <span className='shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] text-gray-600'>
+                                  {budgetInfo.currency}
+                                </span>
                               </div>
                             )}
                           </div>
                         </div>
-                        <IoWalletOutline className='ml-3 h-5 w-5 text-green-600' />
+                        {/* 남음 */}
+                        <div className='rounded-xl border border-gray-100 bg-gray-50 p-3 text-right'>
+                          <Typography
+                            variant='caption'
+                            className='text-gray-500'
+                          >
+                            남음
+                          </Typography>
+                          <div className='mt-1 space-y-1'>
+                            {/* 원래 통화 */}
+                            <div className='flex flex-wrap items-baseline justify-end gap-1'>
+                              <Typography
+                                variant='h6'
+                                className='break-all font-mono font-extrabold text-gray-900'
+                              >
+                                {
+                                  budgetInfo.originalBudgetInfo
+                                    .formattedRemainingBudget
+                                }
+                              </Typography>
+                              <span className='shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] text-gray-600'>
+                                {budgetInfo.originalCurrency}
+                              </span>
+                            </div>
+                            {/* 변환 통화 (다를 때만) */}
+                            {budgetInfo.currency !==
+                              budgetInfo.originalCurrency && (
+                              <div className='flex flex-wrap items-baseline justify-end gap-1'>
+                                <Typography
+                                  variant='h6'
+                                  className='break-all font-mono font-extrabold text-gray-900'
+                                >
+                                  {budgetInfo.formattedRemainingBudget}
+                                </Typography>
+                                <span className='shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] text-gray-600'>
+                                  {budgetInfo.currency}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
 
-                      {/* 프로그레스 바 */}
-                      <div className='mb-3'>
+                      {/* 진행 바 */}
+                      <div className='mb-2'>
                         <div className='h-3 w-full rounded-full bg-gray-200'>
                           <div
                             className='h-3 rounded-full bg-gradient-to-r from-green-500 to-blue-500 transition-all duration-300'
                             style={{
                               width: `${Math.min(budgetInfo.spentPercentage, 100)}%`,
                             }}
-                          ></div>
+                          />
                         </div>
                       </div>
+                      <div className='mb-3 flex items-center justify-between text-xs text-gray-500'>
+                        <span>0%</span>
+                        <span>
+                          {Math.min(budgetInfo.spentPercentage, 100).toFixed(0)}
+                          %
+                        </span>
+                      </div>
 
-                      {/* 예산 정보 */}
-                      <div className='space-y-3'>
-                        <div className='flex items-center justify-between'>
-                          <Typography
-                            variant='body2'
-                            className='font-medium text-gray-700'
-                          >
-                            {budgetInfo.spentPercentage.toFixed(1)}% 사용
-                          </Typography>
-                          <Typography variant='body2' className='text-gray-600'>
-                            사용: {budgetInfo.formattedSpentAmount}
+                      {/* 총 예산: 원래 통화 / 변환 통화 */}
+                      <div className='flex items-center justify-between'>
+                        <div className='flex items-center space-x-2'>
+                          <IoWalletOutline className='h-4 w-4 text-green-600' />
+                          <Typography variant='body2' className='text-gray-700'>
+                            총 예산{' '}
+                            {
+                              budgetInfo.originalBudgetInfo
+                                .formattedTargetBudget
+                            }
+                            {budgetInfo.currency !==
+                              budgetInfo.originalCurrency && (
+                              <> / {budgetInfo.formattedTargetBudget}</>
+                            )}
                           </Typography>
                         </div>
-
-                        {/* 원래 통화로 사용 금액 표시 */}
                         {budgetInfo.currency !==
                           budgetInfo.originalCurrency && (
-                          <div className='flex items-center justify-between rounded-lg bg-blue-50 p-2'>
-                            <Typography
-                              variant='body2'
-                              className='font-medium text-blue-700'
-                            >
-                              {budgetInfo.originalCurrency} 사용량
-                            </Typography>
-                            <Typography
-                              variant='body2'
-                              className='text-blue-600'
-                            >
-                              {
-                                budgetInfo.originalBudgetInfo
-                                  .formattedSpentAmount
-                              }{' '}
-                              /{' '}
-                              {
-                                budgetInfo.originalBudgetInfo
-                                  .formattedTargetBudget
-                              }
-                            </Typography>
-                          </div>
-                        )}
-
-                        <div className='flex items-center justify-between'>
-                          <Typography variant='body2' className='text-gray-600'>
-                            남은 예산: {budgetInfo.formattedRemainingBudget}
+                          <Typography
+                            variant='caption'
+                            className='text-gray-400'
+                          >
+                            환율 기준: 1 {budgetInfo.originalCurrency} ≈{' '}
+                            {budgetInfo.exchangeRate.toFixed(2)}{' '}
+                            {budgetInfo.currency}
                           </Typography>
-                          {onBudgetClick && (
-                            <span className='text-xs text-blue-500'>
-                              상세보기 →
-                            </span>
-                          )}
-                        </div>
-
-                        {/* 현지 통화별 사용 내역 */}
-                        {budgetInfo.localSpending.breakdownByCurrency.length >
-                          0 && (
-                          <div className='mt-4 rounded-lg bg-white/50 p-3'>
-                            <Typography
-                              variant='caption'
-                              className='mb-2 block font-medium text-gray-700'
-                            >
-                              현지 통화별 사용 내역
-                            </Typography>
-                            <div className='space-y-2'>
-                              {budgetInfo.localSpending.breakdownByCurrency.map(
-                                (item, index) => (
-                                  <div
-                                    key={item.currency}
-                                    className='flex items-center justify-between'
-                                  >
-                                    <div className='flex items-center space-x-2'>
-                                      <div
-                                        className={`h-2 w-2 rounded-full ${
-                                          [
-                                            'bg-blue-500',
-                                            'bg-green-500',
-                                            'bg-purple-500',
-                                            'bg-orange-500',
-                                          ][index % 4]
-                                        }`}
-                                      ></div>
-                                      <Typography
-                                        variant='caption'
-                                        className='font-medium text-gray-700'
-                                      >
-                                        {item.formattedAmount}
-                                      </Typography>
-                                    </div>
-                                    <Typography
-                                      variant='caption'
-                                      className='text-gray-500'
-                                    >
-                                      = {item.formattedConvertedAmount}
-                                    </Typography>
-                                  </div>
-                                )
-                              )}
-                            </div>
-                          </div>
+                        )}
+                        {onBudgetClick && (
+                          <span className='text-xs text-blue-500'>
+                            상세보기 →
+                          </span>
                         )}
                       </div>
                     </>
