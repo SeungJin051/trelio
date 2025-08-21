@@ -1,3 +1,42 @@
+/**
+ * @api {patch} /api/todos/:id 투두 수정
+ * @apiName UpdateTodo
+ * @apiGroup Todos
+ *
+ * @apiParam {String} id 투두의 고유 ID
+ *
+ * @apiParam {String} [title] 투두 제목
+ * @apiParam {String} [description] 투두 설명
+ * @apiParam {Boolean} [is_completed] 완료 여부
+ * @apiParam {String} [assigned_user_id] 담당자 ID
+ * @apiParam {String} [due_date] 마감일
+ * @apiParam {Number} [priority] 우선순위
+ *
+ * @apiSuccess {Object} todo 수정된 투두 정보
+ * @apiSuccess {String} todo.id 투두 ID
+ * @apiSuccess {String} todo.title 투두 제목
+ * @apiSuccess {String} todo.description 투두 설명
+ * @apiSuccess {Boolean} todo.is_completed 완료 여부
+ * @apiSuccess {Object} todo.assignee 담당자 정보
+ * @apiSuccess {Object} todo.creator 생성자 정보
+ *
+ * @api {delete} /api/todos/:id 투두 삭제
+ * @apiName DeleteTodo
+ * @apiGroup Todos
+ *
+ * @apiParam {String} id 투두의 고유 ID
+ *
+ * @apiSuccess {Object} message 삭제 성공 메시지
+ *
+ * @apiError {Object} 400 Todo ID is required / Invalid request
+ * @apiError {Object} 401 Authentication failed
+ * @apiError {Object} 403 Unauthorized access to todo
+ * @apiError {Object} 404 Todo not found
+ * @apiError {Object} 500 Internal server error
+ *
+ * @apiDescription 특정 투두를 수정하거나 삭제합니다.
+ * 인증된 사용자만 접근 가능하며, 해당 여행 계획의 참여자만 투두를 수정/삭제할 수 있습니다.
+ */
 import { NextResponse } from 'next/server';
 
 import { createServerSupabaseClient } from '@/lib/supabase/client/supabase-server';
