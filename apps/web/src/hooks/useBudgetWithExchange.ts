@@ -331,12 +331,13 @@ export const useBudgetWithExchange = ({
 
       // 에러 시 기본 정보 설정
       const userCurrency = getUserCurrency();
+      const origCur = budgetCurrency || userCurrency;
       setBudgetInfo({
         targetBudget,
         spentAmount: 0,
         remainingBudget: targetBudget,
         currency: userCurrency,
-        originalCurrency: budgetCurrency || userCurrency,
+        originalCurrency: origCur,
         exchangeRate: 1,
         spentPercentage: 0,
         formattedTargetBudget: formatCurrencyWithExchange(
@@ -348,6 +349,33 @@ export const useBudgetWithExchange = ({
           targetBudget,
           userCurrency
         ),
+        originalBudgetInfo: {
+          targetBudget,
+          spentAmount: 0,
+          remainingBudget: targetBudget,
+          formattedTargetBudget: formatCurrencyWithExchange(
+            targetBudget,
+            origCur
+          ),
+          formattedSpentAmount: formatCurrencyWithExchange(0, origCur),
+          formattedRemainingBudget: formatCurrencyWithExchange(
+            targetBudget,
+            origCur
+          ),
+        },
+        localSpending: {
+          totalInOriginalCurrency: 0,
+          totalInUserCurrency: 0,
+          formattedTotalInOriginalCurrency: formatCurrencyWithExchange(
+            0,
+            origCur
+          ),
+          formattedTotalInUserCurrency: formatCurrencyWithExchange(
+            0,
+            userCurrency
+          ),
+          breakdownByCurrency: [],
+        },
       });
     } finally {
       setIsLoading(false);

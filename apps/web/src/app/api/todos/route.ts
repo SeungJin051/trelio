@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 import { createServerSupabaseClient } from '@/lib/supabase/client/supabase-server';
 
 /**
  * 투두리스트 조회 (GET)
  */
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const planId = searchParams.get('planId');
@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
 /**
  * 새 투두 생성 (POST)
  */
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
     const body = await request.json();
     const {

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 import { createServerSupabaseClient } from '@/lib/supabase/client/supabase-server';
 
@@ -26,12 +26,9 @@ interface User {
 /**
  * 투두 수정 (PATCH)
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: Request, context: any) {
   try {
-    const todoId = params.id;
+    const todoId = context?.params?.id as string;
     const body = await request.json();
 
     const supabase = await createServerSupabaseClient();
@@ -167,12 +164,9 @@ export async function PATCH(
 /**
  * 투두 삭제 (DELETE)
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: Request, context: any) {
   try {
-    const todoId = params.id;
+    const todoId = context?.params?.id as string;
 
     const supabase = await createServerSupabaseClient();
 
