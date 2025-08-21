@@ -22,14 +22,11 @@ import { TravelBlock } from '@/types/travel/blocks';
 import { BriefingBoard, TabContainer, TravelHeader } from './components';
 import { TabItem, TRAVEL_DETAIL_CONSTANTS } from './constants';
 
-interface TodoItem {
-  id: string;
-  title: string;
-  isCompleted: boolean;
-  assigneeId?: string;
-  assigneeName?: string;
-  assigneeAvatar?: string;
-  createdAt: string;
+// 임시로 확장된 타입 정의 (DB 필드 추가 반영)
+interface ExtendedTravelPlanDetail {
+  target_budget?: number;
+  budget_currency?: string;
+  destination_country?: string;
 }
 
 const TravelDetailView = () => {
@@ -45,34 +42,6 @@ const TravelDetailView = () => {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-
-  // TODO: 실제 데이터는 API에서 가져와야 함
-  const [todos, setTodos] = useState<TodoItem[]>([
-    {
-      id: '1',
-      title: '렌터카 예약',
-      isCompleted: true,
-      assigneeId: 'user1',
-      assigneeName: '민준',
-      assigneeAvatar: undefined,
-      createdAt: '2024-01-15',
-    },
-    {
-      id: '2',
-      title: '여행자 보험 가입',
-      isCompleted: false,
-      assigneeId: 'user2',
-      assigneeName: '지혜',
-      assigneeAvatar: undefined,
-      createdAt: '2024-01-15',
-    },
-    {
-      id: '3',
-      title: '맛집 리스트 최종 확정',
-      isCompleted: false,
-      createdAt: '2024-01-15',
-    },
-  ]);
 
   const planId = params.id as string;
 
@@ -258,44 +227,6 @@ const TravelDetailView = () => {
     console.log('Readiness detail clicked');
   };
 
-  const handleAddTodo = (title: string) => {
-    const newTodo: TodoItem = {
-      id: Date.now().toString(),
-      title,
-      isCompleted: false,
-      createdAt: new Date().toISOString(),
-    };
-    setTodos((prev) => [...prev, newTodo]);
-  };
-
-  const handleToggleTodo = (id: string) => {
-    setTodos((prev) =>
-      prev.map((todo) =>
-        todo.id === id ? { ...todo, isCompleted: !todo.isCompleted } : todo
-      )
-    );
-  };
-
-  const handleAssignTodo = (todoId: string, assigneeId: string) => {
-    const assignee = participants.find((p) => p.id === assigneeId);
-    setTodos((prev) =>
-      prev.map((todo) =>
-        todo.id === todoId
-          ? {
-              ...todo,
-              assigneeId,
-              assigneeName: assignee?.nickname,
-              assigneeAvatar: assignee?.profile_image_url,
-            }
-          : todo
-      )
-    );
-  };
-
-  const handleDeleteTodo = (id: string) => {
-    setTodos((prev) => prev.filter((todo) => todo.id !== id));
-  };
-
   const handleBlockClick = (blockId: string) => {
     // TODO: 새로운 API 데이터와 기존 TravelBlock 타입 매핑 필요
     console.log('Block click:', blockId);
@@ -361,9 +292,9 @@ const TravelDetailView = () => {
   const canEdit = true;
 
   return (
-    <div className='flex h-screen bg-gray-50'>
+    <div className='flex min-h-screen w-full bg-gray-50'>
       {/* 메인 컨텐츠 */}
-      <div className='flex flex-1 flex-col'>
+      <div className='flex w-full flex-1 flex-col'>
         {/* 헤더 */}
         <TravelHeader
           title={travelPlan.title}
@@ -382,10 +313,11 @@ const TravelDetailView = () => {
         />
 
         {/* 컨텐츠 영역 */}
-        <div className='flex-1 overflow-hidden'>
+        <div className='flex-1 overflow-x-hidden'>
           {selectedDay === 0 ? (
-            <div>
+            <div className='h-full'>
               <BriefingBoard
+                planId={planId}
                 title={travelPlan.title}
                 location={travelPlan.location}
                 startDate={travelPlan.start_date}
@@ -396,9 +328,10 @@ const TravelDetailView = () => {
                   profile_image_url: p.profile_image_url,
                   isOnline: p.isOnline || false,
                 }))}
-                totalBudget={totalBudget}
-                currency='KRW'
-                readinessScore={readinessScore}
+                totalBudget={(travelPlan as any).target_budget || 0}
+                currency={(travelPlan as any).budget_currency || 'KRW'}
+                destinationCountry={(travelPlan as any).destination_country}
+                userNationality={userProfile?.nationality}
                 hotTopics={hotTopics}
                 onInviteParticipants={handleInviteParticipants}
                 onExport={handleExport}
@@ -407,11 +340,6 @@ const TravelDetailView = () => {
                 onReadinessClick={handleReadinessClick}
                 onBlockClick={handleBlockClick}
                 onHotTopicClick={handleHotTopicClick}
-                todos={todos}
-                onAddTodo={handleAddTodo}
-                onToggleTodo={handleToggleTodo}
-                onAssignTodo={handleAssignTodo}
-                onDeleteTodo={handleDeleteTodo}
               />
             </div>
           ) : (
