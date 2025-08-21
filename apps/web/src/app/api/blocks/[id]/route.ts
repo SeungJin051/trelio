@@ -87,6 +87,32 @@ export async function PUT(
     }
 
     const body = await request.json();
+    const { cost, currency, start_time, end_time, ...otherFields } = body;
+
+    // 비용 정보를 JSONB 형태로 구성
+    const costData =
+      cost && currency
+        ? {
+            amount: parseFloat(cost),
+            currency: currency,
+          }
+        : cost; // 이미 JSONB 형태일 수도 있음
+
+    // 시간 정보를 JSONB 형태로 구성
+    const timeRangeData =
+      start_time && end_time
+        ? {
+            startTime: start_time,
+            endTime: end_time,
+          }
+        : undefined;
+
+    // 업데이트할 데이터 구성
+    const updateData = {
+      ...otherFields,
+      ...(costData && { cost: costData }),
+      ...(timeRangeData && { time_range: timeRangeData }),
+    };
 
     // 블록 존재 확인 및 권한 확인
     const { data: existingBlock, error: fetchError } = await supabase
@@ -122,7 +148,7 @@ export async function PUT(
     const { data: updatedBlock, error: updateError } = await supabase
       .from('travel_blocks')
       .update({
-        ...body,
+        ...updateData,
         updated_at: new Date().toISOString(),
       })
       .eq('id', blockId)
