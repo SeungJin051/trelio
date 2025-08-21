@@ -7,6 +7,7 @@ import { IoGridOutline } from 'react-icons/io5';
 
 import { Typography } from '@ui/components';
 
+import { useMobile } from '@/hooks';
 import { formatCurrency } from '@/lib/currency';
 
 import { TabItem } from '../constants';
@@ -20,6 +21,7 @@ interface DayTabProps {
 
 export const DayTab = forwardRef<HTMLButtonElement, DayTabProps>(
   ({ tab, isSelected, onClick, isDashboard = false }, ref) => {
+    const isMobile = useMobile();
     const { setNodeRef, isOver } = useDroppable({
       id: `day-${tab.dayNumber}`,
     });
@@ -36,10 +38,15 @@ export const DayTab = forwardRef<HTMLButtonElement, DayTabProps>(
 
     const getTabContent = () => {
       if (isDashboard) {
+        // 모든 화면에서 그리드 아이콘 사용
+        const DashboardIcon = IoGridOutline;
+        const dashboardText = isMobile ? '대시보드' : tab.label;
+        const subText = '전체 보기';
+
         return (
           <div className='flex h-full flex-col items-center justify-center'>
             <div className='mb-1 flex items-center justify-center'>
-              <IoGridOutline className='mr-1 h-3 w-3 sm:h-4 sm:w-4' />
+              <DashboardIcon className='mr-1 h-3 w-3 sm:h-4 sm:w-4' />
               <Typography
                 variant='body2'
                 className={`text-xs font-medium sm:text-sm ${
@@ -50,11 +57,11 @@ export const DayTab = forwardRef<HTMLButtonElement, DayTabProps>(
                       : 'text-gray-900'
                 }`}
               >
-                {tab.label}
+                {dashboardText}
               </Typography>
             </div>
             <Typography variant='caption' className='text-xs text-gray-500'>
-              전체 보기
+              {subText}
             </Typography>
           </div>
         );
