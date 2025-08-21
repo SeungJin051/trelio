@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
@@ -21,6 +21,7 @@ import TravelDatePicker from '@/components/travel/inputs/TravelDatePicker';
 import { useSession } from '@/hooks/useSession';
 import { useToast } from '@/hooks/useToast';
 import {
+  convertCurrency,
   formatCurrencyWithExchange,
   getCurrencyByDestination,
   getCurrencyByNationality,
@@ -96,6 +97,29 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
     }
     return '';
   };
+
+  // 환율 적용된 목적지 통화 예산 미리보기
+  const [convertedBudget, setConvertedBudget] = useState<number | null>(null);
+
+  useEffect(() => {
+    const run = async () => {
+      const amount = parseBudgetValue(basicInfo.targetBudget);
+      const userCur = getUserCurrency();
+      const destCur = getDestinationCurrency();
+      if (!amount || !destCur) {
+        setConvertedBudget(null);
+        return;
+      }
+      try {
+        const v = await convertCurrency(amount, userCur, destCur);
+        setConvertedBudget(v);
+      } catch {
+        setConvertedBudget(null);
+      }
+    };
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [basicInfo.targetBudget, basicInfo.location, userProfile?.nationality]);
 
   // 실제 숫자값으로 변환
   const parseBudgetValue = (formattedValue: string): number => {
@@ -180,6 +204,7 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
       }
       const shareLinkId = uuidv4();
       const budgetValue = parseBudgetValue(basicInfo.targetBudget);
+      const userCurrency = getUserCurrency();
       const destinationCurrency = getDestinationCurrency();
 
       // 목적지 국가 코드 찾기
@@ -189,6 +214,13 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
           country.nameEn.toLowerCase() === basicInfo.location.toLowerCase()
       );
 
+      // 저장 시: 목적지 선택됨 → 예산을 목적지 통화로 변환하여 저장
+      const budgetToSave = destinationCurrency
+        ? await convertCurrency(budgetValue, userCurrency, destinationCurrency)
+        : budgetValue;
+
+      const budgetCurrencyToSave = destinationCurrency || userCurrency;
+
       const { data: travelPlan, error: planError } = await supabase
         .from('travel_plans')
         .insert({
@@ -197,8 +229,8 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
           location: basicInfo.location.trim(),
           start_date: basicInfo.startDate!.toISOString().split('T')[0],
           end_date: basicInfo.endDate!.toISOString().split('T')[0],
-          target_budget: budgetValue > 0 ? budgetValue : 0,
-          budget_currency: destinationCurrency,
+          target_budget: budgetValue > 0 ? budgetToSave : 0,
+          budget_currency: budgetCurrencyToSave,
           destination_country: selectedCountry?.code,
           share_link_id: shareLinkId,
           default_permission: basicInfo.allowEdit ? 'editor' : 'viewer',
@@ -296,7 +328,7 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
                     <span>예산 (선택사항)</span>
                   </label>
                   <Input
-                    placeholder={`예: 1,000,000`}
+                    placeholder={`예: ${formatCurrencyWithExchange(1000000, getUserCurrency())}`}
                     value={basicInfo.targetBudget}
                     onChange={(e) => {
                       const formattedValue = formatBudgetInput(e.target.value);
@@ -308,11 +340,14 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
                         setErrors((prev) => ({ ...prev, budget: undefined }));
                     }}
                     errorText={errors.budget}
-                    helperText={
-                      basicInfo.location
-                        ? `💰 목적지 통화: ${getDestinationCurrency()} (${basicInfo.location})`
-                        : `💰 기본 통화: ${getUserCurrency()}`
-                    }
+                    helperText={(function () {
+                      const ownerName = userProfile?.nationality || '대한민국';
+                      const destName = basicInfo.location;
+                      if (destName) {
+                        return `💡 지금은 ${ownerName} 화폐 단위로 입력해주세요.`;
+                      }
+                      return `💡 지금은 ${ownerName} 화폐 단위로 입력해주세요.`;
+                    })()}
                   />
                 </div>
 
@@ -325,17 +360,32 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
                           variant='body2'
                           className='font-semibold text-blue-800'
                         >
-                          설정된 예산
+                          설정된 예산 (목적지 통화)
                         </Typography>
                         <Typography
                           variant='h6'
                           className='font-bold text-blue-900'
                         >
+                          {(() => {
+                            const userCur = getUserCurrency();
+                            const destCur = getDestinationCurrency();
+                            const amount = parseBudgetValue(
+                              basicInfo.targetBudget
+                            );
+                            if (!amount)
+                              return formatCurrencyWithExchange(0, destCur);
+                            if (destCur) {
+                              const val = convertedBudget ?? amount;
+                              return formatCurrencyWithExchange(val, destCur);
+                            }
+                            return formatCurrencyWithExchange(amount, userCur);
+                          })()}
+                        </Typography>
+                        <Typography variant='caption' className='text-blue-700'>
+                          기준 입력:{' '}
                           {formatCurrencyWithExchange(
                             parseBudgetValue(basicInfo.targetBudget),
-                            basicInfo.location
-                              ? getDestinationCurrency()
-                              : getUserCurrency()
+                            getUserCurrency()
                           )}
                         </Typography>
                         {basicInfo.location &&
@@ -344,8 +394,7 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
                               variant='caption'
                               className='text-blue-600'
                             >
-                              ※ 실제 예산 현황에서는 {getUserCurrency()}로 환율
-                              적용하여 표시됩니다
+                              ※ 저장 시 목적지 통화로 환율 변환되어 저장됩니다
                             </Typography>
                           )}
                       </div>
