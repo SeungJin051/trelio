@@ -176,9 +176,7 @@ export async function PATCH(request: Request, context: any) {
         }
       }
     } catch (error) {
-      console.log(
-        'profiles 테이블을 찾을 수 없습니다. 기본 정보만 사용합니다.'
-      );
+      console.error('사용자 정보 조회 실패:', error);
     }
 
     // 사용자 정보 추가

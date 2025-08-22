@@ -143,7 +143,6 @@ export async function createBlock(
   }
 
   const json = (await response.json()) as TravelBlock;
-  console.log('[createBlock] success', { id: json.id, title: json.title });
   return json;
 }
 
@@ -170,7 +169,6 @@ export async function updateBlock(
   }
 
   const json = (await response.json()) as TravelBlock;
-  console.log('[updateBlock] success', { id: json.id });
   return json;
 }
 

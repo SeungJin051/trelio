@@ -132,9 +132,7 @@ export async function GET(request: Request) {
         }
       }
     } catch (error) {
-      console.log(
-        'profiles 테이블을 찾을 수 없습니다. 기본 정보만 사용합니다.'
-      );
+      console.error('사용자 정보 조회 실패:', error);
     }
 
     // 투두 데이터에 사용자 정보 추가
@@ -268,9 +266,7 @@ export async function POST(request: Request) {
         }
       }
     } catch (error) {
-      console.log(
-        'profiles 테이블을 찾을 수 없습니다. 기본 정보만 사용합니다.'
-      );
+      console.error('사용자 정보 조회 실패:', error);
     }
 
     const todoWithUsers = {

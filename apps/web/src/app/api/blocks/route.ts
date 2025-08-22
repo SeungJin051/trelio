@@ -228,12 +228,6 @@ export async function POST(request: NextRequest) {
       console.error('Error creating activity log:', activityError);
     }
 
-    console.log('API /api/blocks POST success', {
-      plan_id,
-      new_block_id: newBlock.id,
-      activity_id: activityRow?.id,
-    });
-
     return NextResponse.json(newBlock, { status: 201 });
   } catch (error) {
     console.error('Error creating block:', error);

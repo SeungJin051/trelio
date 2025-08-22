@@ -56,18 +56,14 @@ export async function GET(
 ) {
   try {
     const { id: planId } = await params;
-    console.log('API: Travel detail request for planId:', planId);
 
     const supabase = await createServerSupabaseClient();
-    console.log('API: Supabase client created');
 
     // 사용자 인증 확인
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
-
-    console.log('API: Auth result - user:', user?.id, 'error:', authError);
 
     if (authError) {
       console.error('API: Auth error:', authError);
@@ -78,14 +74,10 @@ export async function GET(
     }
 
     if (!user) {
-      console.log('API: No user found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('API: Plan ID:', planId);
-
     if (!planId) {
-      console.log('API: No plan ID provided');
       return NextResponse.json(
         { error: 'Plan ID is required' },
         { status: 400 }
@@ -93,22 +85,13 @@ export async function GET(
     }
 
     // 1. 여행 계획 기본 정보 조회
-    console.log('API: Fetching travel plan...');
     const { data: travelPlan, error: planError } = await supabase
       .from('travel_plans')
       .select('*')
       .eq('id', planId)
       .single();
 
-    console.log(
-      'API: Travel plan result - data:',
-      travelPlan?.id,
-      'error:',
-      planError
-    );
-
     if (planError) {
-      console.error('API: Plan fetch error:', planError);
       return NextResponse.json(
         { error: 'Travel plan not found' },
         { status: 404 }
@@ -116,7 +99,6 @@ export async function GET(
     }
 
     if (!travelPlan) {
-      console.log('API: No travel plan found');
       return NextResponse.json(
         { error: 'Travel plan not found' },
         { status: 404 }
@@ -124,18 +106,10 @@ export async function GET(
     }
 
     // 2. 참여자 목록 조회
-    console.log('API: Fetching participants...');
     const { data: participants, error: participantsError } = await supabase
       .from('travel_plan_participants')
       .select('*')
       .eq('plan_id', planId);
-
-    console.log(
-      'API: Participants result - count:',
-      participants?.length,
-      'error:',
-      participantsError
-    );
 
     if (participantsError) {
       console.error('API: Participants fetch error:', participantsError);
@@ -146,20 +120,12 @@ export async function GET(
     }
 
     // 3. 블록 목록 조회 (날짜, 순서대로 정렬)
-    console.log('API: Fetching blocks...');
     const { data: blocks, error: blocksError } = await supabase
       .from('travel_blocks')
       .select('*')
       .eq('plan_id', planId)
       .order('day_number', { ascending: true })
       .order('order_index', { ascending: true });
-
-    console.log(
-      'API: Blocks result - count:',
-      blocks?.length,
-      'error:',
-      blocksError
-    );
 
     if (blocksError) {
       console.error('API: Blocks fetch error:', blocksError);
@@ -170,20 +136,12 @@ export async function GET(
     }
 
     // 4. 최근 활동 로그 5개 조회
-    console.log('API: Fetching activities...');
     const { data: activities, error: activitiesError } = await supabase
       .from('travel_activities')
       .select('*')
       .eq('plan_id', planId)
       .order('created_at', { ascending: false })
       .limit(5);
-
-    console.log(
-      'API: Activities result - count:',
-      activities?.length,
-      'error:',
-      activitiesError
-    );
 
     if (activitiesError) {
       console.error('API: Activities fetch error:', activitiesError);
@@ -292,7 +250,6 @@ export async function GET(
         }) || [],
     };
 
-    console.log('API: Response prepared successfully');
     return NextResponse.json(response);
   } catch (error) {
     console.error('API: Unexpected error:', error);

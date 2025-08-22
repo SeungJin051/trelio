@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 
 import { useQueryClient } from '@tanstack/react-query';
 
-import type { TravelDetailResponse } from '@/lib/api/travel';
 import { createClient } from '@/lib/supabase/client/supabase';
 
 export function useTravelRealtime(planId: string) {
@@ -25,8 +24,6 @@ export function useTravelRealtime(planId: string) {
           filter: `plan_id=eq.${planId}`,
         },
         (payload) => {
-          console.log('Block change:', payload);
-
           // 캐시 무효화하여 최신 데이터 가져오기
           queryClient.invalidateQueries({
             queryKey: ['travel-detail', planId],
@@ -42,24 +39,19 @@ export function useTravelRealtime(planId: string) {
           filter: `plan_id=eq.${planId}`,
         },
         (payload) => {
-          console.log('Activity change:', {
-            eventType: payload.eventType,
-            newRow: payload.new,
-          });
-
           // 활동 로그가 추가되면 캐시 업데이트
           if (payload.eventType === 'INSERT') {
-            queryClient.setQueryData<TravelDetailResponse>(
+            queryClient.setQueryData(
               ['travel-detail', planId],
-              (oldData) => {
+              (oldData: any) => {
                 if (!oldData) return oldData;
 
                 // 새로운 활동을 맨 앞에 추가 (내용 비어있을 때 가독성 있는 문구 생성)
                 const participant = oldData.participants.find(
-                  (p) => p.user_id === payload.new.user_id
+                  (p: any) => p.user_id === payload.new.user_id
                 );
                 const relatedBlock = oldData.blocks.find(
-                  (b) => b.id === payload.new.block_id
+                  (b: any) => b.id === payload.new.block_id
                 );
 
                 const inferredType =
@@ -127,8 +119,6 @@ export function useTravelRealtime(planId: string) {
           filter: `plan_id=eq.${planId}`,
         },
         (payload) => {
-          console.log('Participant change:', payload);
-
           // 참여자 변경 시 캐시 무효화
           queryClient.invalidateQueries({
             queryKey: ['travel-detail', planId],
