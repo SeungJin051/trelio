@@ -126,44 +126,24 @@ export const useBudgetWithExchange = ({
         const userCurrency = getUserCurrency();
         const originalCurrency = budgetCurrency || getDestinationCurrency();
 
-        // 통화별 사용 금액 집계
+        // 통화별 사용 금액 집계 (배치 변환)
         const currencyTotals = new Map<string, number>();
-        let totalSpentInUserCurrency = 0;
-
         for (const block of blocks) {
           if (block.cost?.amount && block.cost.amount > 0) {
             const blockAmount = block.cost.amount;
-            const blockCurrency = block.cost.currency || 'USD';
-
-            // 통화별 합계 계산
+            const blockCurrency = block.cost.currency || originalCurrency;
             currencyTotals.set(
               blockCurrency,
               (currencyTotals.get(blockCurrency) || 0) + blockAmount
             );
-
-            try {
-              // 블록 통화를 사용자 통화로 변환
-              const convertedAmount = await convertCurrency(
-                blockAmount,
-                blockCurrency,
-                userCurrency
-              );
-              totalSpentInUserCurrency += convertedAmount;
-            } catch (error) {
-              console.error(
-                `블록 비용 변환 실패 (${blockCurrency} -> ${userCurrency}):`,
-                error
-              );
-              // 변환 실패 시 원래 금액 그대로 더함 (폴백)
-              totalSpentInUserCurrency += blockAmount;
-            }
           }
         }
 
-        // 통화별 breakdown 생성
-        const breakdownByCurrency = [];
+        // 필요한 통화 집합에 대해 한 번씩만 환율 조회
+        const breakdownByCurrency =
+          [] as BudgetInfo['localSpending']['breakdownByCurrency'];
         let totalInOriginalCurrency = 0;
-
+        let totalSpentInUserCurrency = 0;
         for (const [currency, amount] of currencyTotals.entries()) {
           try {
             const convertedAmount = await convertCurrency(
@@ -172,7 +152,6 @@ export const useBudgetWithExchange = ({
               userCurrency
             );
             const exchangeRate = amount > 0 ? convertedAmount / amount : 1;
-
             breakdownByCurrency.push({
               currency,
               amount,
@@ -184,13 +163,26 @@ export const useBudgetWithExchange = ({
               ),
               exchangeRate,
             });
-
-            // 원래 통화(예산 통화)와 같은 경우 원화 총액에 더함
-            if (currency === originalCurrency) {
+            totalSpentInUserCurrency += convertedAmount;
+            if (currency === originalCurrency)
               totalInOriginalCurrency += amount;
-            }
           } catch (error) {
             console.error(`통화별 분석 실패 (${currency}):`, error);
+            // 실패 시 변환 없이 원화 추가
+            breakdownByCurrency.push({
+              currency,
+              amount,
+              convertedAmount: amount,
+              formattedAmount: formatCurrencyWithExchange(amount, currency),
+              formattedConvertedAmount: formatCurrencyWithExchange(
+                amount,
+                userCurrency
+              ),
+              exchangeRate: 1,
+            });
+            totalSpentInUserCurrency += amount;
+            if (currency === originalCurrency)
+              totalInOriginalCurrency += amount;
           }
         }
 
@@ -261,14 +253,16 @@ export const useBudgetWithExchange = ({
       const effectiveBudgetCurrency =
         budgetCurrency || getDestinationCurrency();
       const spentData = await calculateSpentAmount();
-      const spentAmount = spentData.totalInUserCurrency;
+      // 예산 통화 기준 지출 합계를 사용해 변환 (이중 변환 방지)
+      const spentInOriginalCurrency =
+        spentData.localSpending.totalInOriginalCurrency;
 
-      // 환율 적용하여 예산 정보 계산
+      // 환율 적용하여 예산 정보 계산 (원화→사용자 통화 단일 변환)
       const exchangeResult = await calculateBudgetWithExchange(
         targetBudget,
         effectiveBudgetCurrency,
         userCurrency,
-        spentAmount
+        spentInOriginalCurrency
       );
 
       const spentPercentage =
@@ -279,8 +273,6 @@ export const useBudgetWithExchange = ({
           : 0;
 
       // 원래 통화로 사용 금액 계산 (예: 1000달러 중 100달러 사용 = 900달러 남음)
-      const spentInOriginalCurrency =
-        spentData.localSpending.totalInOriginalCurrency;
       const remainingInOriginalCurrency =
         targetBudget - spentInOriginalCurrency;
 

@@ -13,6 +13,7 @@ import { BlockCreateModal } from '@/components/travel/detail/BlockCreateModal';
 import { BlockDetailModal } from '@/components/travel/detail/BlockDetailModal';
 import { TravelTimelineCanvas } from '@/components/travel/detail/TravelTimelineCanvas';
 import { useBlocks } from '@/hooks/useBlocks';
+import { useParticipantsPresence } from '@/hooks/useParticipantsPresence';
 import { useSession } from '@/hooks/useSession';
 import { useToast } from '@/hooks/useToast';
 import { useTravelDetail } from '@/hooks/useTravelDetail';
@@ -60,6 +61,14 @@ const TravelDetailView = () => {
 
   // 실시간 기능 활성화 (항상 호출)
   useTravelRealtime(planId);
+
+  // 참여자 Presence (온라인/오프라인)
+  useParticipantsPresence({
+    planId,
+    userId: userProfile?.id,
+    nickname: userProfile?.nickname,
+    profileImageUrl: userProfile?.profile_image_url,
+  });
 
   // 블록 시스템 Hook (항상 호출)
   const {
@@ -111,9 +120,9 @@ const TravelDetailView = () => {
 
   // 총 예산 계산
   const totalBudget = useMemo(() => {
-    return blocks.reduce((total, block) => {
+    return blocks.reduce((total: number, block: any) => {
       if (block.cost && typeof block.cost === 'object' && block.cost !== null) {
-        const costObj = block.cost as any;
+        const costObj = block.cost as { amount?: number };
         if (typeof costObj.amount === 'number') {
           return total + costObj.amount;
         }
@@ -156,11 +165,13 @@ const TravelDetailView = () => {
   const hotTopics = useMemo(() => {
     // 실제로는 댓글 수를 API에서 가져와야 함
     // 현재는 임시로 최근 활동에서 블록 관련 활동을 찾아서 반환
-    const blockActivities = activities.filter((activity) => activity.blockId);
+    const blockActivities = activities.filter(
+      (activity: any) => activity.blockId
+    );
 
     // 블록별 활동 수 계산
     const blockActivityCounts = blockActivities.reduce(
-      (acc, activity) => {
+      (acc: Record<string, number>, activity: any) => {
         const blockId = activity.blockId!;
         acc[blockId] = (acc[blockId] || 0) + 1;
         return acc;
@@ -170,11 +181,12 @@ const TravelDetailView = () => {
 
     // 활동이 많은 순으로 정렬하여 상위 3개 반환
     return Object.entries(blockActivityCounts)
-      .sort(([, a], [, b]) => b - a)
+      .sort(([, a], [, b]) => (b as number) - (a as number))
       .slice(0, 3)
       .map(([blockId]) => ({
         id: blockId,
-        title: blocks.find((b) => b.id === blockId)?.title || '알 수 없는 블록',
+        title:
+          blocks.find((b: any) => b.id === blockId)?.title || '알 수 없는 블록',
         commentCount: blockActivityCounts[blockId] || 0,
         blockId: blockId,
       }));
@@ -322,12 +334,13 @@ const TravelDetailView = () => {
                 location={travelPlan.location}
                 startDate={travelPlan.start_date}
                 endDate={travelPlan.end_date}
-                participants={participants.map((p) => ({
+                participants={participants.map((p: any) => ({
                   id: p.id,
                   nickname: p.nickname || '알 수 없음',
                   profile_image_url: p.profile_image_url,
                   isOnline: p.isOnline || false,
                 }))}
+                activities={activities}
                 totalBudget={(travelPlan as any).target_budget || 0}
                 currency={(travelPlan as any).budget_currency || 'KRW'}
                 destinationCountry={(travelPlan as any).destination_country}

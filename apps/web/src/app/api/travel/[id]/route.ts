@@ -123,7 +123,7 @@ export async function GET(
       );
     }
 
-    // 2. 참여자 목록 조회 (관계 문제 해결을 위해 단순화)
+    // 2. 참여자 목록 조회
     console.log('API: Fetching participants...');
     const { data: participants, error: participantsError } = await supabase
       .from('travel_plan_participants')
@@ -169,7 +169,7 @@ export async function GET(
       );
     }
 
-    // 4. 최근 활동 로그 5개 조회 (관계 문제 해결을 위해 단순화)
+    // 4. 최근 활동 로그 5개 조회
     console.log('API: Fetching activities...');
     const { data: activities, error: activitiesError } = await supabase
       .from('travel_activities')
@@ -193,34 +193,103 @@ export async function GET(
       );
     }
 
-    // 5. 통합 응답 데이터 구성
+    // 5. 사용자 프로필 조회 (참여자 + 활동 작성자)
+    const participantUserIds = (participants || [])
+      .map((p: any) => p.user_id)
+      .filter(Boolean);
+    const activityUserIds = (activities || [])
+      .map((a: any) => a.user_id)
+      .filter(Boolean);
+    const uniqueUserIds = Array.from(
+      new Set<string>([...participantUserIds, ...activityUserIds])
+    );
+
+    const profilesMap = new Map<
+      string,
+      { nickname?: string; profile_image_url?: string }
+    >();
+    if (uniqueUserIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('user_profiles')
+        .select('id, nickname, profile_image_url')
+        .in('id', uniqueUserIds);
+
+      for (const p of profiles || []) {
+        profilesMap.set(p.id as string, {
+          nickname: (p as any).nickname ?? undefined,
+          profile_image_url: (p as any).profile_image_url ?? undefined,
+        });
+      }
+    }
+
+    // 6. 블록 제목 맵
+    const blocksMap = new Map<string, string>();
+    for (const b of blocks || []) {
+      blocksMap.set((b as any).id, (b as any).title);
+    }
+
+    // 7. 통합 응답 데이터 구성 (프로필/제목 매핑 반영)
     const response = {
       travelPlan,
       participants:
-        participants?.map((p: any) => ({
-          id: p.id,
-          role: p.role,
-          joined_at: p.joined_at,
-          user_id: p.user_id,
-          nickname: '사용자', // TODO: 사용자 정보 조회
-          profile_image_url: undefined,
-          isOnline: false, // TODO: 실시간 온라인 상태 구현
-        })) || [],
+        participants?.map((p: any) => {
+          const profile = profilesMap.get(p.user_id) || {};
+          return {
+            id: p.id,
+            role: p.role,
+            joined_at: p.joined_at,
+            user_id: p.user_id,
+            nickname: profile.nickname || '(이름 없음)',
+            profile_image_url: profile.profile_image_url,
+            isOnline: false,
+          };
+        }) || [],
       blocks: blocks || [],
       activities:
-        activities?.map((a: any) => ({
-          id: a.id,
-          type: a.type,
-          user: {
-            id: a.user_id,
-            nickname: '사용자', // TODO: 사용자 정보 조회
-            profile_image_url: undefined,
-          },
-          content: a.content,
-          timestamp: a.created_at,
-          blockId: a.block_id,
-          blockTitle: undefined, // TODO: 블록 정보 조회
-        })) || [],
+        activities?.map((a: any) => {
+          const profile = profilesMap.get(a.user_id) || {};
+          const type = a.type ?? a.activity_type;
+          const blockTitle = a.block_id ? blocksMap.get(a.block_id) : undefined;
+          // 콘텐츠가 비어있으면 의미 있는 메시지 생성
+          const contentFallback = (() => {
+            if (type === 'block_created') {
+              return `${profile.nickname || '사용자'}님이 "${blockTitle || '블록'}"을 추가했습니다`;
+            }
+            if (type === 'block_updated') {
+              return `${profile.nickname || '사용자'}님이 "${blockTitle || '블록'}"을 수정했습니다`;
+            }
+            if (type === 'block_move') {
+              return `${profile.nickname || '사용자'}님이 "${blockTitle || '블록'}"을 이동했습니다`;
+            }
+            if (type === 'block_deleted') {
+              return `${profile.nickname || '사용자'}님이 블록을 삭제했습니다`;
+            }
+            if (type === 'comment') {
+              return `${profile.nickname || '사용자'}님이 댓글을 남겼습니다`;
+            }
+            if (type === 'participant_added') {
+              return `${profile.nickname || '새 참여자'}님이 참여했습니다`;
+            }
+            if (type === 'participant_removed') {
+              return `${profile.nickname || '사용자'}님이 나갔습니다`;
+            }
+            return a.description || '활동이 기록되었습니다';
+          })();
+
+          return {
+            id: a.id,
+            type,
+            user: {
+              id: a.user_id,
+              nickname: profile.nickname || '(이름 없음)',
+              profile_image_url: profile.profile_image_url,
+            },
+            content: a.content ?? a.description ?? contentFallback,
+            timestamp: a.created_at,
+            blockId: a.block_id,
+            blockTitle,
+          };
+        }) || [],
     };
 
     console.log('API: Response prepared successfully');

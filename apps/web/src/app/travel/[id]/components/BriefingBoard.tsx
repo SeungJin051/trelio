@@ -27,9 +27,16 @@ import { formatCurrency } from '@/lib/currency';
 
 import { SharedTodoWidget } from './SharedTodoWidget';
 
+// 로컬 타입 (API와 동일 스키마 사용)
 interface ActivityItem {
   id: string;
-  type: 'block_add' | 'block_edit' | 'comment' | 'participant_join';
+  type:
+    | 'block_add'
+    | 'block_edit'
+    | 'block_delete'
+    | 'block_move'
+    | 'comment'
+    | 'participant_join';
   user: {
     id: string;
     nickname: string;
@@ -56,6 +63,7 @@ interface BriefingBoardProps {
   startDate: string;
   endDate: string;
   participants: Participant[];
+  activities: ActivityItem[];
   totalBudget: number;
   currency: string;
   destinationCountry?: string; // 목적지 국가 코드
@@ -82,6 +90,7 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
   startDate,
   endDate,
   participants,
+  activities,
   totalBudget,
   currency,
   destinationCountry,
@@ -161,36 +170,7 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
     return `${diffDays - 1}박 ${diffDays}일`;
   };
 
-  // 최근 활동 데이터 (실제로는 API에서 가져옴)
-  const recentActivities: ActivityItem[] = [
-    {
-      id: '1',
-      type: 'block_add',
-      user: { id: '1', nickname: '지혜', profile_image_url: undefined },
-      content: '돼지국밥 블록을 추가했습니다',
-      timestamp: '방금 전',
-      blockId: 'block-1',
-      blockTitle: '돼지국밥',
-    },
-    {
-      id: '2',
-      type: 'block_edit',
-      user: { id: '2', nickname: '민준', profile_image_url: undefined },
-      content: '해운대 숙소 시간을 15:00으로 변경했습니다',
-      timestamp: '5분 전',
-      blockId: 'block-2',
-      blockTitle: '해운대 숙소',
-    },
-    {
-      id: '3',
-      type: 'comment',
-      user: { id: '3', nickname: '현수', profile_image_url: undefined },
-      content: '광안리 드론쇼 블록에 댓글을 남겼습니다',
-      timestamp: '1시간 전',
-      blockId: 'block-3',
-      blockTitle: '광안리 드론쇼',
-    },
-  ];
+  // 최근 활동: 상위 컴포넌트에서 전달받은 데이터를 사용
 
   return (
     <div className='min-h-full w-full overflow-x-hidden bg-gray-50 px-1 py-3 sm:px-3 md:px-6 lg:px-8'>
@@ -291,15 +271,6 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
                     </div>
                   </div>
                 ))}
-
-                {/* 초대 버튼 */}
-                <button
-                  onClick={onInviteParticipants}
-                  className='flex h-10 w-10 items-center justify-center rounded-full border-2 border-dashed border-gray-300 bg-gray-50 text-gray-500 transition-all duration-200 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-500'
-                  title='참여자 초대하기'
-                >
-                  <IoAddOutline className='h-5 w-5' />
-                </button>
               </div>
 
               {/* 참여자 이름 목록 (모바일용) */}
@@ -339,12 +310,9 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
                   leftIcon={<IoAddOutline className='h-4 w-4 sm:h-5 sm:w-5' />}
                 >
                   <div className='ml-2 text-left sm:ml-3'>
-                    <div className='text-sm font-semibold sm:text-base'>
+                    <Typography variant='h6' className='text-white'>
                       동반자 초대하기
-                    </div>
-                    <div className='text-xs text-blue-100'>
-                      새로운 여행 친구를 초대하세요
-                    </div>
+                    </Typography>
                   </div>
                 </Button>
                 <div className='grid w-full grid-cols-2 gap-2 sm:gap-3'>
@@ -387,7 +355,7 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
                 최근 변경사항
               </Typography>
               <div className='space-y-2 sm:space-y-3'>
-                {recentActivities.map((activity) => (
+                {activities.map((activity: ActivityItem) => (
                   <div
                     key={activity.id}
                     className='rounded-lg border border-gray-200 p-3'

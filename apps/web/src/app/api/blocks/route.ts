@@ -211,21 +211,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 활동 로그 생성
-    const { error: activityError } = await supabase
+    // 활동 로그 생성 (스키마 준수: type/content)
+    const { data: activityRow, error: activityError } = await supabase
       .from('travel_activities')
       .insert({
         plan_id,
         user_id: user.id,
-        type: 'block_add',
+        type: 'block_created',
         content: `${title} 블록을 추가했습니다`,
         block_id: newBlock.id,
-      });
+      })
+      .select()
+      .single();
 
     if (activityError) {
       console.error('Error creating activity log:', activityError);
-      // 활동 로그 생성 실패는 블록 생성을 실패시키지 않음
     }
+
+    console.log('API /api/blocks POST success', {
+      plan_id,
+      new_block_id: newBlock.id,
+      activity_id: activityRow?.id,
+    });
 
     return NextResponse.json(newBlock, { status: 201 });
   } catch (error) {

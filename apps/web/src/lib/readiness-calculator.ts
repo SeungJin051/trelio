@@ -6,10 +6,12 @@ import { TravelTodo } from '@/types/travel';
 interface Block {
   id: string;
   title?: string;
+  // 과거 간이 스키마 호환
   time?: string;
-  location?: string;
+  location?: any;
   description?: string;
   block_type: string;
+  time_range?: { start_time?: string; end_time?: string };
 }
 
 /**
@@ -68,37 +70,55 @@ const calculateBlockCompleteness = (
  * @returns 완성 여부
  */
 const isBlockComplete = (block: Block): boolean => {
-  // 기본 필수 정보: 제목, 시간, 위치
-  const hasBasicInfo = !!(
-    block.title?.trim() &&
-    block.time &&
-    block.location?.trim()
+  // location: 문자열 또는 객체({ address }) 모두 허용
+  const hasLocation = (() => {
+    if (!block.location) return false;
+    if (typeof block.location === 'string') return !!block.location.trim();
+    if (typeof block.location === 'object') return !!block.location.address;
+    return false;
+  })();
+
+  // time: 과거 필드 또는 time_range.start_time/end_time 허용
+  const hasTime = !!(
+    (block.time && block.time.trim()) ||
+    block.time_range?.start_time ||
+    block.time_range?.end_time
   );
 
-  // 블록 타입별 추가 요구사항
-  switch (block.block_type) {
+  const hasTitle = !!block.title?.trim();
+  const hasBasicInfo = hasTitle && hasTime && hasLocation;
+
+  // 타입 매핑 (DB 스키마 호환)
+  const normalizedType = (() => {
+    switch (block.block_type) {
+      case 'hotel':
+        return 'accommodation';
+      case 'food':
+        return 'restaurant';
+      case 'move':
+        return 'transportation';
+      case 'flight':
+      case 'activity':
+      case 'memo':
+        return block.block_type;
+      default:
+        return 'other';
+    }
+  })();
+
+  switch (normalizedType) {
     case 'accommodation':
-      // 숙소: 기본 정보만 있으면 완성
       return hasBasicInfo;
-
     case 'flight':
-      // 항공편: 기본 정보 + 상세 정보 필요
+      // 항공은 상세 설명(예매정보 등) 존재 시 가산
       return hasBasicInfo && !!block.description?.trim();
-
     case 'activity':
-      // 활동: 기본 정보만 있으면 완성
-      return hasBasicInfo;
-
     case 'restaurant':
-      // 식당: 기본 정보만 있으면 완성
       return hasBasicInfo;
-
     case 'transportation':
-      // 교통: 기본 정보 + 상세 정보 필요
+      // 이동은 상세 설명(경로/수단) 존재 시 가산
       return hasBasicInfo && !!block.description?.trim();
-
     default:
-      // 기타: 기본 정보만 있으면 완성
       return hasBasicInfo;
   }
 };
