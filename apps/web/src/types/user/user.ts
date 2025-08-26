@@ -38,6 +38,7 @@ export interface UserProfile {
   profile_image_url?: string;
   preferred_destinations: PreferredDestination[];
   travel_styles: TravelStyle[];
+  nationality?: string; // 사용자 국적 (ISO 3166-1 alpha-3)
 }
 
 // 데이터베이스 사용자 프로필 인터페이스 (전체 필드)

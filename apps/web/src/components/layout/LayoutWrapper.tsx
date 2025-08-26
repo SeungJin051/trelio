@@ -60,7 +60,7 @@ const LayoutWrapper = ({ children }: PropsWithChildren) => {
           'min-h-[calc(100vh-5rem)]'
         } `}
       >
-        <div className='h-full w-full'>{children}</div>
+        <div className='w-full min-w-0 overflow-x-hidden'>{children}</div>
       </main>
 
       {/* 푸터 */}

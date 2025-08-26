@@ -46,7 +46,6 @@ class SocketManager {
 
     // 연결 성공 시
     this.socket.on('connect', () => {
-      console.log('✅ Socket 연결 성공');
       this.reconnectAttempts = 0;
 
       // 현재 여행 계획에 재참여 (재연결 시)
@@ -57,8 +56,6 @@ class SocketManager {
 
     // 연결 해제 시
     this.socket.on('disconnect', (reason) => {
-      console.log('❌ Socket 연결 끊김:', reason);
-
       if (reason === 'io server disconnect') {
         // 서버에서 연결을 끊은 경우 재연결 시도
         this.handleReconnect();
@@ -80,10 +77,6 @@ class SocketManager {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       const delay = Math.pow(2, this.reconnectAttempts) * 1000; // Exponential backoff
-
-      console.log(
-        `🔄 재연결 시도 ${this.reconnectAttempts}/${this.maxReconnectAttempts} (${delay}ms 후)`
-      );
 
       setTimeout(() => {
         if (this.socket) {
@@ -114,8 +107,6 @@ class SocketManager {
     // 새 채널 참여
     this.currentTravelPlanId = planId;
     this.socket.emit('join_travel_plan', planId);
-
-    console.log(`🏠 여행 계획 채널 참여: ${planId}`);
   }
 
   /**
@@ -127,8 +118,6 @@ class SocketManager {
 
     this.socket.emit('leave_travel_plan', this.currentTravelPlanId);
     this.currentTravelPlanId = null;
-
-    console.log('🚪 여행 계획 채널 나감');
   }
 
   /**

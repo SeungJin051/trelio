@@ -98,11 +98,10 @@ export interface MoveBlockRequest {
   new_order_index: number;
 }
 
-// 여행 상세 정보 조회
 export async function fetchTravelDetail(
   planId: string
 ): Promise<TravelDetailResponse> {
-  const response = await fetch(`/api/trips/${planId}`, {
+  const response = await fetch(`/api/travel/${planId}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -110,14 +109,22 @@ export async function fetchTravelDetail(
   });
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json().catch(() => ({}));
+    // 콘솔 추적용 상세 로깅
+    console.error('[fetchTravelDetail] failed', {
+      status: response.status,
+      statusText: response.statusText,
+      error,
+      planId,
+      endpoint: `/api/travel/${planId}`,
+    });
     throw new Error(error.error || 'Failed to fetch travel detail');
   }
 
-  return response.json();
+  const json = await response.json();
+  return json;
 }
 
-// 블록 생성
 export async function createBlock(
   data: CreateBlockRequest
 ): Promise<TravelBlock> {
@@ -130,14 +137,15 @@ export async function createBlock(
   });
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json().catch(() => ({}));
+    console.error('[createBlock] failed', { status: response.status, error });
     throw new Error(error.error || 'Failed to create block');
   }
 
-  return response.json();
+  const json = (await response.json()) as TravelBlock;
+  return json;
 }
 
-// 블록 수정
 export async function updateBlock(
   blockId: string,
   data: UpdateBlockRequest
@@ -151,14 +159,19 @@ export async function updateBlock(
   });
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json().catch(() => ({}));
+    console.error('[updateBlock] failed', {
+      status: response.status,
+      error,
+      blockId,
+    });
     throw new Error(error.error || 'Failed to update block');
   }
 
-  return response.json();
+  const json = (await response.json()) as TravelBlock;
+  return json;
 }
 
-// 블록 삭제
 export async function deleteBlock(blockId: string): Promise<void> {
   const response = await fetch(`/api/blocks/${blockId}`, {
     method: 'DELETE',
@@ -168,12 +181,12 @@ export async function deleteBlock(blockId: string): Promise<void> {
   });
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json().catch(() => ({}));
+    console.error('[deleteBlock] failed', { status: response.status, error });
     throw new Error(error.error || 'Failed to delete block');
   }
 }
 
-// 블록 순서 변경
 export async function moveBlock(
   blockId: string,
   data: MoveBlockRequest
@@ -187,7 +200,8 @@ export async function moveBlock(
   });
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json().catch(() => ({}));
+    console.error('[moveBlock] failed', { status: response.status, error });
     throw new Error(error.error || 'Failed to move block');
   }
 }

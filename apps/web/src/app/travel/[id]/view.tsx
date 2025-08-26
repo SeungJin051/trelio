@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useParams, useRouter } from 'next/navigation';
 
@@ -13,6 +13,7 @@ import { BlockCreateModal } from '@/components/travel/detail/BlockCreateModal';
 import { BlockDetailModal } from '@/components/travel/detail/BlockDetailModal';
 import { TravelTimelineCanvas } from '@/components/travel/detail/TravelTimelineCanvas';
 import { useBlocks } from '@/hooks/useBlocks';
+import { useParticipantsPresence } from '@/hooks/useParticipantsPresence';
 import { useSession } from '@/hooks/useSession';
 import { useToast } from '@/hooks/useToast';
 import { useTravelDetail } from '@/hooks/useTravelDetail';
@@ -22,14 +23,11 @@ import { TravelBlock } from '@/types/travel/blocks';
 import { BriefingBoard, TabContainer, TravelHeader } from './components';
 import { TabItem, TRAVEL_DETAIL_CONSTANTS } from './constants';
 
-interface TodoItem {
-  id: string;
-  title: string;
-  isCompleted: boolean;
-  assigneeId?: string;
-  assigneeName?: string;
-  assigneeAvatar?: string;
-  createdAt: string;
+// 임시로 확장된 타입 정의 (DB 필드 추가 반영)
+interface ExtendedTravelPlanDetail {
+  target_budget?: number;
+  budget_currency?: string;
+  destination_country?: string;
 }
 
 const TravelDetailView = () => {
@@ -45,34 +43,6 @@ const TravelDetailView = () => {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-
-  // TODO: 실제 데이터는 API에서 가져와야 함
-  const [todos, setTodos] = useState<TodoItem[]>([
-    {
-      id: '1',
-      title: '렌터카 예약',
-      isCompleted: true,
-      assigneeId: 'user1',
-      assigneeName: '민준',
-      assigneeAvatar: undefined,
-      createdAt: '2024-01-15',
-    },
-    {
-      id: '2',
-      title: '여행자 보험 가입',
-      isCompleted: false,
-      assigneeId: 'user2',
-      assigneeName: '지혜',
-      assigneeAvatar: undefined,
-      createdAt: '2024-01-15',
-    },
-    {
-      id: '3',
-      title: '맛집 리스트 최종 확정',
-      isCompleted: false,
-      createdAt: '2024-01-15',
-    },
-  ]);
 
   const planId = params.id as string;
 
@@ -91,6 +61,14 @@ const TravelDetailView = () => {
 
   // 실시간 기능 활성화 (항상 호출)
   useTravelRealtime(planId);
+
+  // 참여자 Presence (온라인/오프라인)
+  useParticipantsPresence({
+    planId,
+    userId: userProfile?.id,
+    nickname: userProfile?.nickname,
+    profileImageUrl: userProfile?.profile_image_url,
+  });
 
   // 블록 시스템 Hook (항상 호출)
   const {
@@ -131,19 +109,20 @@ const TravelDetailView = () => {
     return [dashboardTab, ...dayTabs];
   }, [timeline.days]);
 
-  // 에러 처리
+  // 에러 처리: 동일 에러 중복 토스트 방지 및 무한 루프 방지
+  const hasShownErrorRef = useRef(false);
   useEffect(() => {
-    if (error) {
+    if (error && !hasShownErrorRef.current) {
+      hasShownErrorRef.current = true;
       toast.error('여행 정보를 불러오는데 실패했습니다.');
-      console.error('Travel detail error:', error);
     }
-  }, [error, toast]);
+  }, [error]);
 
   // 총 예산 계산
   const totalBudget = useMemo(() => {
-    return blocks.reduce((total, block) => {
+    return blocks.reduce((total: number, block: any) => {
       if (block.cost && typeof block.cost === 'object' && block.cost !== null) {
-        const costObj = block.cost as any;
+        const costObj = block.cost as { amount?: number };
         if (typeof costObj.amount === 'number') {
           return total + costObj.amount;
         }
@@ -186,11 +165,13 @@ const TravelDetailView = () => {
   const hotTopics = useMemo(() => {
     // 실제로는 댓글 수를 API에서 가져와야 함
     // 현재는 임시로 최근 활동에서 블록 관련 활동을 찾아서 반환
-    const blockActivities = activities.filter((activity) => activity.blockId);
+    const blockActivities = activities.filter(
+      (activity: any) => activity.blockId
+    );
 
     // 블록별 활동 수 계산
     const blockActivityCounts = blockActivities.reduce(
-      (acc, activity) => {
+      (acc: Record<string, number>, activity: any) => {
         const blockId = activity.blockId!;
         acc[blockId] = (acc[blockId] || 0) + 1;
         return acc;
@@ -200,11 +181,12 @@ const TravelDetailView = () => {
 
     // 활동이 많은 순으로 정렬하여 상위 3개 반환
     return Object.entries(blockActivityCounts)
-      .sort(([, a], [, b]) => b - a)
+      .sort(([, a], [, b]) => (b as number) - (a as number))
       .slice(0, 3)
       .map(([blockId]) => ({
         id: blockId,
-        title: blocks.find((b) => b.id === blockId)?.title || '알 수 없는 블록',
+        title:
+          blocks.find((b: any) => b.id === blockId)?.title || '알 수 없는 블록',
         commentCount: blockActivityCounts[blockId] || 0,
         blockId: blockId,
       }));
@@ -255,44 +237,6 @@ const TravelDetailView = () => {
   const handleReadinessClick = () => {
     // TODO: 준비율 상세 모달 또는 페이지로 이동
     console.log('Readiness detail clicked');
-  };
-
-  const handleAddTodo = (title: string) => {
-    const newTodo: TodoItem = {
-      id: Date.now().toString(),
-      title,
-      isCompleted: false,
-      createdAt: new Date().toISOString(),
-    };
-    setTodos((prev) => [...prev, newTodo]);
-  };
-
-  const handleToggleTodo = (id: string) => {
-    setTodos((prev) =>
-      prev.map((todo) =>
-        todo.id === id ? { ...todo, isCompleted: !todo.isCompleted } : todo
-      )
-    );
-  };
-
-  const handleAssignTodo = (todoId: string, assigneeId: string) => {
-    const assignee = participants.find((p) => p.id === assigneeId);
-    setTodos((prev) =>
-      prev.map((todo) =>
-        todo.id === todoId
-          ? {
-              ...todo,
-              assigneeId,
-              assigneeName: assignee?.nickname,
-              assigneeAvatar: assignee?.profile_image_url,
-            }
-          : todo
-      )
-    );
-  };
-
-  const handleDeleteTodo = (id: string) => {
-    setTodos((prev) => prev.filter((todo) => todo.id !== id));
   };
 
   const handleBlockClick = (blockId: string) => {
@@ -360,9 +304,9 @@ const TravelDetailView = () => {
   const canEdit = true;
 
   return (
-    <div className='flex h-screen bg-gray-50'>
+    <div className='flex min-h-screen w-full bg-gray-50'>
       {/* 메인 컨텐츠 */}
-      <div className='flex flex-1 flex-col'>
+      <div className='flex w-full flex-1 flex-col'>
         {/* 헤더 */}
         <TravelHeader
           title={travelPlan.title}
@@ -381,23 +325,26 @@ const TravelDetailView = () => {
         />
 
         {/* 컨텐츠 영역 */}
-        <div className='flex-1 overflow-hidden'>
+        <div className='flex-1 overflow-x-hidden'>
           {selectedDay === 0 ? (
-            <div>
+            <div className='h-full'>
               <BriefingBoard
+                planId={planId}
                 title={travelPlan.title}
                 location={travelPlan.location}
                 startDate={travelPlan.start_date}
                 endDate={travelPlan.end_date}
-                participants={participants.map((p) => ({
+                participants={participants.map((p: any) => ({
                   id: p.id,
                   nickname: p.nickname || '알 수 없음',
                   profile_image_url: p.profile_image_url,
                   isOnline: p.isOnline || false,
                 }))}
-                totalBudget={totalBudget}
-                currency='KRW'
-                readinessScore={readinessScore}
+                activities={activities}
+                totalBudget={(travelPlan as any).target_budget || 0}
+                currency={(travelPlan as any).budget_currency || 'KRW'}
+                destinationCountry={(travelPlan as any).destination_country}
+                userNationality={userProfile?.nationality}
                 hotTopics={hotTopics}
                 onInviteParticipants={handleInviteParticipants}
                 onExport={handleExport}
@@ -406,11 +353,6 @@ const TravelDetailView = () => {
                 onReadinessClick={handleReadinessClick}
                 onBlockClick={handleBlockClick}
                 onHotTopicClick={handleHotTopicClick}
-                todos={todos}
-                onAddTodo={handleAddTodo}
-                onToggleTodo={handleToggleTodo}
-                onAssignTodo={handleAssignTodo}
-                onDeleteTodo={handleDeleteTodo}
               />
             </div>
           ) : (

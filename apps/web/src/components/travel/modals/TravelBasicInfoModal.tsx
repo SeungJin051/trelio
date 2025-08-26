@@ -1,19 +1,31 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
-import { IoCopyOutline, IoLinkOutline, IoPersonOutline } from 'react-icons/io5';
+import {
+  IoCopyOutline,
+  IoLinkOutline,
+  IoPersonOutline,
+  IoWalletOutline,
+} from 'react-icons/io5';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Button, Input, Switch, Typography } from '@ui/components';
 
 import { Modal } from '@/components/basic';
+import { countriesISO } from '@/components/travel/constants/countries';
 import LocationInput from '@/components/travel/inputs/LocationInput';
 import TravelDatePicker from '@/components/travel/inputs/TravelDatePicker';
 import { useSession } from '@/hooks/useSession';
 import { useToast } from '@/hooks/useToast';
+import {
+  convertCurrency,
+  formatCurrencyWithExchange,
+  getCurrencyByDestination,
+  getCurrencyByNationality,
+} from '@/lib/exchange-rate';
 import { createClient } from '@/lib/supabase/client/supabase';
 
 interface TravelBasicInfo {
@@ -21,6 +33,7 @@ interface TravelBasicInfo {
   location: string;
   startDate: Date | null;
   endDate: Date | null;
+  targetBudget: string; // 입력값은 문자열로 받아서 숫자로 변환
   allowEdit: boolean;
 }
 
@@ -44,6 +57,7 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
     location: '',
     startDate: null,
     endDate: null,
+    targetBudget: '',
     allowEdit: true,
   });
 
@@ -51,7 +65,66 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
     title?: string;
     location?: string;
     dates?: string;
+    budget?: string;
   }>({});
+
+  // 사용자 통화 가져오기
+  const getUserCurrency = () => {
+    return getCurrencyByNationality(userProfile?.nationality);
+  };
+
+  // 목적지 통화 가져오기
+  const getDestinationCurrency = () => {
+    if (!basicInfo.location) return getUserCurrency();
+
+    const selectedCountry = countriesISO.find(
+      (country) =>
+        country.nameKo.toLowerCase() === basicInfo.location.toLowerCase() ||
+        country.nameEn.toLowerCase() === basicInfo.location.toLowerCase()
+    );
+
+    return getCurrencyByDestination(selectedCountry?.code);
+  };
+
+  // 예산 입력 포맷팅 (천 단위 구분자 추가)
+  const formatBudgetInput = (value: string) => {
+    // 숫자가 아닌 문자 제거
+    const numericValue = value.replace(/[^\d]/g, '');
+
+    // 천 단위 구분자 추가
+    if (numericValue) {
+      return parseInt(numericValue).toLocaleString('ko-KR');
+    }
+    return '';
+  };
+
+  // 환율 적용된 목적지 통화 예산 미리보기
+  const [convertedBudget, setConvertedBudget] = useState<number | null>(null);
+
+  useEffect(() => {
+    const run = async () => {
+      const amount = parseBudgetValue(basicInfo.targetBudget);
+      const userCur = getUserCurrency();
+      const destCur = getDestinationCurrency();
+      if (!amount || !destCur) {
+        setConvertedBudget(null);
+        return;
+      }
+      try {
+        const v = await convertCurrency(amount, userCur, destCur);
+        setConvertedBudget(v);
+      } catch {
+        setConvertedBudget(null);
+      }
+    };
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [basicInfo.targetBudget, basicInfo.location, userProfile?.nationality]);
+
+  // 실제 숫자값으로 변환
+  const parseBudgetValue = (formattedValue: string): number => {
+    return parseInt(formattedValue.replace(/[^\d]/g, '')) || 0;
+  };
 
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {};
@@ -61,11 +134,32 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
       newErrors.title = '여행 제목은 50자 이내로 입력해주세요.';
     }
     if (!basicInfo.location.trim()) {
-      newErrors.location = '나라 및 지역을 입력해주세요.';
+      newErrors.location = '나라(국가)를 입력해주세요.';
+    } else {
+      const normalize = (s: string) => s.trim().toLowerCase();
+      const input = normalize(basicInfo.location);
+      const isValidCountry = countriesISO.some(
+        (c) => normalize(c.nameKo) === input || normalize(c.nameEn) === input
+      );
+      if (!isValidCountry) {
+        newErrors.location = '국가 목록에서 정확한 국가를 선택해주세요.';
+      }
     }
     if (!basicInfo.startDate || !basicInfo.endDate) {
       newErrors.dates = '여행 시작일과 종료일을 선택해주세요.';
     }
+
+    // 예산 검증 (선택사항이지만 입력 시 유효성 검사)
+    if (basicInfo.targetBudget) {
+      const budgetValue = parseBudgetValue(basicInfo.targetBudget);
+      if (budgetValue <= 0) {
+        newErrors.budget = '예산은 0보다 큰 값을 입력해주세요.';
+      } else if (budgetValue > 1000000000) {
+        // 10억 제한
+        newErrors.budget = '예산이 너무 큽니다. 더 작은 값을 입력해주세요.';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -109,6 +203,24 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
         return;
       }
       const shareLinkId = uuidv4();
+      const budgetValue = parseBudgetValue(basicInfo.targetBudget);
+      const userCurrency = getUserCurrency();
+      const destinationCurrency = getDestinationCurrency();
+
+      // 목적지 국가 코드 찾기
+      const selectedCountry = countriesISO.find(
+        (country) =>
+          country.nameKo.toLowerCase() === basicInfo.location.toLowerCase() ||
+          country.nameEn.toLowerCase() === basicInfo.location.toLowerCase()
+      );
+
+      // 저장 시: 목적지 선택됨 → 예산을 목적지 통화로 변환하여 저장
+      const budgetToSave = destinationCurrency
+        ? await convertCurrency(budgetValue, userCurrency, destinationCurrency)
+        : budgetValue;
+
+      const budgetCurrencyToSave = destinationCurrency || userCurrency;
+
       const { data: travelPlan, error: planError } = await supabase
         .from('travel_plans')
         .insert({
@@ -117,6 +229,9 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
           location: basicInfo.location.trim(),
           start_date: basicInfo.startDate!.toISOString().split('T')[0],
           end_date: basicInfo.endDate!.toISOString().split('T')[0],
+          target_budget: budgetValue > 0 ? budgetToSave : 0,
+          budget_currency: budgetCurrencyToSave,
+          destination_country: selectedCountry?.code,
           share_link_id: shareLinkId,
           default_permission: basicInfo.allowEdit ? 'editor' : 'viewer',
           created_at: new Date().toISOString(),
@@ -150,19 +265,6 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
     }
   };
 
-  const handleCopyShareLink = () => {
-    if (!userProfile) return;
-    const shareLink = `${window.location.origin}/travel/join/temp-link`;
-    navigator.clipboard
-      .writeText(shareLink)
-      .then(() => {
-        toast.success('링크가 복사되었습니다.');
-      })
-      .catch(() => {
-        toast.error('링크 복사에 실패했습니다.');
-      });
-  };
-
   const canProceed =
     basicInfo.title.trim() &&
     basicInfo.location.trim() &&
@@ -174,21 +276,11 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title='새 여행 계획 시작하기'
-      width='lg'
+      width='responsive'
     >
-      <div className='p-6'>
-        <Typography variant='body2' className='mb-8 text-center text-gray-500'>
-          새로운 여행의 기본적인 정보를 입력해주세요.
-        </Typography>
-        <div className='space-y-6'>
-          <div>
-            <Typography
-              variant='h6'
-              weight='semiBold'
-              className='mb-4 text-gray-900'
-            >
-              여행 기본 정보
-            </Typography>
+      <div className='flex flex-col'>
+        <div className='max-h-[70vh] overflow-y-auto px-6 py-6'>
+          <div className='space-y-8'>
             <div className='space-y-4'>
               <Input
                 label='여행 제목'
@@ -203,7 +295,9 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
                 maxLength={50}
               />
               <LocationInput
-                label='나라 및 지역'
+                label='나라(국가)'
+                placeholder='예: 대한민국 / United States'
+                helperText='국가만 선택할 수 있어요'
                 value={basicInfo.location}
                 onChange={(value) => {
                   setBasicInfo((prev) => ({ ...prev, location: value }));
@@ -226,62 +320,122 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
                 }}
                 errorText={errors.dates}
               />
-            </div>
-          </div>
-          <div>
-            <Typography
-              variant='h6'
-              weight='semiBold'
-              className='mb-4 text-gray-900'
-            >
-              참여자 설정
-            </Typography>
-            <div className='space-y-4'>
-              <div className='rounded-lg border border-gray-200 p-4'>
-                <div className='flex items-center'>
-                  <IoPersonOutline className='mr-3 h-5 w-5 text-gray-400' />
-                  <div className='flex-1'>
-                    <Typography
-                      variant='body2'
-                      weight='medium'
-                      className='text-gray-900'
-                    >
-                      {userProfile?.nickname || userProfile?.email || '사용자'}
-                    </Typography>
-                    <Typography variant='caption' className='text-blue-600'>
-                      오너
-                    </Typography>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <div className='flex items-center justify-between'>
-                  <div>
-                    <Typography
-                      variant='body2'
-                      weight='medium'
-                      className='text-gray-700'
-                    >
-                      초대된 사용자 기본 권한
-                    </Typography>
-                    <Typography variant='caption' className='text-gray-500'>
-                      초대된 친구들이 이 여행 계획을 수정할 수 있도록
-                      허용할까요?
-                    </Typography>
-                  </div>
-                  <Switch
-                    checked={basicInfo.allowEdit}
-                    onChange={(checked) =>
-                      setBasicInfo((prev) => ({ ...prev, allowEdit: checked }))
-                    }
-                    label={basicInfo.allowEdit ? '편집 가능' : '보기만 가능'}
+
+              <div className='space-y-3'>
+                <div>
+                  <label className='mb-2 flex items-center space-x-2 text-sm font-medium text-gray-700'>
+                    <IoWalletOutline className='h-4 w-4' />
+                    <span>예산 (선택사항)</span>
+                  </label>
+                  <Input
+                    placeholder={`예: ${formatCurrencyWithExchange(1000000, getUserCurrency())}`}
+                    value={basicInfo.targetBudget}
+                    onChange={(e) => {
+                      const formattedValue = formatBudgetInput(e.target.value);
+                      setBasicInfo((prev) => ({
+                        ...prev,
+                        targetBudget: formattedValue,
+                      }));
+                      if (errors.budget)
+                        setErrors((prev) => ({ ...prev, budget: undefined }));
+                    }}
+                    errorText={errors.budget}
+                    helperText={(function () {
+                      const ownerName = userProfile?.nationality || '대한민국';
+                      const destName = basicInfo.location;
+                      if (destName) {
+                        return `💡 지금은 ${ownerName} 화폐 단위로 입력해주세요.`;
+                      }
+                      return `💡 지금은 ${ownerName} 화폐 단위로 입력해주세요.`;
+                    })()}
                   />
+                </div>
+
+                {basicInfo.targetBudget && (
+                  <div className='rounded-lg border border-blue-200 bg-blue-50 p-4'>
+                    <div className='flex items-center space-x-2'>
+                      <IoWalletOutline className='h-5 w-5 text-blue-600' />
+                      <div>
+                        <Typography
+                          variant='body2'
+                          className='font-semibold text-blue-800'
+                        >
+                          설정된 예산 (목적지 통화)
+                        </Typography>
+                        <Typography
+                          variant='h6'
+                          className='font-bold text-blue-900'
+                        >
+                          {(() => {
+                            const userCur = getUserCurrency();
+                            const destCur = getDestinationCurrency();
+                            const amount = parseBudgetValue(
+                              basicInfo.targetBudget
+                            );
+                            if (!amount)
+                              return formatCurrencyWithExchange(0, destCur);
+                            if (destCur) {
+                              const val = convertedBudget ?? amount;
+                              return formatCurrencyWithExchange(val, destCur);
+                            }
+                            return formatCurrencyWithExchange(amount, userCur);
+                          })()}
+                        </Typography>
+                        <Typography variant='caption' className='text-blue-700'>
+                          기준 입력:{' '}
+                          {formatCurrencyWithExchange(
+                            parseBudgetValue(basicInfo.targetBudget),
+                            getUserCurrency()
+                          )}
+                        </Typography>
+                        {basicInfo.location &&
+                          getDestinationCurrency() !== getUserCurrency() && (
+                            <Typography
+                              variant='caption'
+                              className='text-blue-600'
+                            >
+                              ※ 저장 시 목적지 통화로 환율 변환되어 저장됩니다
+                            </Typography>
+                          )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div>
+              <Typography
+                variant='h6'
+                weight='semiBold'
+                className='mb-4 text-gray-900'
+              >
+                참여자 설정
+              </Typography>
+              <div className='space-y-4'>
+                <div className='rounded-lg border border-gray-200 p-4'>
+                  <div className='flex items-center'>
+                    <IoPersonOutline className='mr-3 h-5 w-5 text-gray-400' />
+                    <div className='flex-1'>
+                      <Typography
+                        variant='body2'
+                        weight='medium'
+                        className='text-gray-900'
+                      >
+                        {userProfile?.nickname ||
+                          userProfile?.email ||
+                          '사용자'}
+                      </Typography>
+                      <Typography variant='caption' className='text-blue-600'>
+                        오너
+                      </Typography>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <div className='mt-8 flex space-x-3'>
+        <div className='flex space-x-3 border-t px-6 py-4'>
           <Button
             variant='outlined'
             colorTheme='gray'

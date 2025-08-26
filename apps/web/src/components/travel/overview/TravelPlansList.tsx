@@ -14,6 +14,7 @@ import {
 
 import { Button, Input, Typography } from '@ui/components';
 
+import TravelBasicInfoModal from '@/components/travel/modals/TravelBasicInfoModal';
 import { useSession } from '@/hooks/useSession';
 import { createClient } from '@/lib/supabase/client/supabase';
 import { formatDateRange } from '@/lib/travel-utils';
@@ -41,6 +42,7 @@ const TravelPlansList: React.FC = () => {
   const [travelPlans, setTravelPlans] = useState<TravelPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [initialLoad, setInitialLoad] = useState(true);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const supabase = useMemo(() => createClient(), []);
 
@@ -154,8 +156,8 @@ const TravelPlansList: React.FC = () => {
   );
 
   const handleCreateTravel = useCallback(() => {
-    router.push('/travel/new');
-  }, [router]);
+    setIsCreateModalOpen(true);
+  }, []);
   const handleFilterChange = useCallback((newFilter: FilterType) => {
     setFilter(newFilter);
   }, []);
@@ -288,6 +290,10 @@ const TravelPlansList: React.FC = () => {
           ))}
         </div>
       )}
+      <TravelBasicInfoModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+      />
     </div>
   );
 };

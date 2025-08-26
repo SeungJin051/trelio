@@ -10,7 +10,7 @@ import {
   type TravelDetailResponse,
   updateBlock,
   type UpdateBlockRequest,
-} from '@/lib/api/trips';
+} from '@/lib/api/travel';
 
 export function useTravelDetail(planId: string) {
   return useQuery({

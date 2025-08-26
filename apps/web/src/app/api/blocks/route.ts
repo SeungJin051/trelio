@@ -44,6 +44,81 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { createServerSupabaseClient } from '@/lib/supabase/client/supabase-server';
 
+/**
+ * @api {get} /api/blocks 여행 블록 조회
+ * @apiName GetTravelBlocks
+ * @apiGroup Blocks
+ *
+ * @apiQuery {String} planId 여행 계획 ID
+ *
+ * @apiSuccess {Object[]} blocks 블록 목록
+ *
+ * @apiError {Object} 400 Missing planId
+ * @apiError {Object} 401 Unauthorized
+ * @apiError {Object} 403 Access denied
+ * @apiError {Object} 500 Failed to fetch blocks
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = await createServerSupabaseClient();
+
+    // 사용자 인증 확인
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const planId = searchParams.get('planId');
+
+    if (!planId) {
+      return NextResponse.json(
+        { error: 'Missing planId parameter' },
+        { status: 400 }
+      );
+    }
+
+    // 사용자가 해당 여행 계획에 참여하고 있는지 확인
+    const { data: participant, error: participantError } = await supabase
+      .from('travel_plan_participants')
+      .select('role')
+      .eq('plan_id', planId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (participantError || !participant) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    }
+
+    // 블록 조회
+    const { data: blocks, error: blocksError } = await supabase
+      .from('travel_blocks')
+      .select('*')
+      .eq('plan_id', planId)
+      .order('day_number', { ascending: true })
+      .order('order_index', { ascending: true });
+
+    if (blocksError) {
+      console.error('Error fetching blocks:', blocksError);
+      return NextResponse.json(
+        { error: 'Failed to fetch blocks' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ blocks: blocks || [] });
+  } catch (error) {
+    console.error('Error fetching blocks:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
@@ -92,6 +167,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
+    // 비용 정보를 JSONB 형태로 구성
+    const costData =
+      cost && currency
+        ? {
+            amount: parseFloat(cost),
+            currency: currency,
+          }
+        : null;
+
+    // 시간 정보를 JSONB 형태로 구성
+    const timeRangeData =
+      start_time && end_time
+        ? {
+            startTime: start_time,
+            endTime: end_time,
+          }
+        : null;
+
     // 블록 생성
     const { data: newBlock, error: blockError } = await supabase
       .from('travel_blocks')
@@ -103,10 +196,8 @@ export async function POST(request: NextRequest) {
         order_index,
         block_type,
         location,
-        start_time,
-        end_time,
-        cost,
-        currency,
+        time_range: timeRangeData,
+        cost: costData,
         created_by: user.id,
       })
       .select()
@@ -120,20 +211,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 활동 로그 생성
-    const { error: activityError } = await supabase
+    // 활동 로그 생성 (스키마 준수: type/content)
+    const { data: activityRow, error: activityError } = await supabase
       .from('travel_activities')
       .insert({
         plan_id,
         user_id: user.id,
-        type: 'block_add',
+        type: 'block_created',
         content: `${title} 블록을 추가했습니다`,
         block_id: newBlock.id,
-      });
+      })
+      .select()
+      .single();
 
     if (activityError) {
       console.error('Error creating activity log:', activityError);
-      // 활동 로그 생성 실패는 블록 생성을 실패시키지 않음
     }
 
     return NextResponse.json(newBlock, { status: 201 });

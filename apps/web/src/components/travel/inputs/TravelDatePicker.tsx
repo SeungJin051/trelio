@@ -5,7 +5,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ko } from 'date-fns/locale';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { IoCalendarOutline } from 'react-icons/io5';
+import {
+  IoCalendarOutline,
+  IoChevronBackOutline,
+  IoChevronDownOutline,
+  IoChevronForwardOutline,
+} from 'react-icons/io5';
 
 import { Typography } from '@ui/components';
 import { cn } from '@ui/utils/cn';
@@ -38,6 +43,7 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
     null
   );
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   const calculateDays = (start: Date | null, end: Date | null): number => {
     if (!start || !end) return 0;
@@ -71,6 +77,13 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
     };
   }, []);
 
+  useEffect(() => {
+    const update = () => setIsMobile(window.innerWidth < 640);
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
   const handleDateSelect = (date: Date | null, type: 'start' | 'end') => {
     if (type === 'start') {
       if (endDate && date && date > endDate) {
@@ -92,6 +105,32 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
 
   const isError = !!errorText;
   const days = calculateDays(startDate, endDate);
+  const formatRangeDisplay = (): string => {
+    if (!startDate || !endDate) return '여행 날짜를 선택해주세요';
+    const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+    if (isMobile) {
+      return `${startDate.getFullYear()}.${pad(startDate.getMonth() + 1)}.${pad(
+        startDate.getDate()
+      )} ~ ${pad(endDate.getMonth() + 1)}.${pad(endDate.getDate())}`;
+    }
+    return `${formatDate(startDate)} ~ ${formatDate(endDate)}`;
+  };
+  const startOfDay = (d: Date) => {
+    const nd = new Date(d);
+    nd.setHours(0, 0, 0, 0);
+    return nd;
+  };
+  const isSameDay = (a?: Date | null, b?: Date | null) => {
+    if (!a || !b) return false;
+    return startOfDay(a).getTime() === startOfDay(b).getTime();
+  };
+  const isInRange = (d: Date) => {
+    if (!startDate || !endDate) return false;
+    const t = startOfDay(d).getTime();
+    return (
+      t > startOfDay(startDate).getTime() && t < startOfDay(endDate).getTime()
+    );
+  };
 
   return (
     <div className={cn('w-full', className)} ref={containerRef}>
@@ -103,46 +142,48 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
       <div className='relative'>
         <div
           className={cn(
-            'flex w-full cursor-pointer items-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-base shadow-sm transition-all duration-200',
+            'flex w-full cursor-pointer items-center rounded-2xl bg-white px-4 py-3 text-base text-gray-900 shadow-sm ring-1 ring-black/5',
             isError
-              ? 'border-red-500 ring-1 ring-red-500 focus-within:ring-red-500'
-              : 'focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 hover:border-gray-400',
+              ? 'ring-red-500 focus-within:ring-2 focus-within:ring-red-500'
+              : 'focus-within:ring-2 focus-within:ring-sky-300',
             disabled ? 'cursor-not-allowed bg-gray-50 opacity-70' : ''
           )}
           onClick={() => {
             if (!disabled) {
-              setShowCalendar(true);
-              setFocusedInput('start');
+              if (showCalendar) {
+                setShowCalendar(false);
+                setFocusedInput(null);
+              } else {
+                setShowCalendar(true);
+                setFocusedInput('start');
+              }
             }
           }}
         >
           <IoCalendarOutline className='mr-3 h-5 w-5 text-gray-400' />
-          <div className='flex-1'>
-            {startDate && endDate ? (
-              <div className='flex items-center space-x-1'>
-                <span className='font-medium text-gray-800'>
-                  {formatDate(startDate)}
+          <div className='min-w-0 flex-1'>
+            <div className='flex items-center space-x-2'>
+              <span className='block truncate whitespace-nowrap font-medium text-gray-900'>
+                {formatRangeDisplay()}
+              </span>
+              {startDate && endDate && days > 0 && (
+                <span className='shrink-0 text-sm text-gray-500'>
+                  ({days}일)
                 </span>
-                <span className='text-gray-500'>~</span>
-                <span className='font-medium text-gray-800'>
-                  {formatDate(endDate)}
-                </span>
-                {days > 0 && (
-                  <span className='ml-2 text-sm text-gray-500'>({days}일)</span>
-                )}
-              </div>
-            ) : (
-              <span className='text-gray-400'>여행 날짜를 선택해주세요</span>
-            )}
+              )}
+            </div>
           </div>
+          <IoChevronDownOutline
+            className={cn(
+              'ml-3 h-5 w-5 text-gray-400',
+              showCalendar ? 'rotate-180' : ''
+            )}
+          />
         </div>
         {showCalendar && !disabled && (
-          <div className='absolute left-0 top-full z-50 mt-2 rounded-lg border border-gray-200 bg-white p-4 shadow-lg'>
+          <div className='absolute right-0 top-full z-50 mt-3 rounded-3xl bg-white p-5 shadow-xl ring-1 ring-black/5 transition-all duration-300'>
             <div className='mb-4'>
-              <Typography
-                variant='body2'
-                className='font-semibold text-gray-700'
-              >
+              <Typography variant='body2' className='font-medium text-gray-700'>
                 {focusedInput === 'start'
                   ? '시작일을 선택해주세요'
                   : '종료일을 선택해주세요'}
@@ -159,20 +200,62 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
               selectsStart={focusedInput === 'start'}
               selectsEnd={focusedInput === 'end'}
               inline
-              calendarClassName='custom-calendar-toss'
+              monthsShown={1}
+              calendarClassName='!bg-transparent !border-0 !shadow-none'
               locale='ko'
+              renderCustomHeader={({
+                date,
+                decreaseMonth,
+                increaseMonth,
+                prevMonthButtonDisabled,
+                nextMonthButtonDisabled,
+              }) => (
+                <div className='mb-3 flex items-center justify-between px-1'>
+                  <button
+                    type='button'
+                    onClick={decreaseMonth}
+                    disabled={prevMonthButtonDisabled}
+                    className='flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-gray-800 ring-1 ring-black/5 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 disabled:opacity-40'
+                  >
+                    <IoChevronBackOutline className='h-4 w-4' />
+                  </button>
+                  <span className='select-none text-sm font-medium text-gray-800'>
+                    {date.toLocaleDateString('ko-KR', {
+                      year: 'numeric',
+                      month: 'long',
+                    })}
+                  </span>
+                  <button
+                    type='button'
+                    onClick={increaseMonth}
+                    disabled={nextMonthButtonDisabled}
+                    className='flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-gray-800 ring-1 ring-black/5 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 disabled:opacity-40'
+                  >
+                    <IoChevronForwardOutline className='h-4 w-4' />
+                  </button>
+                </div>
+              )}
+              dayClassName={(date: Date) => {
+                const isStart = isSameDay(date, startDate);
+                const isEnd = isSameDay(date, endDate);
+                const inRange = isInRange(date);
+                const day = date.getDay();
+                const classes = [
+                  'w-10 h-10 flex items-center justify-center rounded-full text-sm font-medium transition-colors duration-150 hover:bg-sky-50 active:bg-sky-100',
+                ];
+                if (isStart || isEnd) {
+                  classes.push(
+                    '!bg-sky-100 !text-sky-800 !ring-1 !ring-sky-200'
+                  );
+                } else if (inRange) {
+                  classes.push('!bg-sky-50 !text-sky-700');
+                } else {
+                  if (day === 0) classes.push('text-gray-400');
+                  if (day === 6) classes.push('text-gray-400');
+                }
+                return classes.join(' ');
+              }}
             />
-            {startDate && endDate && (
-              <div className='mt-4 rounded-md bg-gray-50 px-3 py-2 text-center'>
-                <Typography
-                  variant='caption'
-                  className='font-medium text-gray-700'
-                >
-                  선택된 기간:{' '}
-                  <span className='font-bold text-blue-600'>{days}일</span>
-                </Typography>
-              </div>
-            )}
           </div>
         )}
       </div>
