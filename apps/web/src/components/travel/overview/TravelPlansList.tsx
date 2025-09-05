@@ -17,7 +17,6 @@ import { Button, Input, Typography } from '@ui/components';
 import TravelBasicInfoModal from '@/components/travel/modals/TravelBasicInfoModal';
 import { useSession } from '@/hooks/useSession';
 import { createClient } from '@/lib/supabase/client/supabase';
-import { formatDateRange } from '@/lib/travel-utils';
 
 interface TravelPlan {
   id: string;

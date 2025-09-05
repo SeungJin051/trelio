@@ -41,21 +41,6 @@ import { NextResponse } from 'next/server';
 
 import { createServerSupabaseClient } from '@/lib/supabase/client/supabase-server';
 
-// 타입 정의
-interface Todo {
-  id: string;
-  plan_id: string;
-  title: string;
-  description?: string;
-  is_completed: boolean;
-  assigned_user_id?: string;
-  created_by: string;
-  due_date?: string;
-  priority: number;
-  created_at: string;
-  updated_at: string;
-}
-
 interface User {
   id: string;
   nickname?: string;
@@ -65,9 +50,12 @@ interface User {
 /**
  * 투두 수정 (PATCH)
  */
-export async function PATCH(request: Request, context: any) {
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const todoId = context?.params?.id as string;
+    const { id: todoId } = await params;
     const body = await request.json();
 
     const supabase = await createServerSupabaseClient();
@@ -109,8 +97,10 @@ export async function PATCH(request: Request, context: any) {
 
     // 권한 확인: 투두 생성자이거나 여행 계획 소유자
     const isCreator = existingTodo.created_by === user.id;
-    // travel_plan은 single() 결과에서 단일 객체. 타입 경고 회피를 위해 any 캐스팅
-    const isOwner = (existingTodo as any).travel_plan?.owner_id === user.id;
+    // travel_plan은 single() 결과에서 단일 객체
+    const isOwner =
+      (existingTodo as { travel_plan?: { owner_id?: string } }).travel_plan
+        ?.owner_id === user.id;
 
     if (!isCreator && !isOwner) {
       return NextResponse.json(
@@ -201,9 +191,12 @@ export async function PATCH(request: Request, context: any) {
 /**
  * 투두 삭제 (DELETE)
  */
-export async function DELETE(request: Request, context: any) {
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const todoId = context?.params?.id as string;
+    const { id: todoId } = await params;
 
     const supabase = await createServerSupabaseClient();
 
@@ -245,7 +238,9 @@ export async function DELETE(request: Request, context: any) {
 
     // 권한 확인: 투두 생성자이거나 여행 계획 소유자
     const isCreator = existingTodo.created_by === user.id;
-    const isOwner = (existingTodo as any).travel_plan?.owner_id === user.id;
+    const isOwner =
+      (existingTodo as { travel_plan?: { owner_id?: string } }).travel_plan
+        ?.owner_id === user.id;
 
     if (!isCreator && !isOwner) {
       return NextResponse.json(

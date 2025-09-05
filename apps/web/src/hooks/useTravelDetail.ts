@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   createBlock,
-  type CreateBlockRequest,
   deleteBlock,
   fetchTravelDetail,
   moveBlock,
@@ -81,7 +80,7 @@ export function useUpdateBlock() {
       blockId: string;
       data: UpdateBlockRequest;
     }) => updateBlock(blockId, data),
-    onSuccess: (updatedBlock, variables) => {
+    onSuccess: (updatedBlock) => {
       // 여행 상세 정보 캐시 업데이트
       queryClient.setQueryData<TravelDetailResponse>(
         ['travel-detail', updatedBlock.plan_id],
@@ -131,7 +130,7 @@ export function useMoveBlock() {
       blockId: string;
       data: MoveBlockRequest;
     }) => moveBlock(blockId, data),
-    onSuccess: (_, variables) => {
+    onSuccess: (_) => {
       // 블록 이동 후 전체 데이터를 다시 가져옴 (순서가 복잡하게 변경되므로)
       // 실제로는 낙관적 업데이트를 구현할 수 있지만, 복잡성을 줄이기 위해 무효화
       queryClient.invalidateQueries({ queryKey: ['travel-detail'] });

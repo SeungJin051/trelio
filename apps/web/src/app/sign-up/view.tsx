@@ -14,11 +14,7 @@ import { Card } from '@/components';
 import LocationInput from '@/components/travel/inputs/LocationInput';
 import { useToast } from '@/hooks';
 import { createClient } from '@/lib/supabase/client/supabase';
-import type {
-  PreferredDestination,
-  TravelStyle,
-  UserProfile,
-} from '@/types/user/user';
+import type { TravelStyle, UserProfile } from '@/types/user/user';
 
 import { FILE_UPLOAD_LIMITS, TOTAL_STEPS, TRAVEL_STYLES } from './constants';
 import { useImageUpload } from './hooks/useImageUpload';

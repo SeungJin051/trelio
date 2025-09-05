@@ -8,7 +8,7 @@ interface Block {
   title?: string;
   // 과거 간이 스키마 호환
   time?: string;
-  location?: any;
+  location?: string | { address?: string } | null;
   description?: string;
   block_type: string;
   time_range?: { start_time?: string; end_time?: string };

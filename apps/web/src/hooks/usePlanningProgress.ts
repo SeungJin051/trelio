@@ -50,7 +50,7 @@ export const usePlanningProgress = ({
         const json = await todosRes.json();
         setTodosCount((json?.todos as TodoLite[] | undefined)?.length || 0);
       }
-    } catch (e) {
+    } catch {
       // ignore
     }
   }, [planId]);

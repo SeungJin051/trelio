@@ -194,7 +194,7 @@ export const useRecentActivities = (limit: number = 10) => {
               user_id: activity.user_id,
               action_type: activity.type, // type을 action_type으로 매핑
               description: activity.content, // content를 description으로 매핑
-              metadata: null, // metadata 컬럼이 없으므로 null
+              metadata: undefined, // metadata 컬럼이 없으므로 undefined로 정규화
               created_at: activity.created_at,
               updated_at: activity.created_at, // updated_at 컬럼이 없으므로 created_at 사용
               user: userProfile || {

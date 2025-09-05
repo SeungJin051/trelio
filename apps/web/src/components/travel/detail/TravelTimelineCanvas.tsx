@@ -11,7 +11,6 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import {
-  arrayMove,
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
@@ -25,7 +24,7 @@ import {
   IoRestaurantOutline,
 } from 'react-icons/io5';
 
-import { Button, Typography } from '@ui/components';
+import { Typography } from '@ui/components';
 
 import { BlockType, TravelBlock, TravelTimeline } from '@/types/travel/blocks';
 
@@ -35,8 +34,8 @@ interface TravelTimelineCanvasProps {
   timeline: TravelTimeline;
   canEdit: boolean;
   selectedDay: number;
-  onDaySelect: (dayNumber: number) => void;
-  onBlockCreate: (dayNumber: number) => void;
+  onDaySelect: (_dayNumber: number) => void;
+  onBlockCreate: (_dayNumber: number) => void;
   onBlockMove?: (
     blockId: string,
     newDayNumber: number,
@@ -62,8 +61,8 @@ export const TravelTimelineCanvas: React.FC<TravelTimelineCanvasProps> = ({
   timeline,
   canEdit,
   selectedDay,
-  onDaySelect,
-  onBlockCreate,
+  onDaySelect: _onDaySelect,
+  onBlockCreate: _onBlockCreate,
   onBlockMove,
   onBlockClick,
 }) => {
@@ -135,20 +134,9 @@ export const TravelTimelineCanvas: React.FC<TravelTimelineCanvasProps> = ({
 
     if (droppedBlock) {
       // 같은 날짜 내에서 순서 변경
-      const oldIndex = selectedDayData.blocks.findIndex(
-        (block) => block.id === activeId
-      );
       const newIndex = selectedDayData.blocks.findIndex(
         (block) => block.id === overId
       );
-
-      // arrayMove를 사용하여 새로운 순서 계산
-      const reorderedBlocks = arrayMove(
-        selectedDayData.blocks,
-        oldIndex,
-        newIndex
-      );
-      const movedBlock = reorderedBlocks[newIndex];
 
       // 블록 이동 실행
       if (onBlockMove) {

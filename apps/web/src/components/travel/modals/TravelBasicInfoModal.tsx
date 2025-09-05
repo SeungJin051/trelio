@@ -4,15 +4,10 @@ import React, { useEffect, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
-import {
-  IoCopyOutline,
-  IoLinkOutline,
-  IoPersonOutline,
-  IoWalletOutline,
-} from 'react-icons/io5';
+import { IoPersonOutline, IoWalletOutline } from 'react-icons/io5';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Button, Input, Switch, Typography } from '@ui/components';
+import { Button, Input, Typography } from '@ui/components';
 
 import { Modal } from '@/components/basic';
 import { countriesISO } from '@/components/travel/constants/countries';
@@ -258,7 +253,7 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
       toast.success('여행 계획이 생성되었습니다!');
       onClose();
       router.push('/');
-    } catch (error) {
+    } catch {
       toast.error('여행 계획 생성 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);

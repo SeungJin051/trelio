@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import Link from 'next/link';
 
@@ -29,7 +29,7 @@ import { NewTravelModal } from '@/components/common';
 import { useMobile, useSession } from '@/hooks';
 import { createClient } from '@/lib/supabase/client/supabase';
 
-import { filterOptions, navigation } from './constants';
+import { navigation } from './constants';
 
 interface TravelPlan {
   id: string;
@@ -47,53 +47,6 @@ interface HeaderProps {
   shouldShowSidebar?: boolean;
   onSidebarToggle?: () => void;
 }
-
-// 헤더 스켈레톤 컴포넌트
-const HeaderSkeleton = ({
-  sidebarOpen = false,
-  shouldShowSidebar = false,
-}: {
-  sidebarOpen?: boolean;
-  shouldShowSidebar?: boolean;
-}) => (
-  <header
-    className={`fixed top-0 z-30 border-b border-gray-200 bg-white shadow-sm backdrop-blur-sm transition-all duration-300 ${
-      shouldShowSidebar
-        ? sidebarOpen
-          ? 'left-80 right-0'
-          : 'left-16 right-0'
-        : 'left-0 right-0'
-    }`}
-  >
-    <nav className='mx-auto flex h-20 items-center justify-between px-6'>
-      <div className='flex md:flex-1'>
-        <Link href='/' className='flex items-center'>
-          <span className='sr-only'>Trelio</span>
-          <div className='flex items-center justify-center md:justify-start'>
-            {/* 로고 스켈레톤 */}
-            <div className='h-10 w-10 animate-pulse rounded-full bg-gray-200'></div>
-            {/* 텍스트 스켈레톤 */}
-            <div className='ml-2 h-6 w-16 animate-pulse rounded bg-gray-200'></div>
-          </div>
-        </Link>
-      </div>
-
-      {/* 모바일 스켈레톤 */}
-      <div className='flex items-center space-x-2 md:hidden'>
-        <div className='h-9 w-9 animate-pulse rounded-lg bg-gray-200'></div>
-        <div className='h-9 w-9 animate-pulse rounded-full bg-gray-200'></div>
-        <div className='h-9 w-9 animate-pulse rounded-full bg-gray-200'></div>
-      </div>
-
-      {/* 데스크톱 스켈레톤 */}
-      <div className='hidden min-h-12 md:flex md:flex-1 md:items-center md:justify-end md:space-x-4'>
-        <div className='flex h-10 w-32 animate-pulse items-center justify-center rounded-lg bg-gray-200'></div>
-        <div className='flex h-10 w-10 animate-pulse items-center justify-center rounded-full bg-gray-200'></div>
-        <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200'></div>
-      </div>
-    </nav>
-  </header>
-);
 
 export const Header = ({
   sidebarOpen = false,
@@ -133,25 +86,26 @@ export const Header = ({
   ] as const;
 
   // 여행 계획 목록 가져오기 (Sidebar와 동일한 로직)
-  const fetchTravelPlans = async (forceRefresh = false) => {
-    if (!userProfile) {
-      setLoading(false);
-      return;
-    }
+  const fetchTravelPlans = useCallback(
+    async (forceRefresh = false) => {
+      if (!userProfile) {
+        setLoading(false);
+        return;
+      }
 
-    // 이미 데이터가 있고 강제 새로고침이 아닌 경우 스킵
-    if (!forceRefresh && travelPlans.length > 0 && hasInitialized) {
-      return;
-    }
+      // 이미 데이터가 있고 강제 새로고침이 아닌 경우 스킵
+      if (!forceRefresh && travelPlans.length > 0 && hasInitialized) {
+        return;
+      }
 
-    try {
-      setLoading(true);
+      try {
+        setLoading(true);
 
-      // 사용자가 소유한 여행 계획만 가져오기
-      const { data: plansData, error: plansError } = await supabase
-        .from('travel_plans')
-        .select(
-          `
+        // 사용자가 소유한 여행 계획만 가져오기
+        const { data: plansData, error: plansError } = await supabase
+          .from('travel_plans')
+          .select(
+            `
           id,
           title,
           start_date,
@@ -159,59 +113,62 @@ export const Header = ({
           location,
           created_at
         `
-        )
-        .eq('owner_id', userProfile.id)
-        .order('created_at', { ascending: false });
+          )
+          .eq('owner_id', userProfile.id)
+          .order('created_at', { ascending: false });
 
-      if (plansError) {
-        console.error('여행 계획 조회 실패:', plansError);
-        setTravelPlans([]);
-        setLoading(false);
-        return;
-      }
-
-      // 데이터 변환 및 상태 결정
-      const transformedPlans: TravelPlan[] = (plansData || []).map((plan) => {
-        const startDate = new Date(plan.start_date);
-        const endDate = new Date(plan.end_date);
-        const today = new Date();
-
-        let status: 'upcoming' | 'in-progress' | 'completed';
-        if (endDate < today) {
-          status = 'completed';
-        } else if (startDate <= today && today <= endDate) {
-          status = 'in-progress';
-        } else {
-          status = 'upcoming';
+        if (plansError) {
+          console.error('여행 계획 조회 실패:', plansError);
+          setTravelPlans([]);
+          setLoading(false);
+          return;
         }
 
-        return {
-          id: plan.id,
-          title: plan.title,
-          start_date: plan.start_date,
-          end_date: plan.end_date,
-          location: plan.location,
-          status,
-          created_at: plan.created_at,
-          participantCount: 1, // 일단 1명으로 설정 (소유자)
-        };
-      });
+        // 데이터 변환 및 상태 결정
+        const transformedPlans: TravelPlan[] = (plansData || []).map((plan) => {
+          const startDate = new Date(plan.start_date);
+          const endDate = new Date(plan.end_date);
+          const today = new Date();
 
-      setTravelPlans(transformedPlans);
-      setHasInitialized(true);
-    } catch (error) {
-      setTravelPlans([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+          let status: 'upcoming' | 'in-progress' | 'completed';
+          if (endDate < today) {
+            status = 'completed';
+          } else if (startDate <= today && today <= endDate) {
+            status = 'in-progress';
+          } else {
+            status = 'upcoming';
+          }
+
+          return {
+            id: plan.id,
+            title: plan.title,
+            start_date: plan.start_date,
+            end_date: plan.end_date,
+            location: plan.location,
+            status,
+            created_at: plan.created_at,
+            participantCount: 1, // 일단 1명으로 설정 (소유자)
+          };
+        });
+
+        setTravelPlans(transformedPlans);
+        setHasInitialized(true);
+      } catch (error) {
+        console.error(error);
+        setTravelPlans([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [userProfile, travelPlans.length, hasInitialized, supabase]
+  );
 
   // 컴포넌트 마운트 시 및 userProfile 변경 시 데이터 가져오기
   useEffect(() => {
     if (userProfile) {
       fetchTravelPlans();
     }
-  }, [userProfile]);
+  }, [userProfile, fetchTravelPlans]);
 
   // 모바일 여행 메뉴가 열릴 때 데이터 새로고침
   useEffect(() => {
@@ -219,7 +176,7 @@ export const Header = ({
       // 모바일에서 여행 메뉴가 열릴 때 항상 최신 데이터 확인
       fetchTravelPlans(true);
     }
-  }, [mobileTravelMenuOpen, isMobile, userProfile]);
+  }, [mobileTravelMenuOpen, isMobile, userProfile, fetchTravelPlans]);
 
   // 필터링된 여행 계획
   const filteredPlans = travelPlans.filter((plan) => {
@@ -343,84 +300,6 @@ export const Header = ({
         <button
           onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
           className='flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-gray-100'
-        >
-          <Avatar
-            src={userProfile?.profile_image_url}
-            alt={userProfile?.nickname || userProfile?.email || '사용자'}
-            size='small'
-          />
-        </button>
-
-        <AnimatePresence>
-          {profileDropdownOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className='absolute right-0 mt-2 w-48 rounded-lg bg-white py-2 shadow-lg ring-1 ring-black ring-opacity-5'
-            >
-              <div className='border-b border-gray-100 px-4 py-2'>
-                <Typography
-                  variant='body2'
-                  className='font-medium text-gray-900'
-                >
-                  {userProfile?.nickname || '사용자'}
-                </Typography>
-                <Typography variant='body2' className='text-gray-500'>
-                  {userProfile?.email}
-                </Typography>
-              </div>
-
-              <Link
-                href='/profile'
-                className='flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
-                onClick={() => setProfileDropdownOpen(false)}
-              >
-                <Icon as={CiUser} className='mr-2 h-4 w-4' />
-                프로필 설정
-              </Link>
-
-              <button
-                onClick={handleSignOut}
-                className='flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
-              >
-                <Icon as={CiLogout} className='mr-2 h-4 w-4' />
-                로그아웃
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </div>
-  );
-
-  // 로그인 후 모바일 헤더 오른쪽 영역 렌더링
-  const renderMobileAuthenticatedHeader = () => (
-    <div className='flex items-center space-x-2 md:hidden'>
-      {/* 새 여행 계획 생성 버튼 (아이콘만) */}
-      <button
-        onClick={() => setNewTravelModalOpen(true)}
-        className='flex h-9 w-9 items-center justify-center rounded-lg bg-[#3182F6] transition-colors hover:bg-[#2b74e0]'
-      >
-        <Icon as={IoAddOutline} color='white' size={20} />
-      </button>
-
-      {/* 알림 아이콘 */}
-      <button
-        className='flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-gray-100'
-        onClick={() => {
-          // TODO: 알림 모달 열기
-          console.log('알림 모달 열기');
-        }}
-      >
-        <Icon as={IoNotificationsOutline} color='#374151' size={20} />
-      </button>
-
-      {/* 아바타 (드롭다운) */}
-      <div className='profile-dropdown relative'>
-        <button
-          onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-          className='flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-gray-100'
         >
           <Avatar
             src={userProfile?.profile_image_url}
