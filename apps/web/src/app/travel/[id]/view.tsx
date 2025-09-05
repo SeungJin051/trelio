@@ -18,6 +18,7 @@ import { useSession } from '@/hooks/useSession';
 import { useToast } from '@/hooks/useToast';
 import { useTravelDetail } from '@/hooks/useTravelDetail';
 import { useTravelRealtime } from '@/hooks/useTravelRealtime';
+import { calculateDDayWithEnd } from '@/lib/travel-utils';
 import { TravelBlock } from '@/types/travel/blocks';
 
 import { BriefingBoard, TabContainer, TravelHeader } from './components';
@@ -254,51 +255,9 @@ const TravelDetailView = () => {
     setShowDetailModal(true);
   };
 
-  // D-Day 계산
-  const getDDay = () => {
-    if (!travelPlan) return '';
-
-    const startDateObj = new Date(travelPlan.start_date);
-    const endDateObj = new Date(travelPlan.end_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    startDateObj.setHours(0, 0, 0, 0);
-    endDateObj.setHours(0, 0, 0, 0);
-
-    const diffTime = startDateObj.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    // 여행 시작 전
-    if (diffDays > 0) return `D-${diffDays}`;
-
-    // 여행 시작일
-    if (diffDays === 0) return 'D-Day';
-
-    // 여행 중
-    if (today >= startDateObj && today <= endDateObj) {
-      const daysSinceStart = Math.ceil(
-        (today.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)
-      );
-      return `D+${daysSinceStart}`;
-    }
-
-    // 여행 종료 후
-    const daysSinceEnd = Math.ceil(
-      (today.getTime() - endDateObj.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    return `여행 종료 ${daysSinceEnd}일`;
-  };
-
-  // 여행 기간 계산
-  const getTripDuration = () => {
-    if (!travelPlan) return '';
-
-    const start = new Date(travelPlan.start_date);
-    const end = new Date(travelPlan.end_date);
-    const diffTime = end.getTime() - start.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-    return `${diffDays - 1}박 ${diffDays}일`;
-  };
+  const ddayText = travelPlan
+    ? calculateDDayWithEnd(travelPlan.start_date, travelPlan.end_date)
+    : '';
 
   // 편집 권한 확인 (임시로 true, 나중에 실제 권한 체크 로직으로 교체)
   const canEdit = true;
@@ -314,7 +273,7 @@ const TravelDetailView = () => {
           startDate={travelPlan.start_date}
           endDate={travelPlan.end_date}
           participantsCount={participants.length}
-          dDay={getDDay()}
+          dDay={ddayText}
         />
 
         {/* 탭 컨테이너 */}

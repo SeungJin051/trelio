@@ -3,7 +3,6 @@
 import {
   IoAddOutline,
   IoCalendarOutline,
-  IoChatbubbleOutline,
   IoCheckmarkCircleOutline,
   IoDownloadOutline,
   IoInformationCircleOutline,
@@ -14,7 +13,6 @@ import {
 
 import {
   Avatar,
-  Badge,
   Button,
   Progress,
   ProgressColorTheme,
@@ -23,7 +21,7 @@ import {
 
 import { useBudgetWithExchange } from '@/hooks/useBudgetWithExchange';
 import { useReadinessScore } from '@/hooks/useReadinessScore';
-import { formatCurrency } from '@/lib/currency';
+import { calculateDDayWithEnd, formatTripNightsDays } from '@/lib/travel-utils';
 
 import { SharedTodoWidget } from './SharedTodoWidget';
 
@@ -95,12 +93,9 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
   currency,
   destinationCountry,
   userNationality,
-  hotTopics,
   onInviteParticipants,
   onExport,
   onSettings,
-  onBlockClick,
-  onHotTopicClick,
   onBudgetClick,
   onReadinessClick,
 }) => {
@@ -128,47 +123,23 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
     destinationCountry,
     userNationality,
   });
-  // D-Day 계산
-  const getDDay = () => {
-    const startDateObj = new Date(startDate);
-    const endDateObj = new Date(endDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    startDateObj.setHours(0, 0, 0, 0);
-    endDateObj.setHours(0, 0, 0, 0);
+  const ddayText = calculateDDayWithEnd(startDate, endDate);
+  const tripDurationText = formatTripNightsDays(startDate, endDate);
 
-    const diffTime = startDateObj.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    // 여행 시작 전
-    if (diffDays > 0) return `D-${diffDays}`;
-
-    // 여행 시작일
-    if (diffDays === 0) return 'D-Day';
-
-    // 여행 중
-    if (today >= startDateObj && today <= endDateObj) {
-      const daysSinceStart = Math.ceil(
-        (today.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)
-      );
-      return `D+${daysSinceStart}`;
-    }
-
-    // 여행 종료 후
-    const daysSinceEnd = Math.ceil(
-      (today.getTime() - endDateObj.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    return `여행 종료 ${daysSinceEnd}일`;
-  };
-
-  // 여행 기간 계산
-  const getTripDuration = () => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffTime = end.getTime() - start.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-    return `${diffDays - 1}박 ${diffDays}일`;
-  };
+  // D-Day 배지 색상 (투명도 포함)
+  const isEnded = ddayText.startsWith('여행 종료 ');
+  const isStartDay = ddayText === 'D-Day';
+  const isUpcoming = ddayText.startsWith('D-');
+  const isInProgress = ddayText.startsWith('D+') && !isEnded;
+  const ddayBadgeBgClass = isEnded
+    ? 'bg-gray-900'
+    : isStartDay
+      ? 'bg-blue-500/90'
+      : isUpcoming
+        ? 'bg-orange-500/90'
+        : isInProgress
+          ? 'bg-green-500/90'
+          : 'bg-gray-900';
 
   // 최근 활동: 상위 컴포넌트에서 전달받은 데이터를 사용
 
@@ -189,7 +160,7 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
                 <div className='flex items-center space-x-1'>
                   <IoCalendarOutline className='h-3 w-3 sm:h-4 sm:w-4' />
                   <span>
-                    {getTripDuration()} {location}
+                    {tripDurationText} {location}
                   </span>
                 </div>
                 <div className='flex items-center space-x-1'>
@@ -202,19 +173,21 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
               </div>
             </div>
 
-            {/* D-Day 카운터 */}
-            <div className='w-full rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-3 py-2 text-center text-white shadow-lg sm:w-auto sm:px-4 sm:py-3 sm:text-left md:px-5 md:py-4'>
+            {/* D-Day 카운터: 상태별 배지 색상 */}
+            <div
+              className={`w-full rounded-xl ${ddayBadgeBgClass} px-3 py-2 text-center text-white shadow-sm sm:w-auto sm:px-4 sm:py-3 sm:text-left md:px-5 md:py-4`}
+            >
               <Typography
                 variant='h3'
                 className='text-lg font-bold sm:text-xl md:text-2xl lg:text-3xl'
               >
-                {getDDay()}
+                {ddayText}
               </Typography>
               <Typography
                 variant='caption'
-                className='text-xs text-blue-100 sm:text-sm'
+                className='text-xs text-gray-300 sm:text-sm'
               >
-                여행까지 남은 시간
+                {!ddayText.includes('D+') && '여행까지 남은 시간'}
               </Typography>
             </div>
           </div>
@@ -497,7 +470,7 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
               ) : (
                 <button
                   onClick={onBudgetClick}
-                  className='w-full cursor-pointer rounded-xl bg-gradient-to-r from-green-50 to-blue-50 p-3 transition-all duration-200 hover:from-green-100 hover:to-blue-100 sm:p-4'
+                  className='w-full cursor-pointer rounded-xl bg-gray-50 p-3 transition-all duration-200 hover:bg-gray-100 sm:p-4'
                   disabled={!onBudgetClick || budgetLoading}
                 >
                   {budgetLoading ? (
@@ -601,7 +574,7 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
                       <div className='mb-2'>
                         <div className='h-3 w-full rounded-full bg-gray-200'>
                           <div
-                            className='h-3 rounded-full bg-gradient-to-r from-green-500 to-blue-500 transition-all duration-300'
+                            className='h-3 rounded-full bg-green-500 transition-all duration-300'
                             style={{
                               width: `${Math.min(budgetInfo.spentPercentage, 100)}%`,
                             }}
@@ -659,10 +632,10 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
             <SharedTodoWidget planId={planId} participants={participants} />
 
             {/* 토론 중인 항목 */}
-            {hotTopics.length > 0 && (
-              <div className='w-full rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4 md:p-5 lg:p-6'>
-                <div className='mb-4 flex items-center space-x-2'>
-                  <IoChatbubbleOutline className='h-5 w-5 text-orange-500' />
+            {/* {hotTopics.length > 0 && (
+              <div className='w-full p-3 bg-white shadow-sm rounded-xl sm:rounded-2xl sm:p-4 md:p-5 lg:p-6'>
+                <div className='flex items-center mb-4 space-x-2'>
+                  <IoChatbubbleOutline className='w-5 h-5 text-orange-500' />
                   <Typography
                     variant='h6'
                     className='font-semibold text-gray-900'
@@ -674,7 +647,7 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
                   {hotTopics.map((topic) => (
                     <div
                       key={topic.id}
-                      className='cursor-pointer rounded-xl border border-orange-200 bg-orange-50 p-3 transition-all hover:bg-orange-100 hover:shadow-sm sm:p-4'
+                      className='p-3 transition-all border border-orange-200 cursor-pointer rounded-xl bg-orange-50 hover:bg-orange-100 hover:shadow-sm sm:p-4'
                       onClick={() => onHotTopicClick(topic.blockId)}
                     >
                       <Typography
@@ -698,7 +671,7 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
                   ))}
                 </div>
               </div>
-            )}
+            )} */}
           </div>
         </div>
       </div>
