@@ -3,9 +3,7 @@
 import {
   IoAddOutline,
   IoCalendarOutline,
-  IoCheckmarkCircleOutline,
   IoDownloadOutline,
-  IoInformationCircleOutline,
   IoSettingsOutline,
   IoTimeOutline,
   IoWalletOutline,
@@ -20,7 +18,7 @@ import {
 } from '@ui/components';
 
 import { useBudgetWithExchange } from '@/hooks/useBudgetWithExchange';
-import { useReadinessScore } from '@/hooks/useReadinessScore';
+import { usePlanningProgress } from '@/hooks/usePlanningProgress';
 import { calculateDDayWithEnd, formatTripNightsDays } from '@/lib/travel-utils';
 
 import { SharedTodoWidget } from './SharedTodoWidget';
@@ -99,13 +97,12 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
   onBudgetClick,
   onReadinessClick,
 }) => {
-  // 실시간 준비율 계산
+  // 여행 계획율 계산
   const {
-    score: readinessScore,
-    status,
-    recommendations,
-    isLoading: readinessLoading,
-  } = useReadinessScore({
+    score: planningScore,
+    status: planningStatus,
+    isLoading: planningLoading,
+  } = usePlanningProgress({
     planId,
     startDate,
     endDate,
@@ -146,56 +143,6 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
   return (
     <div className='min-h-full w-full overflow-x-hidden bg-gray-50 px-1 py-3 sm:px-3 md:px-6 lg:px-8'>
       <div className='mx-auto w-full max-w-6xl space-y-4 sm:space-y-5 md:space-y-6'>
-        {/* 헤더 섹션 */}
-        <div className='w-full rounded-2xl bg-white p-3 shadow-sm sm:p-4 md:p-5 lg:p-6'>
-          <div className='flex w-full flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-0'>
-            <div className='min-w-0 flex-1 space-y-2'>
-              <Typography
-                variant='h4'
-                className='break-words text-lg font-bold text-gray-900 sm:text-xl md:text-2xl lg:text-3xl'
-              >
-                {title}
-              </Typography>
-              <div className='flex flex-col space-y-1 text-xs text-gray-600 sm:text-sm lg:flex-row lg:items-center lg:space-x-4 lg:space-y-0'>
-                <div className='flex items-center space-x-1'>
-                  <IoCalendarOutline className='h-3 w-3 sm:h-4 sm:w-4' />
-                  <span>
-                    {tripDurationText} {location}
-                  </span>
-                </div>
-                <div className='flex items-center space-x-1'>
-                  <IoTimeOutline className='h-3 w-3 sm:h-4 sm:w-4' />
-                  <span className='text-xs sm:text-sm'>
-                    {new Date(startDate).toLocaleDateString()} -{' '}
-                    {new Date(endDate).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* D-Day 카운터: 상태별 배지 색상 */}
-            <div
-              className={`w-full rounded-xl ${ddayBadgeBgClass} px-3 py-2 text-center text-white shadow-sm sm:w-auto sm:px-4 sm:py-3 sm:text-left md:px-5 md:py-4`}
-            >
-              <Typography
-                variant='h3'
-                className='text-lg font-bold sm:text-xl md:text-2xl lg:text-3xl'
-              >
-                {ddayText}
-              </Typography>
-              <Typography
-                variant='caption'
-                className='text-xs text-gray-300 sm:text-sm'
-              >
-                {!ddayText.includes('D+') && '여행까지 남은 시간'}
-              </Typography>
-            </div>
-          </div>
-
-          {/* 날씨 정보 */}
-          {/* Removed weather display */}
-        </div>
-
         {/* 실시간 현황과 핵심 요약 그리드 */}
         <div className='flex w-full flex-col gap-4 md:flex-row md:gap-5 lg:gap-6'>
           {/* 좌측 컬럼 - 사람과 활동 */}
@@ -368,7 +315,7 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
 
           {/* 우측 컬럼 - 진행상황 */}
           <div className='w-full min-w-0 flex-1 space-y-4 md:space-y-5 lg:space-y-6'>
-            {/* 여행 준비율 */}
+            {/* 여행 계획율 */}
             <div className='w-full rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4 md:p-5 lg:p-6'>
               <div className='mb-4 flex items-center justify-between'>
                 <div className='flex items-center space-x-2'>
@@ -376,18 +323,18 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
                     variant='h6'
                     className='font-semibold text-gray-900'
                   >
-                    여행 준비율
+                    여행 계획율
                   </Typography>
-                  <span className='text-lg'>{status.emoji}</span>
+                  <span className='text-lg'>{planningStatus.emoji}</span>
                 </div>
-                {readinessLoading ? (
+                {planningLoading ? (
                   <div className='h-6 w-12 animate-pulse rounded bg-gray-200'></div>
                 ) : (
                   <Typography
                     variant='h6'
-                    className={`font-bold text-${status.color}-600`}
+                    className={`font-bold text-${planningStatus.color}-600`}
                   >
-                    {readinessScore}%
+                    {planningScore}%
                   </Typography>
                 )}
               </div>
@@ -395,38 +342,32 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
               <button
                 onClick={onReadinessClick}
                 className='w-full rounded-lg p-2 transition-all duration-200 sm:p-3'
-                disabled={!onReadinessClick || readinessLoading}
+                disabled={!onReadinessClick || planningLoading}
               >
                 <Progress
-                  value={readinessScore}
+                  value={planningScore}
                   size='medium'
-                  colorTheme={status.color as ProgressColorTheme}
+                  colorTheme={planningStatus.color as ProgressColorTheme}
                 />
               </button>
-
-              {/* 추천사항 */}
-              {recommendations.length > 0 && !readinessLoading && (
-                <div className='mt-4 rounded-lg bg-gray-50 p-3'>
-                  <div className='mb-2 flex items-center space-x-2'>
-                    <IoInformationCircleOutline className='h-4 w-4 text-blue-500' />
-                    <Typography
-                      variant='caption'
-                      className='font-medium text-gray-700'
-                    >
-                      추천사항
-                    </Typography>
-                  </div>
-                  <div className='space-y-1'>
-                    {recommendations.map((recommendation, index) => (
-                      <Typography
-                        key={index}
-                        variant='caption'
-                        className='block text-gray-600'
-                      >
-                        • {recommendation}
-                      </Typography>
-                    ))}
-                  </div>
+              {/* 한 줄 제안 (UX writing) */}
+              {!planningLoading && (
+                <div className='mt-3 rounded-lg bg-gray-50 p-3'>
+                  <Typography variant='caption' className='text-gray-700'>
+                    {planningScore <= 0 &&
+                      '시작해볼까요? 블록과 할 일을 추가하면 계획율이 올라가요.'}
+                    {planningScore > 0 &&
+                      planningScore < 30 &&
+                      '좋은 출발이에요. 오늘 1–2개만 더 추가해볼까요?'}
+                    {planningScore >= 30 &&
+                      planningScore < 70 &&
+                      '탄력 받았어요. 남은 일차에 핵심 활동을 채워봐요.'}
+                    {planningScore >= 70 &&
+                      planningScore < 90 &&
+                      '거의 다 됐어요. 이동/숙소만 확인하면 충분해요.'}
+                    {planningScore >= 90 &&
+                      '완벽에 가까워요. 세부만 다듬으면 끝!'}
+                  </Typography>
                 </div>
               )}
             </div>
