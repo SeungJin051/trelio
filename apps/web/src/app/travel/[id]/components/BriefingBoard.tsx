@@ -394,7 +394,7 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
 
               <button
                 onClick={onReadinessClick}
-                className='w-full cursor-pointer rounded-lg p-2 transition-all duration-200 hover:bg-gray-50 sm:p-3'
+                className='w-full rounded-lg p-2 transition-all duration-200 sm:p-3'
                 disabled={!onReadinessClick || readinessLoading}
               >
                 <Progress
@@ -402,15 +402,6 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
                   size='medium'
                   colorTheme={status.color as ProgressColorTheme}
                 />
-                <div className='mt-2 flex items-center space-x-2 text-sm text-gray-500'>
-                  <IoCheckmarkCircleOutline className='h-4 w-4' />
-                  <span>{status.message}</span>
-                  {onReadinessClick && (
-                    <span className='ml-auto text-xs text-blue-500'>
-                      상세보기 →
-                    </span>
-                  )}
-                </div>
               </button>
 
               {/* 추천사항 */}
@@ -470,7 +461,7 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
               ) : (
                 <button
                   onClick={onBudgetClick}
-                  className='w-full cursor-pointer rounded-xl bg-gray-50 p-3 transition-all duration-200 hover:bg-gray-100 sm:p-4'
+                  className='w-full rounded-xl bg-gray-50 p-3 transition-all duration-200 sm:p-4'
                   disabled={!onBudgetClick || budgetLoading}
                 >
                   {budgetLoading ? (
@@ -487,7 +478,7 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
                       {/* 상단 요약: 사용/남음 (이중 통화 표시) */}
                       <div className='mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2'>
                         {/* 사용 */}
-                        <div className='rounded-xl border border-gray-100 bg-gray-50 p-3'>
+                        <div className='rounded-xl border border-gray-100 bg-white p-3'>
                           <Typography
                             variant='caption'
                             className='text-gray-500'
@@ -528,7 +519,7 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
                           </div>
                         </div>
                         {/* 남음 */}
-                        <div className='rounded-xl border border-gray-100 bg-gray-50 p-3 text-right'>
+                        <div className='rounded-xl border border-gray-100 bg-white p-3'>
                           <Typography
                             variant='caption'
                             className='text-gray-500'
@@ -589,38 +580,55 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
                         </span>
                       </div>
 
-                      {/* 총 예산: 원래 통화 / 변환 통화 */}
-                      <div className='flex items-center justify-between'>
+                      {/* 총 예산: 우측 정렬 숫자, 하단 환율 안내 */}
+                      <div className='flex items-start justify-between'>
                         <div className='flex items-center space-x-2'>
                           <IoWalletOutline className='h-4 w-4 text-green-600' />
                           <Typography variant='body2' className='text-gray-700'>
-                            총 예산{' '}
-                            {
-                              budgetInfo.originalBudgetInfo
-                                .formattedTargetBudget
-                            }
-                            {budgetInfo.currency !==
-                              budgetInfo.originalCurrency && (
-                              <> / {budgetInfo.formattedTargetBudget}</>
-                            )}
+                            총 예산
                           </Typography>
                         </div>
-                        {budgetInfo.currency !==
-                          budgetInfo.originalCurrency && (
-                          <Typography
-                            variant='caption'
-                            className='text-gray-400'
-                          >
-                            환율 기준: 1 {budgetInfo.originalCurrency} ≈{' '}
-                            {budgetInfo.exchangeRate.toFixed(2)}{' '}
-                            {budgetInfo.currency}
-                          </Typography>
-                        )}
-                        {onBudgetClick && (
-                          <span className='text-xs text-blue-500'>
-                            상세보기 →
-                          </span>
-                        )}
+                        <div className='text-right'>
+                          <div className='flex flex-wrap items-baseline justify-end gap-1'>
+                            <Typography
+                              variant='h6'
+                              className='break-all font-mono font-extrabold text-gray-900'
+                            >
+                              {
+                                budgetInfo.originalBudgetInfo
+                                  .formattedTargetBudget
+                              }
+                            </Typography>
+                            <span className='shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] text-gray-600'>
+                              {budgetInfo.originalCurrency}
+                            </span>
+                          </div>
+                          {budgetInfo.currency !==
+                            budgetInfo.originalCurrency && (
+                            <div className='flex flex-wrap items-baseline justify-end gap-1'>
+                              <Typography
+                                variant='h6'
+                                className='break-all font-mono font-extrabold text-gray-900'
+                              >
+                                {budgetInfo.formattedTargetBudget}
+                              </Typography>
+                              <span className='shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] text-gray-600'>
+                                {budgetInfo.currency}
+                              </span>
+                            </div>
+                          )}
+                          {budgetInfo.currency !==
+                            budgetInfo.originalCurrency && (
+                            <Typography
+                              variant='caption'
+                              className='text-gray-400'
+                            >
+                              환율 기준: 1 {budgetInfo.originalCurrency} ≈{' '}
+                              {budgetInfo.exchangeRate.toFixed(2)}{' '}
+                              {budgetInfo.currency}
+                            </Typography>
+                          )}
+                        </div>
                       </div>
                     </>
                   )}

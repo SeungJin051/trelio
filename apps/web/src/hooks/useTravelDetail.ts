@@ -13,11 +13,38 @@ import {
 } from '@/lib/api/travel';
 
 export function useTravelDetail(planId: string) {
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: ['travel-detail', planId],
     queryFn: () => fetchTravelDetail(planId),
     enabled: !!planId,
-    staleTime: 1000 * 60 * 5, // 5분
+    // 서버 데이터로 캐시 갱신 시, 기존 캐시에 반영돼 있던 presence(isOnline)를 유지
+    select: (fresh) => {
+      const prev = queryClient.getQueryData<TravelDetailResponse>([
+        'travel-detail',
+        planId,
+      ]);
+      if (!prev) return fresh;
+
+      const onlineUserIdSet = new Set(
+        (prev.participants || [])
+          .filter((p) => p.isOnline)
+          .map((p) => p.user_id)
+      );
+
+      return {
+        ...fresh,
+        participants: (fresh.participants || []).map((p) => ({
+          ...p,
+          isOnline: onlineUserIdSet.has(p.user_id),
+        })),
+      } as TravelDetailResponse;
+    },
+    // 최신 데이터 보장을 위해 재진입 시 항상 리패치
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
+    staleTime: 0,
     gcTime: 1000 * 60 * 10, // 10분
   });
 }

@@ -137,7 +137,10 @@ export const useBlocks = ({
     enabled: !!planId,
     retry: 1,
     retryDelay: 1000,
-    staleTime: 1000 * 60 * 5, // 5분간 캐시 유지
+    // 최신 데이터 보장을 위해 재진입 시 항상 리패치
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
+    staleTime: 0,
   });
 
   // 날짜별로 그룹화된 블록 계산 (타임라인 구성)
