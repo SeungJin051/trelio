@@ -173,6 +173,8 @@ export function formatCurrency(amount: number, currency: CurrencyCode): string {
       maximumFractionDigits: currencyInfo.decimals,
     }).format(amount);
   } catch (error) {
+    console.error(error);
+
     // Fallback: 심볼 + 숫자 (Intl.NumberFormat 실패 시)
     const formattedNumber = amount.toLocaleString('ko-KR', {
       minimumFractionDigits: currencyInfo.decimals,
@@ -189,15 +191,11 @@ export function formatCurrency(amount: number, currency: CurrencyCode): string {
  * @param currency - 통화 코드
  * @returns 포맷팅된 입력값
  */
-export function formatCurrencyInput(
-  value: string,
-  currency: CurrencyCode
-): string {
+export function formatCurrencyInput(value: string): string {
   // 숫자가 아닌 문자 제거
   const numbers = value.replace(/[^0-9]/g, '');
   if (!numbers) return '';
 
-  const currencyInfo = CURRENCIES[currency];
   const amount = parseInt(numbers);
 
   // 천 단위 구분자 추가

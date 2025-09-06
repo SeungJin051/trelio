@@ -1,6 +1,6 @@
 'use client';
 
-import { useContext } from 'react';
+import { useContext, useMemo } from 'react';
 
 import { ToastType } from '@/components/basic/Toast/Toast';
 import { ToastContext } from '@/providers/toast-provider';
@@ -12,34 +12,33 @@ export const useToast = () => {
     throw new Error('useToast must be used within a ToastProvider');
   }
 
-  const toast = (
-    message: string,
-    options?: { type?: ToastType; title?: string; duration?: number }
-  ) => {
-    return context.showToast({ message, ...options });
-  };
+  // toast 메모이제이션 처리
+  const toast = useMemo(() => {
+    const base = (
+      message: string,
+      options?: { type?: ToastType; title?: string; duration?: number }
+    ) => context.showToast({ message, ...options });
 
-  toast.success = (
-    message: string,
-    options?: { title?: string; duration?: number }
-  ) => {
-    return context.showToast({ message, type: 'success', ...options });
-  };
+    base.success = (
+      message: string,
+      options?: { title?: string; duration?: number }
+    ) => context.showToast({ message, type: 'success', ...options });
 
-  toast.error = (
-    message: string,
-    options?: { title?: string; duration?: number }
-  ) => {
-    return context.showToast({ message, type: 'error', ...options });
-  };
+    base.error = (
+      message: string,
+      options?: { title?: string; duration?: number }
+    ) => context.showToast({ message, type: 'error', ...options });
 
-  toast.hide = (id: string) => {
-    context.hideToast(id);
-  };
+    base.hide = (id: string) => {
+      context.hideToast(id);
+    };
 
-  toast.hideAll = () => {
-    context.hideAllToasts();
-  };
+    base.hideAll = () => {
+      context.hideAllToasts();
+    };
+
+    return base;
+  }, [context]);
 
   return toast;
 };

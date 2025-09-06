@@ -1,16 +1,22 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { arrayMove } from '@dnd-kit/sortable';
+import type { PostgrestError } from '@supabase/supabase-js';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import type { TravelDetailResponse } from '@/lib/api/travel';
 import { getCurrencyFromLocation } from '@/lib/currency';
 import { createClient } from '@/lib/supabase/client/supabase';
 import {
   BlockEvent,
+  type BlockMeta,
   BlockType,
+  type Cost,
   CreateBlockRequest,
   DayBlocks,
+  type Location,
   MoveBlockRequest,
+  type TimeRange,
   TravelBlock,
   TravelTimeline,
   UpdateBlockRequest,
@@ -49,10 +55,55 @@ export const useBlocks = ({
   // 낙관적 업데이트를 위한 임시 상태 (사용자 경험 향상)
   const [optimisticBlocks, setOptimisticBlocks] = useState<TravelBlock[]>([]);
   // 충돌 해결을 위한 상태 (동시 편집 시)
-  const [conflictResolution, setConflictResolution] = useState<{
+  const [conflictResolution] = useState<{
     blockId: string;
-    conflicts: { field: string; localValue: any; serverValue: any }[];
+    conflicts: { field: string; localValue: unknown; serverValue: unknown }[];
   } | null>(null);
+
+  // Supabase Row 타입들 정의
+  type SupabaseLocationRow = {
+    address: string;
+    latitude?: number | null;
+    longitude?: number | null;
+    place_id?: string | null;
+  };
+
+  type SupabaseTimeRangeRow = {
+    start_time?: string | null;
+    end_time?: string | null;
+    duration?: number | null;
+  };
+
+  type SupabaseCostRow = {
+    amount?: number | null;
+    currency?: Cost['currency'] | null;
+  };
+
+  interface SupabaseTravelBlockRow {
+    id: string;
+    plan_id: string;
+    day_number: number;
+    order_index: number;
+    block_type: BlockType;
+    title: string;
+    description?: string | null;
+    location?: SupabaseLocationRow | null;
+    time_range?: SupabaseTimeRangeRow | null;
+    cost?: SupabaseCostRow | null;
+    meta?: BlockMeta | null;
+    created_by: string;
+    created_at: string;
+    updated_at: string;
+  }
+
+  const isPostgrestError = (err: unknown): err is PostgrestError => {
+    return (
+      !!err &&
+      typeof err === 'object' &&
+      'code' in (err as Record<string, unknown>) &&
+      'message' in (err as Record<string, unknown>)
+    );
+  };
 
   // 블록 데이터 조회 (React Query 사용)
   const {
@@ -79,10 +130,11 @@ export const useBlocks = ({
         if (error) {
           // 테이블이 존재하지 않는 경우 빈 배열 반환 (초기 상태)
           if (
-            (error as any).code === 'PGRST116' ||
-            (error as any).message.includes('relation') ||
-            (error as any).message.includes('does not exist') ||
-            (error as any).message.includes('travel_blocks')
+            (isPostgrestError(error) && error.code === 'PGRST116') ||
+            (typeof (error as PostgrestError).message === 'string' &&
+              ((error as PostgrestError).message.includes('relation') ||
+                (error as PostgrestError).message.includes('does not exist') ||
+                (error as PostgrestError).message.includes('travel_blocks')))
           ) {
             return [] as TravelBlock[];
           }
@@ -91,46 +143,52 @@ export const useBlocks = ({
         }
 
         // Supabase 데이터를 TravelBlock 타입으로 변환
-        return (
-          (data?.map((block) => ({
-            id: (block as any).id,
-            planId: (block as any).plan_id,
-            dayNumber: (block as any).day_number,
-            orderIndex: (block as any).order_index,
-            blockType: (block as any).block_type as BlockType,
-            title: (block as any).title,
-            description: (block as any).description,
-            // 위치 정보 변환
-            location: (block as any).location
-              ? {
-                  address: (block as any).location.address,
-                  latitude: (block as any).location.latitude,
-                  longitude: (block as any).location.longitude,
-                  placeId: (block as any).location.place_id,
-                }
-              : undefined,
-            // 시간 정보 변환
-            timeRange: (block as any).time_range
-              ? {
-                  startTime: (block as any).time_range.start_time,
-                  endTime: (block as any).time_range.end_time,
-                  duration: (block as any).time_range.duration,
-                }
-              : undefined,
-            // 비용 정보 변환
-            cost: (block as any).cost
-              ? {
-                  amount: (block as any).cost.amount,
-                  currency: (block as any).cost.currency,
-                }
-              : undefined,
-            meta: (block as any).meta,
-            createdBy: (block as any).created_by,
-            createdAt: (block as any).created_at,
-            updatedAt: (block as any).updated_at,
-          })) as TravelBlock[]) || []
-        );
-      } catch (error) {
+        const rows = (data || []) as SupabaseTravelBlockRow[];
+        const mapped: TravelBlock[] = rows.map((block) => {
+          const location: Location | undefined = block.location
+            ? {
+                address: block.location.address,
+                latitude: block.location.latitude ?? undefined,
+                longitude: block.location.longitude ?? undefined,
+                placeId: block.location.place_id ?? undefined,
+              }
+            : undefined;
+
+          const timeRange: TimeRange | undefined = block.time_range
+            ? {
+                startTime: block.time_range.start_time ?? undefined,
+                endTime: block.time_range.end_time ?? undefined,
+                duration: block.time_range.duration ?? undefined,
+              }
+            : undefined;
+
+          const cost: Cost | undefined = block.cost
+            ? {
+                amount: block.cost.amount ?? 0,
+                currency: (block.cost.currency || 'KRW') as Cost['currency'],
+              }
+            : undefined;
+
+          return {
+            id: block.id,
+            planId: block.plan_id,
+            dayNumber: block.day_number,
+            orderIndex: block.order_index,
+            blockType: block.block_type,
+            title: block.title,
+            description: block.description ?? undefined,
+            location,
+            timeRange,
+            cost,
+            meta: block.meta ?? undefined,
+            createdBy: block.created_by,
+            createdAt: block.created_at,
+            updatedAt: block.updated_at,
+          } as TravelBlock;
+        });
+
+        return mapped;
+      } catch {
         return [] as TravelBlock[]; // 에러 발생 시 빈 배열 반환
       }
     },
@@ -213,7 +271,12 @@ export const useBlocks = ({
   }, [blocks, optimisticBlocks, planId, startDate, endDate, defaultCurrency]);
 
   // 블록 생성 Mutation (낙관적 업데이트 포함)
-  const createBlockMutation = useMutation({
+  const createBlockMutation = useMutation<
+    { id: string; title: string },
+    unknown,
+    CreateBlockRequest,
+    { tempId: string }
+  >({
     mutationFn: async (request: CreateBlockRequest) => {
       if (!userProfile) throw new Error('로그인이 필요합니다.');
 
@@ -250,32 +313,31 @@ export const useBlocks = ({
         try {
           const err = await response.json();
           message = err?.error || message;
-        } catch (e) {
+        } catch {
           // ignore parse error
         }
         throw new Error(message);
       }
 
-      const data = await response.json();
-      return data as any;
+      const data = (await response.json()) as { id: string; title: string };
+      return data;
     },
     onMutate: async (newBlock) => {
       // 낙관적 업데이트: 서버 응답을 기다리지 않고 즉시 UI 업데이트
       const tempId = `temp-${Date.now()}`;
       const optimisticBlock: TravelBlock = {
         id: tempId,
-        planId: (newBlock as any).planId,
-        dayNumber: (newBlock as any).dayNumber,
-        orderIndex: blocks.filter(
-          (b) => b.dayNumber === (newBlock as any).dayNumber
-        ).length,
-        blockType: (newBlock as any).blockType,
-        title: (newBlock as any).title,
-        description: (newBlock as any).description,
-        location: (newBlock as any).location,
-        timeRange: (newBlock as any).timeRange,
-        cost: (newBlock as any).cost,
-        meta: (newBlock as any).meta,
+        planId: newBlock.planId,
+        dayNumber: newBlock.dayNumber,
+        orderIndex: blocks.filter((b) => b.dayNumber === newBlock.dayNumber)
+          .length,
+        blockType: newBlock.blockType,
+        title: newBlock.title,
+        description: newBlock.description,
+        location: newBlock.location,
+        timeRange: newBlock.timeRange,
+        cost: newBlock.cost,
+        meta: newBlock.meta,
         createdBy: userProfile?.id || '',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -284,83 +346,88 @@ export const useBlocks = ({
       setOptimisticBlocks((prev) => [...prev, optimisticBlock]);
       return { tempId } as const;
     },
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, _variables, context) => {
       // 성공 시 낙관적 업데이트 제거하고 실제 데이터로 교체
       setOptimisticBlocks((prev) =>
-        prev.filter((b) => b.id !== (context as any)?.tempId)
+        prev.filter((b) => b.id !== context?.tempId)
       );
       queryClient.invalidateQueries({ queryKey: ['travel-blocks', planId] });
       queryClient.invalidateQueries({ queryKey: ['travel-detail', planId] });
       // 최근 변경사항 캐시에 즉시 반영 (UI 지연 방지)
       try {
-        queryClient.setQueryData(['travel-detail', planId], (old: any) => {
-          if (!old) return old;
-          const activity = {
-            id: `local-${(data as any).id}`,
-            type: 'block_add' as const,
-            user: {
-              id: userProfile?.id || 'me',
-              nickname: userProfile?.nickname || '사용자',
-              profile_image_url: userProfile?.profile_image_url,
-            },
-            content: `${userProfile?.nickname || '사용자'}님이 "${(data as any).title}"을 추가했습니다`,
-            timestamp: new Date().toISOString(),
-            blockId: (data as any).id,
-            blockTitle: (data as any).title,
-          };
-          const next = [activity, ...(old.activities || [])];
-          return {
-            ...old,
-            activities: next.slice(0, 5),
-          };
-        });
+        queryClient.setQueryData<TravelDetailResponse>(
+          ['travel-detail', planId],
+          (old) => {
+            if (!old) return old;
+            const activity = {
+              id: `local-${data.id}`,
+              type: 'block_add' as const,
+              user: {
+                id: userProfile?.id || 'me',
+                nickname: userProfile?.nickname || '사용자',
+                profile_image_url: userProfile?.profile_image_url,
+              },
+              content: `${userProfile?.nickname || '사용자'}님이 "${data.title}"을 추가했습니다`,
+              timestamp: new Date().toISOString(),
+              blockId: data.id,
+              blockTitle: data.title,
+            };
+            const next = [activity, ...(old.activities || [])];
+            return {
+              ...old,
+              activities: next.slice(0, 5),
+            };
+          }
+        );
       } catch (e) {
         console.warn('[useBlocks] failed to inject optimistic activity', e);
       }
       toast.success('일정이 추가되었습니다.');
     },
-    onError: (error: any, variables, context) => {
+    onError: (error: unknown, _variables, context) => {
       // 실패 시 낙관적 업데이트 롤백
       setOptimisticBlocks((prev) =>
-        prev.filter((b) => b.id !== (context as any)?.tempId)
+        prev.filter(
+          (b) => b.id !== (context as { tempId: string } | undefined)?.tempId
+        )
       );
       const msg =
-        typeof error?.message === 'string'
-          ? error.message
-          : '일정 추가에 실패했습니다.';
+        error instanceof Error ? error.message : '일정 추가에 실패했습니다.';
       toast.error(msg);
     },
   });
 
   // 블록 업데이트 Mutation
-  const updateBlockMutation = useMutation({
-    mutationFn: async (request: UpdateBlockRequest) => {
-      const { data, error } = await supabase
-        .from('travel_blocks')
-        .update({
-          title: request.title,
-          description: request.description,
-          location: request.location,
-          time_range: request.timeRange,
-          cost: request.cost,
-          meta: request.meta,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', (request as any).id)
-        .select()
-        .single();
+  const updateBlockMutation = useMutation<unknown, unknown, UpdateBlockRequest>(
+    {
+      mutationFn: async (request: UpdateBlockRequest) => {
+        const { data, error } = await supabase
+          .from('travel_blocks')
+          .update({
+            title: request.title,
+            description: request.description,
+            location: request.location,
+            time_range: request.timeRange,
+            cost: request.cost,
+            meta: request.meta,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', request.id as unknown as string)
+          .select()
+          .single();
 
-      if (error) throw error;
-      return data as any;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['travel-blocks', planId] });
-      toast.success('일정이 수정되었습니다.');
-    },
-    onError: (error) => {
-      toast.error('일정 수정에 실패했습니다.');
-    },
-  });
+        if (error) throw error;
+        return data;
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['travel-blocks', planId] });
+        toast.success('일정이 수정되었습니다.');
+      },
+      onError: () => {
+        toast.error('일정 수정에 실패했습니다.');
+      },
+    }
+  );
 
   // 블록 삭제 Mutation
   const deleteBlockMutation = useMutation({
@@ -376,20 +443,20 @@ export const useBlocks = ({
       queryClient.invalidateQueries({ queryKey: ['travel-blocks', planId] });
       toast.success('일정이 삭제되었습니다.');
     },
-    onError: (error) => {
+    onError: () => {
       toast.error('일정 삭제에 실패했습니다.');
     },
   });
 
   // 블록 이동 Mutation (날짜/순서 변경)
-  const moveBlockMutation = useMutation({
+  const moveBlockMutation = useMutation<unknown, unknown, MoveBlockRequest>({
     mutationFn: async (request: MoveBlockRequest) => {
       try {
         // 기존 블록 정보 조회
         const { data: currentBlock, error: fetchError } = await supabase
           .from('travel_blocks')
           .select('*')
-          .eq('id', (request as any).id)
+          .eq('id', request.id)
           .single();
 
         if (fetchError) {
@@ -402,15 +469,14 @@ export const useBlocks = ({
         }
 
         // 같은 날짜 내에서 순서만 변경하는 경우
-        if (
-          (currentBlock as any).day_number === (request as any).newDayNumber
-        ) {
+        const currentRow = currentBlock as SupabaseTravelBlockRow;
+        if (currentRow.day_number === request.newDayNumber) {
           // 현재 날짜의 모든 블록 조회 (순서대로)
           const { data: dayBlocks, error: dayBlocksError } = await supabase
             .from('travel_blocks')
             .select('*')
-            .eq('plan_id', (currentBlock as any).plan_id)
-            .eq('day_number', (request as any).newDayNumber)
+            .eq('plan_id', currentRow.plan_id)
+            .eq('day_number', request.newDayNumber)
             .order('order_index', { ascending: true });
 
           if (dayBlocksError) {
@@ -423,8 +489,9 @@ export const useBlocks = ({
           }
 
           // 현재 블록의 인덱스 찾기
-          const currentIndex = dayBlocks.findIndex(
-            (block) => block.id === (request as any).id
+          const dayRows = dayBlocks as SupabaseTravelBlockRow[];
+          const currentIndex = dayRows.findIndex(
+            (block) => block.id === request.id
           );
           if (currentIndex === -1) {
             throw new Error('이동할 블록을 찾을 수 없습니다.');
@@ -432,9 +499,9 @@ export const useBlocks = ({
 
           // 새로운 순서로 블록들 재배열
           const reorderedBlocks = arrayMove(
-            dayBlocks as any[],
+            dayRows,
             currentIndex,
-            (request as any).newOrderIndex
+            request.newOrderIndex
           );
 
           // 순서 업데이트 (임시로 큰 값으로 설정하여 중복 방지)
@@ -442,7 +509,7 @@ export const useBlocks = ({
 
           // 먼저 모든 블록의 순서를 임시로 변경
           for (let i = 0; i < reorderedBlocks.length; i++) {
-            const block = reorderedBlocks[i] as any;
+            const block = reorderedBlocks[i];
             const { error: tempUpdateError } = await supabase
               .from('travel_blocks')
               .update({
@@ -459,7 +526,7 @@ export const useBlocks = ({
 
           // 그 다음 올바른 순서로 설정
           for (let i = 0; i < reorderedBlocks.length; i++) {
-            const block = reorderedBlocks[i] as any;
+            const block = reorderedBlocks[i];
             const { error: finalUpdateError } = await supabase
               .from('travel_blocks')
               .update({
@@ -480,8 +547,8 @@ export const useBlocks = ({
             await supabase
               .from('travel_blocks')
               .select('*')
-              .eq('plan_id', (currentBlock as any).plan_id)
-              .eq('day_number', (request as any).newDayNumber)
+              .eq('plan_id', currentRow.plan_id)
+              .eq('day_number', request.newDayNumber)
               .order('order_index', { ascending: true });
 
           if (targetDayBlocksError) {
@@ -490,13 +557,14 @@ export const useBlocks = ({
           }
 
           // 대상 날짜의 블록들 순서 조정 (새 블록을 위한 공간 확보)
-          const targetBlocks = targetDayBlocks || [];
+          const targetBlocks =
+            (targetDayBlocks as SupabaseTravelBlockRow[]) || [];
           const tempOrderOffset = 10000;
 
           // 대상 날짜의 블록들을 임시로 순서 조정
           for (let i = 0; i < targetBlocks.length; i++) {
-            const block = targetBlocks[i] as any;
-            const newOrder = i >= (request as any).newOrderIndex ? i + 1 : i;
+            const block = targetBlocks[i];
+            const newOrder = i >= request.newOrderIndex ? i + 1 : i;
             const { error: tempUpdateError } = await supabase
               .from('travel_blocks')
               .update({
@@ -516,8 +584,8 @@ export const useBlocks = ({
 
           // 대상 날짜의 블록들을 최종 순서로 설정
           for (let i = 0; i < targetBlocks.length; i++) {
-            const block = targetBlocks[i] as any;
-            const newOrder = i >= (request as any).newOrderIndex ? i + 1 : i;
+            const block = targetBlocks[i];
+            const newOrder = i >= request.newOrderIndex ? i + 1 : i;
             const { error: finalUpdateError } = await supabase
               .from('travel_blocks')
               .update({
@@ -539,11 +607,11 @@ export const useBlocks = ({
           const { error: moveError } = await supabase
             .from('travel_blocks')
             .update({
-              day_number: (request as any).newDayNumber,
-              order_index: (request as any).newOrderIndex,
+              day_number: request.newDayNumber,
+              order_index: request.newOrderIndex,
               updated_at: new Date().toISOString(),
             })
-            .eq('id', (request as any).id);
+            .eq('id', request.id);
 
           if (moveError) {
             console.error('블록 날짜/순서 업데이트 실패:', moveError);
@@ -651,9 +719,9 @@ export const useBlocks = ({
     getBlocksByDay,
 
     // 로딩 상태 (각 작업별)
-    isCreating: (createBlockMutation as any).isPending,
-    isUpdating: (updateBlockMutation as any).isPending,
-    isDeleting: (deleteBlockMutation as any).isPending,
-    isMoving: (moveBlockMutation as any).isPending,
+    isCreating: createBlockMutation.isPending,
+    isUpdating: updateBlockMutation.isPending,
+    isDeleting: deleteBlockMutation.isPending,
+    isMoving: moveBlockMutation.isPending,
   };
 };

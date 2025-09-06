@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import Link from 'next/link';
 
@@ -123,26 +123,27 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
   }, []);
 
   // 여행 계획 목록 가져오기
-  const fetchTravelPlans = async (forceRefresh = false) => {
-    if (!userProfile) {
-      setLoading(false);
+  const fetchTravelPlans = useCallback(
+    async (forceRefresh = false) => {
+      if (!userProfile) {
+        setLoading(false);
 
-      return;
-    }
+        return;
+      }
 
-    // 이미 데이터가 있고 강제 새로고침이 아닌 경우 스킵
-    if (!forceRefresh && travelPlans.length > 0 && hasInitialized) {
-      return;
-    }
+      // 이미 데이터가 있고 강제 새로고침이 아닌 경우 스킵
+      if (!forceRefresh && travelPlans.length > 0 && hasInitialized) {
+        return;
+      }
 
-    try {
-      setLoading(true);
+      try {
+        setLoading(true);
 
-      // 사용자가 소유한 여행 계획만 가져오기
-      const { data: plansData, error: plansError } = await supabase
-        .from('travel_plans')
-        .select(
-          `
+        // 사용자가 소유한 여행 계획만 가져오기
+        const { data: plansData, error: plansError } = await supabase
+          .from('travel_plans')
+          .select(
+            `
           id,
           title,
           start_date,
@@ -150,59 +151,62 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
           location,
           created_at
         `
-        )
-        .eq('owner_id', userProfile.id)
-        .order('created_at', { ascending: false });
+          )
+          .eq('owner_id', userProfile.id)
+          .order('created_at', { ascending: false });
 
-      if (plansError) {
-        console.error('여행 계획 조회 실패:', plansError);
-        setTravelPlans([]);
-        setLoading(false);
-        return;
-      }
-
-      // 데이터 변환 및 상태 결정
-      const transformedPlans: TravelPlan[] = (plansData || []).map((plan) => {
-        const startDate = new Date(plan.start_date);
-        const endDate = new Date(plan.end_date);
-        const today = new Date();
-
-        let status: 'upcoming' | 'in-progress' | 'completed';
-        if (endDate < today) {
-          status = 'completed';
-        } else if (startDate <= today && today <= endDate) {
-          status = 'in-progress';
-        } else {
-          status = 'upcoming';
+        if (plansError) {
+          console.error('여행 계획 조회 실패:', plansError);
+          setTravelPlans([]);
+          setLoading(false);
+          return;
         }
 
-        return {
-          id: plan.id,
-          title: plan.title,
-          start_date: plan.start_date,
-          end_date: plan.end_date,
-          location: plan.location,
-          status,
-          created_at: plan.created_at,
-          participantCount: 1, // 일단 1명으로 설정 (소유자)
-        };
-      });
+        // 데이터 변환 및 상태 결정
+        const transformedPlans: TravelPlan[] = (plansData || []).map((plan) => {
+          const startDate = new Date(plan.start_date);
+          const endDate = new Date(plan.end_date);
+          const today = new Date();
 
-      setTravelPlans(transformedPlans);
-      setHasInitialized(true);
-    } catch (error) {
-      setTravelPlans([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+          let status: 'upcoming' | 'in-progress' | 'completed';
+          if (endDate < today) {
+            status = 'completed';
+          } else if (startDate <= today && today <= endDate) {
+            status = 'in-progress';
+          } else {
+            status = 'upcoming';
+          }
+
+          return {
+            id: plan.id,
+            title: plan.title,
+            start_date: plan.start_date,
+            end_date: plan.end_date,
+            location: plan.location,
+            status,
+            created_at: plan.created_at,
+            participantCount: 1, // 일단 1명으로 설정 (소유자)
+          };
+        });
+
+        setTravelPlans(transformedPlans);
+        setHasInitialized(true);
+      } catch (error) {
+        console.error(error);
+        setTravelPlans([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [userProfile, travelPlans.length, hasInitialized, supabase]
+  );
 
   // 컴포넌트 마운트 시 및 userProfile 변경 시 데이터 가져오기
   useEffect(() => {
     if (userProfile) {
       fetchTravelPlans();
     }
-  }, [userProfile]);
+  }, [userProfile, fetchTravelPlans]);
 
   // 모바일에서 사이드바가 열릴 때 데이터 새로고침
   useEffect(() => {
@@ -210,7 +214,7 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
       // 모바일에서 사이드바가 열릴 때 항상 최신 데이터 확인
       fetchTravelPlans(true);
     }
-  }, [isOpen, isMobile, userProfile]);
+  }, [isOpen, isMobile, userProfile, fetchTravelPlans]);
 
   // 필터링된 여행 계획
   const filteredPlans = travelPlans.filter((plan) => {

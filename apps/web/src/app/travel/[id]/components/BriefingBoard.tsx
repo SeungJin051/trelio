@@ -2,7 +2,6 @@
 
 import {
   IoAddOutline,
-  IoCalendarOutline,
   IoDownloadOutline,
   IoSettingsOutline,
   IoTimeOutline,
@@ -19,7 +18,8 @@ import {
 
 import { useBudgetWithExchange } from '@/hooks/useBudgetWithExchange';
 import { usePlanningProgress } from '@/hooks/usePlanningProgress';
-import { calculateDDayWithEnd, formatTripNightsDays } from '@/lib/travel-utils';
+
+// import { calculateDDayWithEnd } from '@/lib/travel-utils';
 
 import { SharedTodoWidget } from './SharedTodoWidget';
 
@@ -81,8 +81,6 @@ interface BriefingBoardProps {
 
 export const BriefingBoard: React.FC<BriefingBoardProps> = ({
   planId,
-  title,
-  location,
   startDate,
   endDate,
   participants,
@@ -120,23 +118,8 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
     destinationCountry,
     userNationality,
   });
-  const ddayText = calculateDDayWithEnd(startDate, endDate);
-  const tripDurationText = formatTripNightsDays(startDate, endDate);
-
-  // D-Day 배지 색상 (투명도 포함)
-  const isEnded = ddayText.startsWith('여행 종료 ');
-  const isStartDay = ddayText === 'D-Day';
-  const isUpcoming = ddayText.startsWith('D-');
-  const isInProgress = ddayText.startsWith('D+') && !isEnded;
-  const ddayBadgeBgClass = isEnded
-    ? 'bg-gray-900'
-    : isStartDay
-      ? 'bg-blue-500/90'
-      : isUpcoming
-        ? 'bg-orange-500/90'
-        : isInProgress
-          ? 'bg-green-500/90'
-          : 'bg-gray-900';
+  // D-Day 관련 계산은 추후 배지 사용 시 활성화 예정
+  // const ddayText = calculateDDayWithEnd(startDate, endDate);
 
   // 최근 활동: 상위 컴포넌트에서 전달받은 데이터를 사용
 
@@ -158,7 +141,7 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
 
               {/* 참여자 아바타 목록 */}
               <div className='flex w-full flex-wrap items-center gap-2'>
-                {participants.map((participant, index) => (
+                {participants.map((participant) => (
                   <div key={participant.id} className='group relative'>
                     <div className='relative'>
                       <Avatar

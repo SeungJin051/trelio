@@ -163,7 +163,7 @@ export interface Activity {
   user_id: string;
   action_type: string;
   description: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
   user?: {

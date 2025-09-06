@@ -241,7 +241,7 @@ export const useBudgetWithExchange = ({
         },
       };
     }
-  }, [planId]);
+  }, [planId, budgetCurrency, getUserCurrency, getDestinationCurrency]);
 
   // 예산 정보 계산 및 변환
   const calculateBudgetInfo = useCallback(async () => {
@@ -375,7 +375,6 @@ export const useBudgetWithExchange = ({
   }, [
     targetBudget,
     budgetCurrency,
-    planId,
     getUserCurrency,
     getDestinationCurrency,
     calculateSpentAmount,

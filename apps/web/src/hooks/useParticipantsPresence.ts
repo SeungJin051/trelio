@@ -30,6 +30,20 @@ export function useParticipantsPresence({
 
     const supabase = createClient();
 
+    // 1) 낙관적 업데이트: 본인 온라인을 먼저 표시
+    queryClient.setQueryData<TravelDetailResponse>(
+      ['travel-detail', planId],
+      (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          participants: old.participants.map((p) =>
+            p.user_id === userId ? { ...p, isOnline: true } : p
+          ),
+        };
+      }
+    );
+
     // presence key를 사용자 ID로 설정
     const channel = supabase.channel(`presence-travel-${planId}`, {
       config: {
@@ -79,6 +93,19 @@ export function useParticipantsPresence({
 
     return () => {
       supabase.removeChannel(channel);
+      // 2) 정리 시 본인 오프라인으로 낙관적 정정 (leave 이벤트 보장용)
+      queryClient.setQueryData<TravelDetailResponse>(
+        ['travel-detail', planId],
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            participants: old.participants.map((p) =>
+              p.user_id === userId ? { ...p, isOnline: false } : p
+            ),
+          };
+        }
+      );
     };
   }, [planId, userId, nickname, profileImageUrl, queryClient]);
 }

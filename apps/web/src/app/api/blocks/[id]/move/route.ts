@@ -81,14 +81,11 @@ export async function POST(
     }
 
     // Supabase RPC 함수 호출하여 블록 이동
-    const { data: result, error: moveError } = await supabase.rpc(
-      'move_travel_block',
-      {
-        block_id: blockId,
-        new_day_number: newDayNumber,
-        new_order_index: newOrderIndex,
-      }
-    );
+    const { error: moveError } = await supabase.rpc('move_travel_block', {
+      block_id: blockId,
+      new_day_number: newDayNumber,
+      new_order_index: newOrderIndex,
+    });
 
     if (moveError) {
       console.error('Block move error:', moveError);

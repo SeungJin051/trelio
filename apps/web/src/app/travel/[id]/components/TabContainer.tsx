@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { IoChevronBackOutline, IoChevronForwardOutline } from 'react-icons/io5';
 
-import { useMobile } from '@/hooks';
+// import { useMobile } from '@/hooks';
 
 import { TabItem } from '../constants';
 import { DayTab } from './DayTab';
@@ -22,7 +22,7 @@ export const TabContainer: React.FC<TabContainerProps> = ({
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const selectedTabRef = useRef<HTMLButtonElement>(null);
-  const isMobile = useMobile();
+  // const isMobile = useMobile();
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 

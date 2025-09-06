@@ -8,7 +8,7 @@ import { IoGridOutline } from 'react-icons/io5';
 import { Typography } from '@ui/components';
 
 import { useMobile } from '@/hooks';
-import { formatCurrency } from '@/lib/currency';
+import { CurrencyCode, formatCurrency } from '@/lib/currency';
 
 import { TabItem } from '../constants';
 
@@ -93,7 +93,7 @@ export const DayTab = forwardRef<HTMLButtonElement, DayTabProps>(
             <Typography variant='caption' className='text-xs text-gray-400'>
               {formatCurrency(
                 tab.totalCost.amount,
-                (tab.totalCost.currency || 'KRW') as any
+                (tab.totalCost.currency as CurrencyCode) || 'KRW'
               )}
             </Typography>
           ) : (

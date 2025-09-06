@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import {
   IoAddOutline,
@@ -43,7 +43,7 @@ export const SharedTodoWidget: React.FC<SharedTodoWidgetProps> = ({
   const toast = useToast();
 
   // 투두리스트 조회
-  const fetchTodos = async () => {
+  const fetchTodos = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch(`/api/todos?planId=${planId}`);
@@ -60,7 +60,7 @@ export const SharedTodoWidget: React.FC<SharedTodoWidgetProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [planId, toast]);
 
   // 새 투두 추가
   const handleAddTodo = async () => {
@@ -189,10 +189,10 @@ export const SharedTodoWidget: React.FC<SharedTodoWidgetProps> = ({
     }
   };
 
-  // 컴포넌트 마운트 시 투두리스트 조회
+  // 컴포넌트 마운트 및 planId 변경 시 투두리스트 조회
   useEffect(() => {
     fetchTodos();
-  }, [planId]);
+  }, [fetchTodos]);
 
   const pendingTodos = todos.filter((todo) => !todo.is_completed);
   const completedTodos = todos.filter((todo) => todo.is_completed);
