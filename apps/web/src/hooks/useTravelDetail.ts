@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   createBlock,
-  type CreateBlockRequest,
   deleteBlock,
   fetchTravelDetail,
   moveBlock,
@@ -13,11 +12,38 @@ import {
 } from '@/lib/api/travel';
 
 export function useTravelDetail(planId: string) {
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: ['travel-detail', planId],
     queryFn: () => fetchTravelDetail(planId),
     enabled: !!planId,
-    staleTime: 1000 * 60 * 5, // 5분
+    // 서버 데이터로 캐시 갱신 시, 기존 캐시에 반영돼 있던 presence(isOnline)를 유지
+    select: (fresh) => {
+      const prev = queryClient.getQueryData<TravelDetailResponse>([
+        'travel-detail',
+        planId,
+      ]);
+      if (!prev) return fresh;
+
+      const onlineUserIdSet = new Set(
+        (prev.participants || [])
+          .filter((p) => p.isOnline)
+          .map((p) => p.user_id)
+      );
+
+      return {
+        ...fresh,
+        participants: (fresh.participants || []).map((p) => ({
+          ...p,
+          isOnline: onlineUserIdSet.has(p.user_id),
+        })),
+      } as TravelDetailResponse;
+    },
+    // 최신 데이터 보장을 위해 재진입 시 항상 리패치
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
+    staleTime: 0,
     gcTime: 1000 * 60 * 10, // 10분
   });
 }
@@ -54,7 +80,7 @@ export function useUpdateBlock() {
       blockId: string;
       data: UpdateBlockRequest;
     }) => updateBlock(blockId, data),
-    onSuccess: (updatedBlock, variables) => {
+    onSuccess: (updatedBlock) => {
       // 여행 상세 정보 캐시 업데이트
       queryClient.setQueryData<TravelDetailResponse>(
         ['travel-detail', updatedBlock.plan_id],
@@ -104,7 +130,7 @@ export function useMoveBlock() {
       blockId: string;
       data: MoveBlockRequest;
     }) => moveBlock(blockId, data),
-    onSuccess: (_, variables) => {
+    onSuccess: (_) => {
       // 블록 이동 후 전체 데이터를 다시 가져옴 (순서가 복잡하게 변경되므로)
       // 실제로는 낙관적 업데이트를 구현할 수 있지만, 복잡성을 줄이기 위해 무효화
       queryClient.invalidateQueries({ queryKey: ['travel-detail'] });

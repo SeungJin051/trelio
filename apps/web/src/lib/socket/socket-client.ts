@@ -7,8 +7,41 @@ import { BlockEvent } from '@/types/travel/blocks';
  * 실시간 협업 기능을 위한 웹소켓 연결을 담당
  * 싱글톤 패턴으로 구현하여 앱 전체에서 하나의 연결만 유지
  */
+type ServerToClientEvents = {
+  block_event: (event: BlockEvent) => void;
+  cursor_move: (data: {
+    userId: string;
+    x: number;
+    y: number;
+    userName: string;
+  }) => void;
+  participant_status_change: (data: {
+    userId: string;
+    status: 'online' | 'offline';
+    userName: string;
+  }) => void;
+};
+
+type ClientToServerEvents = {
+  join_travel_plan: (planId: string) => void;
+  leave_travel_plan: (planId: string) => void;
+  block_event: (data: {
+    planId: string;
+    event: BlockEvent;
+    timestamp: string;
+  }) => void;
+  cursor_move: (data: {
+    planId: string;
+    x: number;
+    y: number;
+    userName: string;
+    timestamp: number;
+  }) => void;
+};
+
 class SocketManager {
-  private socket: Socket | null = null;
+  private socket: Socket<ServerToClientEvents, ClientToServerEvents> | null =
+    null;
   private currentTravelPlanId: string | null = null;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;

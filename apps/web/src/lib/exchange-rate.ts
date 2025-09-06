@@ -12,21 +12,6 @@ interface ExchangeRateResponse {
   rates: Record<string, number>;
 }
 
-interface ConversionResponse {
-  success: boolean;
-  query: {
-    from: string;
-    to: string;
-    amount: number;
-  };
-  info: {
-    timestamp: number;
-    rate: number;
-  };
-  date: string;
-  result: number;
-}
-
 // 환율 캐시 (1시간 유효)
 const exchangeRateCache = new Map<
   string,

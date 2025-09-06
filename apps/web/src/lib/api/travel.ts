@@ -1,5 +1,3 @@
-import { createClient } from '@/lib/supabase/client/supabase';
-
 export interface TravelPlanDetail {
   id: string;
   title: string;

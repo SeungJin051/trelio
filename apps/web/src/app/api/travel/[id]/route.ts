@@ -152,11 +152,31 @@ export async function GET(
     }
 
     // 5. 사용자 프로필 조회 (참여자 + 활동 작성자)
-    const participantUserIds = (participants || [])
-      .map((p: any) => p.user_id)
+    type ParticipantRow = {
+      id: string;
+      plan_id: string;
+      user_id: string;
+      role: string;
+      joined_at: string;
+    };
+    type BlockRow = { id: string; title: string };
+    type ActivityRow = {
+      id: string;
+      plan_id: string;
+      user_id: string;
+      block_id?: string | null;
+      type?: string | null;
+      activity_type?: string | null;
+      description?: string | null;
+      content?: string | null;
+      created_at: string;
+    };
+
+    const participantUserIds = ((participants as ParticipantRow[] | null) || [])
+      .map((p) => p.user_id)
       .filter(Boolean);
-    const activityUserIds = (activities || [])
-      .map((a: any) => a.user_id)
+    const activityUserIds = ((activities as ActivityRow[] | null) || [])
+      .map((a) => a.user_id)
       .filter(Boolean);
     const uniqueUserIds = Array.from(
       new Set<string>([...participantUserIds, ...activityUserIds])
@@ -173,24 +193,29 @@ export async function GET(
         .in('id', uniqueUserIds);
 
       for (const p of profiles || []) {
+        const { nickname, profile_image_url } = p as {
+          nickname?: string;
+          profile_image_url?: string;
+          id: string;
+        };
         profilesMap.set(p.id as string, {
-          nickname: (p as any).nickname ?? undefined,
-          profile_image_url: (p as any).profile_image_url ?? undefined,
+          nickname: nickname ?? undefined,
+          profile_image_url: profile_image_url ?? undefined,
         });
       }
     }
 
     // 6. 블록 제목 맵
     const blocksMap = new Map<string, string>();
-    for (const b of blocks || []) {
-      blocksMap.set((b as any).id, (b as any).title);
+    for (const b of (blocks as BlockRow[] | null) || []) {
+      blocksMap.set(b.id, b.title);
     }
 
     // 7. 통합 응답 데이터 구성 (프로필/제목 매핑 반영)
     const response = {
       travelPlan,
       participants:
-        participants?.map((p: any) => {
+        ((participants as ParticipantRow[] | null) || []).map((p) => {
           const profile = profilesMap.get(p.user_id) || {};
           return {
             id: p.id,
@@ -204,7 +229,7 @@ export async function GET(
         }) || [],
       blocks: blocks || [],
       activities:
-        activities?.map((a: any) => {
+        ((activities as ActivityRow[] | null) || []).map((a) => {
           const profile = profilesMap.get(a.user_id) || {};
           const type = a.type ?? a.activity_type;
           const blockTitle = a.block_id ? blocksMap.get(a.block_id) : undefined;
@@ -244,7 +269,7 @@ export async function GET(
             },
             content: a.content ?? a.description ?? contentFallback,
             timestamp: a.created_at,
-            blockId: a.block_id,
+            blockId: a.block_id || undefined,
             blockTitle,
           };
         }) || [],

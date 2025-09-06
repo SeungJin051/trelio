@@ -128,7 +128,7 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
     if (!title.trim()) return;
 
     // 블록 타입별 메타데이터 구성
-    const meta: any = {};
+    const meta: Record<string, unknown> = {};
 
     switch (selectedType) {
       case 'flight':
@@ -564,7 +564,7 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
                   type='text'
                   value={amount}
                   onChange={(e) =>
-                    setAmount(formatCurrencyInput(e.target.value, currency))
+                    setAmount(formatCurrencyInput(e.target.value))
                   }
                   placeholder='0'
                   className='w-full rounded-xl border border-gray-300 py-3 pl-10 pr-4 transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20'

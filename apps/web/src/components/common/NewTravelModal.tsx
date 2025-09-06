@@ -2,8 +2,6 @@
 
 import React, { useState } from 'react';
 
-import { useRouter } from 'next/navigation';
-
 import { FaPencilAlt, FaRobot } from 'react-icons/fa';
 
 import { Icon, Typography } from '@ui/components';
@@ -20,7 +18,6 @@ export const NewTravelModal: React.FC<NewTravelModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const router = useRouter();
   const [showBasicInfoModal, setShowBasicInfoModal] = useState(false);
 
   const handleDirectPlanning = () => {

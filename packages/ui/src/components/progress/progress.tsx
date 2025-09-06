@@ -136,7 +136,7 @@ export const Progress = forwardRef<HTMLDivElement, ProgressProps>(
       <div ref={ref} className={clsx('w-full', className)} {...rest}>
         {/* 라벨과 진행률 텍스트 */}
         {(label || showValue) && (
-          <div className='mb-1 flex items-center justify-between'>
+          <div className='flex items-center justify-between'>
             {label && (
               <span
                 className={clsx('font-medium text-gray-700', sizeStyle.text)}

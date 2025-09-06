@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 활동 로그 생성 (스키마 준수: type/content)
-    const { data: activityRow, error: activityError } = await supabase
+    const { error: activityError } = await supabase
       .from('travel_activities')
       .insert({
         plan_id,

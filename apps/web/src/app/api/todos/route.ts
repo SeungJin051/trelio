@@ -111,12 +111,17 @@ export async function GET(request: Request) {
     }
 
     // 사용자 정보 조회 (profiles 테이블이 있는 경우)
-    const usersMap = new Map<string, any>();
+    type UserProfile = {
+      id: string;
+      nickname?: string;
+      profile_image_url?: string;
+    };
+    const usersMap = new Map<string, UserProfile>();
     try {
       const userIds = new Set<string>();
-      todos.forEach((todo: any) => {
-        if (todo.assigned_user_id) userIds.add(todo.assigned_user_id);
-        if (todo.created_by) userIds.add(todo.created_by);
+      todos.forEach((todo) => {
+        if (todo.assigned_user_id) userIds.add(todo.assigned_user_id as string);
+        if (todo.created_by) userIds.add(todo.created_by as string);
       });
 
       if (userIds.size > 0) {
@@ -126,8 +131,8 @@ export async function GET(request: Request) {
           .in('id', Array.from(userIds));
 
         if (!usersError && users) {
-          users.forEach((u: any) => {
-            usersMap.set(u.id, u);
+          users.forEach((u) => {
+            usersMap.set(u.id as string, u as UserProfile);
           });
         }
       }
@@ -136,12 +141,12 @@ export async function GET(request: Request) {
     }
 
     // 투두 데이터에 사용자 정보 추가
-    const todosWithUsers = todos.map((todo: any) => ({
+    const todosWithUsers = todos.map((todo) => ({
       ...todo,
       assignee: todo.assigned_user_id
-        ? usersMap.get(todo.assigned_user_id)
+        ? usersMap.get(todo.assigned_user_id as string) || null
         : null,
-      creator: usersMap.get(todo.created_by),
+      creator: usersMap.get(todo.created_by as string) || null,
     }));
 
     return NextResponse.json({ todos: todosWithUsers });
@@ -247,7 +252,12 @@ export async function POST(request: Request) {
     }
 
     // 사용자 정보 조회 및 추가
-    const usersMap = new Map<string, any>();
+    type UserProfile = {
+      id: string;
+      nickname?: string;
+      profile_image_url?: string;
+    };
+    const usersMap = new Map<string, UserProfile>();
     try {
       const userIds = new Set<string>();
       if (newTodo.assigned_user_id) userIds.add(newTodo.assigned_user_id);
@@ -260,8 +270,8 @@ export async function POST(request: Request) {
           .in('id', Array.from(userIds));
 
         if (!usersError && users) {
-          users.forEach((u: any) => {
-            usersMap.set(u.id, u);
+          users.forEach((u) => {
+            usersMap.set(u.id as string, u as UserProfile);
           });
         }
       }

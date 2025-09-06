@@ -14,11 +14,7 @@ import { Card } from '@/components';
 import LocationInput from '@/components/travel/inputs/LocationInput';
 import { useToast } from '@/hooks';
 import { createClient } from '@/lib/supabase/client/supabase';
-import type {
-  PreferredDestination,
-  TravelStyle,
-  UserProfile,
-} from '@/types/user/user';
+import type { TravelStyle, UserProfile } from '@/types/user/user';
 
 import { FILE_UPLOAD_LIMITS, TOTAL_STEPS, TRAVEL_STYLES } from './constants';
 import { useImageUpload } from './hooks/useImageUpload';
@@ -77,14 +73,6 @@ const SignUpView = () => {
       }
 
       setUser(session.user);
-
-      // 사용자 정보를 콘솔에 출력
-      console.log('🔐 현재 로그인된 사용자 정보:');
-      console.log('👤 사용자 전체 정보:', session.user);
-      console.log('🆔 사용자 ID:', session.user.id);
-      console.log('📧 이메일:', session.user.email);
-      console.log('🔗 인증 제공자:', session.user.app_metadata?.provider);
-      console.log('📊 사용자 메타데이터:', session.user.user_metadata);
 
       // 소셜 로그인 정보에서 기본값 설정
       if (session.user.user_metadata) {

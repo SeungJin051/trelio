@@ -1,4 +1,5 @@
 import {
+  differenceInCalendarDays,
   differenceInDays,
   format,
   formatDistanceToNow,
@@ -38,6 +39,52 @@ export const calculateDDay = (startDate: string): string => {
   if (days === 0) return 'D-Day';
   if (days > 0) return `D-${days}`;
   return `D+${Math.abs(days)}`;
+};
+
+/**
+ * 여행 시작/종료일을 고려한 D-Day를 계산합니다.
+ * - 시작 전: D-{n}
+ * - 시작일: D-Day
+ * - 진행 중: D+{시작 이후 경과일}
+ * - 종료 후: 여행 종료 D+{종료 이후 경과일}일
+ */
+export const calculateDDayWithEnd = (
+  startDate: string,
+  endDate: string
+): string => {
+  const today = new Date();
+  const start = parseISO(startDate);
+  const end = parseISO(endDate);
+
+  // 날짜 단위 비교를 위해 캘린더 일수 기반으로 계산
+  const daysUntilStart = differenceInCalendarDays(start, today);
+  if (daysUntilStart > 0) return `D-${daysUntilStart}`;
+  if (daysUntilStart === 0) return 'D-Day';
+
+  const daysUntilEnd = differenceInCalendarDays(today, end);
+  // 진행 중 (오늘이 종료일 이전 또는 같은 날)
+  if (differenceInCalendarDays(today, start) >= 0 && daysUntilEnd <= 0) {
+    const daysSinceStart = Math.abs(daysUntilStart);
+    return daysSinceStart === 0 ? 'D-Day' : `D+${daysSinceStart}`;
+  }
+
+  // 종료 후
+  const daysSinceEnd = differenceInCalendarDays(today, end);
+  return `여행 종료 D+${daysSinceEnd}일`;
+};
+
+/**
+ * "X박 Y일" 형식의 여행 기간 문자열을 반환합니다.
+ */
+export const formatTripNightsDays = (
+  startDate: string,
+  endDate: string
+): string => {
+  const start = parseISO(startDate);
+  const end = parseISO(endDate);
+  const days = differenceInCalendarDays(end, start) + 1;
+  const nights = Math.max(0, days - 1);
+  return `${nights}박 ${days}일`;
 };
 
 /**

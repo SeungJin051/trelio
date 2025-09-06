@@ -17,7 +17,6 @@ import { Button, Input, Typography } from '@ui/components';
 import TravelBasicInfoModal from '@/components/travel/modals/TravelBasicInfoModal';
 import { useSession } from '@/hooks/useSession';
 import { createClient } from '@/lib/supabase/client/supabase';
-import { formatDateRange } from '@/lib/travel-utils';
 
 interface TravelPlan {
   id: string;
@@ -127,6 +126,17 @@ const TravelPlansList: React.FC = () => {
   useEffect(() => {
     fetchTravelPlans();
   }, [fetchTravelPlans]);
+
+  // 로그인 직후 또는 토큰이 갱신되면 즉시 목록을 다시 가져온다
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange(() => {
+      // userProfile 설정 이후에도 안전하게 재조회
+      fetchTravelPlans();
+    });
+    return () => {
+      data.subscription.unsubscribe();
+    };
+  }, [supabase, fetchTravelPlans]);
 
   const sortedPlans = useMemo(
     () => sortPlans(travelPlans, sort),
@@ -251,7 +261,7 @@ const TravelPlansList: React.FC = () => {
               <select
                 value={sort}
                 onChange={(e) => handleSortChange(e.target.value as SortType)}
-                className='appearance-none rounded-lg border border-gray-300 bg-white px-3 py-2 pr-8 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500'
+                className='appearance-none rounded-lg border border-gray-300 bg-white px-3 py-3 pr-8 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500'
               >
                 {sortOptions.map((option) => (
                   <option key={option.value} value={option.value}>

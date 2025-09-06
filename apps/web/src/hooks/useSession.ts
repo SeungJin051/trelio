@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
 import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { createClient } from '@/lib/supabase/client/supabase';
 
@@ -20,6 +21,7 @@ type UserProfile = {
 type SignUpStatus = 'completed' | 'incomplete' | 'unauthenticated';
 
 export const useSession = () => {
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -193,11 +195,6 @@ export const useSession = () => {
       router.push('/sign-up');
       return;
     }
-
-    // 세션이 없고 예외 페이지가 아닌 경우 log-in으로 리다이렉트
-    if (!session) {
-      router.push('/log-in');
-    }
   }, [
     session,
     signUpStatus,
@@ -207,6 +204,15 @@ export const useSession = () => {
     excludedPaths,
     initialized,
   ]);
+
+  // 로그인 직후 또는 프로필 준비 완료 시 대시보드 관련 쿼리 무효화하여 즉시 재요청 유도
+  useEffect(() => {
+    if (!initialized) return;
+    if (session?.user && userProfile?.id) {
+      queryClient.invalidateQueries({ queryKey: ['upcoming-travel'] });
+      queryClient.invalidateQueries({ queryKey: ['recent-activities'] });
+    }
+  }, [initialized, session?.user, userProfile?.id, queryClient]);
 
   const refreshProfile = useCallback(async () => {
     if (session?.user) {
