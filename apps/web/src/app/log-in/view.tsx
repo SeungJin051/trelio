@@ -167,6 +167,56 @@ const LoginView = () => {
     }
   };
 
+  /**
+   * 구글 소셜 로그인 처리 함수 (Supabase OAuth - Google)
+   */
+  const handleGoogleLogin = async () => {
+    try {
+      setIsLoading((prev) => ({ ...prev, google: true }));
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${getURL()}auth/callback`,
+          scopes: 'openid email profile',
+          queryParams: {
+            prompt: 'consent',
+            access_type: 'offline',
+          },
+        },
+      });
+
+      if (error) {
+        console.error('구글 로그인 에러:', error);
+        switch (error.message) {
+          case 'Email not confirmed':
+            toast.error('이메일 인증이 필요합니다. 이메일을 확인해주세요.');
+            break;
+          case 'Invalid login credentials':
+            toast.error('로그인 정보가 올바르지 않습니다.');
+            break;
+          case 'Too many requests':
+            toast.error('요청이 많습니다. 잠시 후 다시 시도해주세요.');
+            break;
+          default:
+            toast.error(
+              '구글 로그인 중 오류가 발생했습니다. 다시 시도해주세요.'
+            );
+        }
+        return;
+      }
+
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error('구글 로그인 예외:', error);
+      toast.error('로그인 처리 중 문제가 발생했습니다.');
+    } finally {
+      setIsLoading((prev) => ({ ...prev, google: false }));
+    }
+  };
+
   return (
     <div className='flex min-h-screen items-start justify-center pt-[10vh]'>
       <div className='h-[650px] rounded-2xl bg-white shadow-sm'>
@@ -212,7 +262,7 @@ const LoginView = () => {
 
             {/* 구글 로그인 버튼 */}
             <button
-              onClick={() => {}}
+              onClick={handleGoogleLogin}
               disabled={isLoading.google || isLoading.kakao}
               className='flex w-full items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70'
             >

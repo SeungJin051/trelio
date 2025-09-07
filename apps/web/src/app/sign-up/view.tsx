@@ -161,8 +161,9 @@ const SignUpView = () => {
       // 프로필 저장 후 잠시 대기하여 사용자에게 성공 메시지를 보여줌
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      // 메인 페이지로 리다이렉트
-      router.push('/');
+      // 메인 페이지로 리다이렉트 (히스토리 교체로 복귀 방지)
+      router.replace('/');
+      return;
     } catch (error) {
       if (error instanceof Error) {
         toast.error(`회원가입 실패: ${error.message}`);
