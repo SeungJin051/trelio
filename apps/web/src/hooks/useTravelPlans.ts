@@ -25,7 +25,7 @@
  *        └── 전체/진행중/완료 필터링, 검색, 정렬
  *
  */
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
 import { createClient } from '@/lib/supabase/client/supabase';
 import type { Activity, TravelPlan } from '@/types/travel';
@@ -43,19 +43,7 @@ export type InvitedTravelPlanItem = {
   participantCount: number;
 };
 
-export type PendingInvitationItem = {
-  id: string; // invitation id
-  plan_id: string;
-  role: 'editor' | 'viewer';
-  created_at: string;
-  plan: {
-    id: string;
-    title: string;
-    location: string;
-    start_date: string;
-    end_date: string;
-  };
-};
+// 링크 초대 방식으로 전환: pending 초대 타입 제거
 
 export const useUpcomingTravel = () => {
   const { userProfile } = useSession();
@@ -330,116 +318,3 @@ export const useInvitedTravelPlans = (limit: number = 5) => {
 };
 
 // 초대 대기 목록 조회 (travel_plan_invitations 테이블 가정)
-export const usePendingInvitations = (limit: number = 10) => {
-  const { userProfile } = useSession();
-  const supabase = createClient();
-
-  return useQuery({
-    queryKey: ['pending-invitations', userProfile?.id, limit],
-    queryFn: async (): Promise<PendingInvitationItem[]> => {
-      if (!userProfile?.id) return [];
-
-      // invitations 테이블: id, plan_id, invited_user_id, role, status, created_at
-      const { data, error } = await supabase
-        .from('travel_plan_invitations')
-        .select(
-          'id, plan_id, role, created_at, plan:travel_plans(id, title, location, start_date, end_date)'
-        )
-        .eq('invited_user_id', userProfile.id)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false })
-        .limit(limit);
-
-      if (error) {
-        console.error('초대 대기목록 조회 오류:', error);
-        return [];
-      }
-
-      // @ts-expect-error: Supabase nested select aliasing
-      return (data || []).map((row) => ({
-        id: row.id,
-        plan_id: row.plan_id,
-        role: row.role,
-        created_at: row.created_at,
-        plan: row.plan,
-      }));
-    },
-    enabled: !!userProfile?.id,
-    retry: 1,
-  });
-};
-
-// 초대 수락/거절 액션과 3개 참여 제한 적용
-export const useInvitationActions = () => {
-  const { userProfile } = useSession();
-  const supabase = createClient();
-  const queryClient = useQueryClient();
-
-  const acceptMutation = useMutation({
-    mutationFn: async (invitationId: string) => {
-      if (!userProfile?.id) throw new Error('인증 필요');
-
-      // 초대 레코드 조회
-      const { data: invitation, error: inviteError } = await supabase
-        .from('travel_plan_invitations')
-        .select('*')
-        .eq('id', invitationId)
-        .eq('status', 'pending')
-        .single();
-      if (inviteError || !invitation)
-        throw inviteError || new Error('초대를 찾을 수 없습니다');
-
-      // 참여 제한 검사 (최대 3개)
-      const { count, error: countError } = await supabase
-        .from('travel_plan_participants')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', userProfile.id);
-      if (countError) throw countError;
-      if ((count || 0) >= 3) {
-        throw new Error('여행 참여는 최대 3개까지 가능합니다');
-      }
-
-      // 참가자 추가
-      const { error: insertError } = await supabase
-        .from('travel_plan_participants')
-        .insert({
-          plan_id: invitation.plan_id,
-          user_id: userProfile.id,
-          role: invitation.role ?? 'viewer',
-        });
-      if (insertError) throw insertError;
-
-      // 초대 상태 갱신
-      const { error: updateError } = await supabase
-        .from('travel_plan_invitations')
-        .update({ status: 'accepted' })
-        .eq('id', invitationId);
-      if (updateError) throw updateError;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pending-invitations'] });
-      queryClient.invalidateQueries({ queryKey: ['invited-travel-plans'] });
-    },
-  });
-
-  const declineMutation = useMutation({
-    mutationFn: async (invitationId: string) => {
-      // 초대 상태 거절로 변경
-      const { error } = await supabase
-        .from('travel_plan_invitations')
-        .update({ status: 'declined' })
-        .eq('id', invitationId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pending-invitations'] });
-    },
-  });
-
-  return {
-    acceptInvitation: acceptMutation.mutateAsync,
-    declineInvitation: declineMutation.mutateAsync,
-    accepting: acceptMutation.isPending,
-    declining: declineMutation.isPending,
-  };
-};

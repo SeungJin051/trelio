@@ -27,8 +27,6 @@ interface TravelPlan {
   status: 'all' | 'upcoming' | 'in-progress' | 'completed';
   created_at: string;
   participantCount: number;
-  isInvited?: boolean;
-  role?: 'owner' | 'editor' | 'viewer';
 }
 
 type FilterType = 'all' | 'upcoming' | 'in-progress' | 'completed';
@@ -95,73 +93,41 @@ const TravelPlansList: React.FC = () => {
     }
     try {
       if (initialLoad) setLoading(true);
-
-      // 1) 내가 소유한 계획
-      const { data: ownerPlans, error: ownerError } = await supabase
+      // 소유한 여행 계획 조회
+      const { data: plansData, error: plansError } = await supabase
         .from('travel_plans')
         .select('id, title, start_date, end_date, location, created_at')
         .eq('owner_id', userProfile.id);
-      if (ownerError) {
-        console.error('소유 여행 계획 조회 실패:', ownerError);
+
+      if (plansError) {
+        console.error('여행 계획 조회 실패:', plansError);
+        setTravelPlans([]);
+        return;
       }
 
-      // 2) 내가 참여(소유자 제외) 중인 계획 id + role
-      const { data: participationRows, error: partError } = await supabase
-        .from('travel_plan_participants')
-        .select('plan_id, role')
-        .eq('user_id', userProfile.id)
-        .neq('role', 'owner');
-      if (partError) {
-        console.error('참여 여행 계획 조회 실패:', partError);
-      }
+      const planIds = (plansData || []).map((p) => p.id);
 
-      const invitedPlanIds = Array.from(
-        new Set((participationRows || []).map((p) => p.plan_id))
-      );
-
-      // 3) 초대(참여) 계획 메타
-      const { data: invitedPlans, error: invitedError } = invitedPlanIds.length
-        ? await supabase
-            .from('travel_plans')
-            .select('id, title, start_date, end_date, location, created_at')
-            .in('id', invitedPlanIds)
-        : { data: [], error: null };
-      if (invitedError) {
-        console.error('초대된 여행 계획 조회 실패:', invitedError);
-      }
-
-      // 4) 참가자 수 집계
-      const allPlanIds = [
-        ...new Set([...(ownerPlans || []).map((p) => p.id), ...invitedPlanIds]),
-      ];
-      const { data: allParticipants, error: participantsError } =
-        allPlanIds.length
-          ? await supabase
-              .from('travel_plan_participants')
-              .select('plan_id')
-              .in('plan_id', allPlanIds)
-          : { data: [], error: null };
-      if (participantsError) {
-        console.warn('참가자 수 조회 경고:', participantsError);
-      }
-      const participantCountMap = new Map<string, number>();
-      (allParticipants || []).forEach((row) => {
-        participantCountMap.set(
-          row.plan_id,
-          (participantCountMap.get(row.plan_id) || 0) + 1
-        );
-      });
-
-      // role 매핑
-      const roleMap = new Map<string, TravelPlan['role']>();
-      (participationRows || []).forEach((r) => {
-        if (!roleMap.has(r.plan_id)) {
-          roleMap.set(r.plan_id, r.role as TravelPlan['role']);
+      // 참가자 수 집계 (선택)
+      let participantCountMap = new Map<string, number>();
+      if (planIds.length > 0) {
+        const { data: allParticipants, error: participantsError } =
+          await supabase
+            .from('travel_plan_participants')
+            .select('plan_id')
+            .in('plan_id', planIds);
+        if (participantsError) {
+          console.warn('참가자 수 조회 경고:', participantsError);
         }
-      });
+        participantCountMap = new Map<string, number>();
+        (allParticipants || []).forEach((row) => {
+          participantCountMap.set(
+            row.plan_id as string,
+            (participantCountMap.get(row.plan_id as string) || 0) + 1
+          );
+        });
+      }
 
-      // 5) 변환
-      const ownTransformed: TravelPlan[] = (ownerPlans || []).map((plan) => ({
+      const transformed: TravelPlan[] = (plansData || []).map((plan) => ({
         id: plan.id,
         title: plan.title,
         start_date: plan.start_date,
@@ -170,30 +136,10 @@ const TravelPlansList: React.FC = () => {
         status: getStatus(plan.start_date, plan.end_date),
         created_at: plan.created_at,
         participantCount: participantCountMap.get(plan.id) || 1,
-        isInvited: false,
-        role: 'owner',
       }));
 
-      const invitedTransformed: TravelPlan[] = (invitedPlans || []).map(
-        (plan) => ({
-          id: plan.id,
-          title: plan.title,
-          start_date: plan.start_date,
-          end_date: plan.end_date,
-          location: plan.location,
-          status: getStatus(plan.start_date, plan.end_date),
-          created_at: plan.created_at,
-          participantCount: participantCountMap.get(plan.id) || 1,
-          isInvited: true,
-          role: roleMap.get(plan.id) || 'viewer',
-        })
-      );
-
-      const merged = sortPlans(
-        [...ownTransformed, ...invitedTransformed],
-        sort
-      );
-      setTravelPlans(merged);
+      const sorted = sortPlans(transformed, sort);
+      setTravelPlans(sorted);
     } catch (error) {
       console.error('여행 계획 조회 중 오류:', error);
       setTravelPlans([]);
@@ -217,34 +163,6 @@ const TravelPlansList: React.FC = () => {
       data.subscription.unsubscribe();
     };
   }, [supabase, fetchTravelPlans]);
-
-  // 참여 테이블 변경 리얼타임 구독: 내 초대 수락 시 자동 갱신
-  useEffect(() => {
-    if (!userProfile?.id) return;
-    const channel = supabase
-      .channel('travel-plan-participants-watch')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'travel_plan_participants',
-          filter: `user_id=eq.${userProfile.id}`,
-        },
-        () => {
-          fetchTravelPlans();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      try {
-        supabase.removeChannel(channel);
-      } catch (error) {
-        console.warn('removeChannel 실패:', error);
-      }
-    };
-  }, [supabase, userProfile?.id, fetchTravelPlans]);
 
   const sortedPlans = useMemo(
     () => sortPlans(travelPlans, sort),
@@ -500,11 +418,6 @@ const TravelPlanCard: React.FC<TravelPlanCardProps> = React.memo(
               >
                 {plan.title}
               </Typography>
-              {plan.isInvited && (
-                <span className='rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700'>
-                  초대
-                </span>
-              )}
             </div>
             <Typography variant='body2' className='text-gray-600'>
               {plan.location}
