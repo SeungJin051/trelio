@@ -16,12 +16,7 @@ export const Footer = () => {
   };
 
   // 개인 프로젝트에 필요한 최소한의 링크만 유지
-  const footerLinks = [
-    { name: '여행 목록', href: '/travel-list' },
-    { name: '요금제', href: '/price' },
-    { name: 'FAQ', href: '/faq' },
-    { name: '문의하기', href: '/contact' },
-  ];
+  const footerLinks = [{ name: '문의하기', href: '/contact' }];
 
   const socialLinks = [
     { name: 'Github', href: 'https://github.com/SeungJin051', icon: 'github' },

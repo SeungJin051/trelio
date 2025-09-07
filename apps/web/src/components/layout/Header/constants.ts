@@ -10,12 +10,7 @@ export interface NavItem {
   href: string;
 }
 
-export const navigation: NavItem[] = [
-  { name: '여행 목록', href: '/travel-list' },
-  { name: '요금제', href: '/price' },
-  { name: 'FAQ', href: '/faq' },
-  { name: '문의하기', href: '/contact' },
-];
+export const navigation: NavItem[] = [];
 
 // 여행 계획 필터 옵션
 export const filterOptions = [
