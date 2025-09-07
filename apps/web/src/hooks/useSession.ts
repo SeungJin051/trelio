@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import { useQueryClient } from '@tanstack/react-query';
 
+import { locales } from '@/i18n/config';
 import { createClient } from '@/lib/supabase/client/supabase';
 
 type UserProfile = {
@@ -33,6 +34,18 @@ export const useSession = () => {
 
   const router = useRouter();
   const pathname = usePathname();
+
+  // 현재 경로에서 로케일 접두사 제거 (예: /ko/sign-up -> /sign-up)
+  const normalizedPathname = useMemo(() => {
+    if (!pathname) return '/';
+    const segments = pathname.split('/');
+    const firstSegment = segments[1];
+    if ((locales as readonly string[]).includes(firstSegment as any)) {
+      const rest = '/' + segments.slice(2).join('/');
+      return rest === '/' ? '/' : rest.replace(/\/$/, '') || '/';
+    }
+    return pathname === '' ? '/' : pathname;
+  }, [pathname]);
 
   // 리다이렉트 예외 페이지들 (회원가입 미완료여도 접근 가능한 페이지)
   const excludedPaths = useMemo(
@@ -186,7 +199,7 @@ export const useSession = () => {
   // 회원가입 완료 여부 및 인증 상태에 따른 리다이렉트 처리
   useEffect(() => {
     // 초기화되지 않았거나 로딩 중이거나 예외 페이지인 경우 리다이렉트하지 않음
-    if (!initialized || loading || excludedPaths.includes(pathname)) {
+    if (!initialized || loading || excludedPaths.includes(normalizedPathname)) {
       return;
     }
 
@@ -199,7 +212,7 @@ export const useSession = () => {
     session,
     signUpStatus,
     loading,
-    pathname,
+    normalizedPathname,
     router,
     excludedPaths,
     initialized,
