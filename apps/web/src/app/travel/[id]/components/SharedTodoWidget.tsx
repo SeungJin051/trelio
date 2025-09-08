@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 
 import {
   IoAddOutline,
@@ -11,7 +11,6 @@ import {
 
 import { Avatar, Button, Typography } from '@ui/components';
 
-import { useToast } from '@/hooks/useToast';
 import {
   CreateTodoRequest,
   TodoWithAssignee,
@@ -30,7 +29,7 @@ interface SharedTodoWidgetProps {
   participants: Participant[];
 }
 
-export const SharedTodoWidget: React.FC<SharedTodoWidgetProps> = ({
+const SharedTodoWidgetBase: React.FC<SharedTodoWidgetProps> = ({
   planId,
   participants,
 }) => {
@@ -40,7 +39,9 @@ export const SharedTodoWidget: React.FC<SharedTodoWidgetProps> = ({
     string | null
   >(null);
   const [isLoading, setIsLoading] = useState(true);
-  const toast = useToast();
+  // 토스트 사용 시 컨텍스트 변경으로 인한 리렌더를 방지하기 위해
+  // 본 위젯에서는 토스트를 직접 호출하지 않습니다.
+  // (필요 시 상위에서 처리하거나 로그로 대체)
 
   // 투두리스트 조회
   const fetchTodos = useCallback(async () => {
@@ -51,16 +52,13 @@ export const SharedTodoWidget: React.FC<SharedTodoWidgetProps> = ({
 
       if (response.ok) {
         setTodos(data.todos || []);
-      } else {
-        toast.error(data.error || '투두리스트 조회에 실패했습니다.');
       }
     } catch (error) {
       console.error('투두리스트 조회 에러:', error);
-      toast.error('투두리스트 조회에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
-  }, [planId, toast]);
+  }, [planId]);
 
   // 새 투두 추가
   const handleAddTodo = async () => {
@@ -85,13 +83,9 @@ export const SharedTodoWidget: React.FC<SharedTodoWidgetProps> = ({
       if (response.ok) {
         setTodos((prev) => [data.todo, ...prev]);
         setNewTodoTitle('');
-        toast.success('새 할 일이 추가되었습니다.');
-      } else {
-        toast.error(data.error || '할 일 추가에 실패했습니다.');
       }
     } catch (error) {
       console.error('투두 추가 에러:', error);
-      toast.error('할 일 추가에 실패했습니다.');
     }
   };
 
@@ -117,17 +111,9 @@ export const SharedTodoWidget: React.FC<SharedTodoWidgetProps> = ({
 
       if (response.ok) {
         setTodos((prev) => prev.map((t) => (t.id === todoId ? data.todo : t)));
-        toast.success(
-          todo.is_completed
-            ? '할 일을 미완료로 변경했습니다.'
-            : '할 일을 완료했습니다!'
-        );
-      } else {
-        toast.error(data.error || '상태 변경에 실패했습니다.');
       }
     } catch (error) {
       console.error('투두 토글 에러:', error);
-      toast.error('상태 변경에 실패했습니다.');
     }
   };
 
@@ -150,13 +136,9 @@ export const SharedTodoWidget: React.FC<SharedTodoWidgetProps> = ({
 
       if (response.ok) {
         setTodos((prev) => prev.map((t) => (t.id === todoId ? data.todo : t)));
-        toast.success('담당자가 지정되었습니다.');
-      } else {
-        toast.error(data.error || '담당자 지정에 실패했습니다.');
       }
     } catch (error) {
       console.error('담당자 지정 에러:', error);
-      toast.error('담당자 지정에 실패했습니다.');
     }
   };
 
@@ -173,13 +155,9 @@ export const SharedTodoWidget: React.FC<SharedTodoWidgetProps> = ({
 
       if (response.ok) {
         setTodos((prev) => prev.filter((t) => t.id !== todoId));
-        toast.success('할 일이 삭제되었습니다.');
-      } else {
-        toast.error(data.error || '삭제에 실패했습니다.');
       }
     } catch (error) {
       console.error('투두 삭제 에러:', error);
-      toast.error('삭제에 실패했습니다.');
     }
   };
 
@@ -407,3 +385,21 @@ export const SharedTodoWidget: React.FC<SharedTodoWidgetProps> = ({
     </div>
   );
 };
+
+const arePropsEqual = (
+  prev: SharedTodoWidgetProps,
+  next: SharedTodoWidgetProps
+) => {
+  if (prev.planId !== next.planId) return false;
+  if (prev.participants.length !== next.participants.length) return false;
+  // participants의 id/role 기준으로 비교하여 동일하면 리렌더 회피
+  const prevKey = prev.participants
+    .map((p) => `${p.id}:${p.nickname ?? ''}:${p.profile_image_url ?? ''}`)
+    .join('|');
+  const nextKey = next.participants
+    .map((p) => `${p.id}:${p.nickname ?? ''}:${p.profile_image_url ?? ''}`)
+    .join('|');
+  return prevKey === nextKey;
+};
+
+export const SharedTodoWidget = memo(SharedTodoWidgetBase, arePropsEqual);
