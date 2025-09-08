@@ -12,6 +12,7 @@ import LoadingView from '@/components/basic/Loading/Loading';
 import { BlockCreateModal } from '@/components/travel/detail/BlockCreateModal';
 import { BlockDetailModal } from '@/components/travel/detail/BlockDetailModal';
 import { TravelTimelineCanvas } from '@/components/travel/detail/TravelTimelineCanvas';
+import InviteLinkModal from '@/components/travel/modals/InviteLinkModal';
 import { useBlocks } from '@/hooks/useBlocks';
 import { useParticipantsPresence } from '@/hooks/useParticipantsPresence';
 import { useSession } from '@/hooks/useSession';
@@ -39,6 +40,7 @@ const TravelDetailView = () => {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const [selectedBlock, setSelectedBlock] = useState<TravelBlock | null>(null);
   const [selectedDay, setSelectedDay] = useState<number>(0); // 0은 대시보드
 
@@ -166,7 +168,7 @@ const TravelDetailView = () => {
   }
 
   const handleInviteParticipants = () => {
-    toast('동반자 초대 기능은 준비 중입니다.');
+    setShowInviteModal(true);
   };
 
   const handleExport = () => {
@@ -208,6 +210,11 @@ const TravelDetailView = () => {
 
   // 편집 권한 확인 (임시로 true, 나중에 실제 권한 체크 로직으로 교체)
   const canEdit = true;
+  const isOwner = Boolean(
+    travelPlan?.owner_id &&
+      userProfile?.id &&
+      travelPlan.owner_id === userProfile.id
+  );
 
   return (
     <div className='flex min-h-screen w-full bg-gray-50'>
@@ -339,6 +346,17 @@ const TravelDetailView = () => {
           block={selectedBlock}
           onDelete={deleteBlock}
           canEdit={canEdit}
+        />
+      )}
+
+      {showInviteModal && (
+        <InviteLinkModal
+          isOpen={showInviteModal}
+          onClose={() => setShowInviteModal(false)}
+          planId={planId}
+          shareLinkId={(travelPlan as any).share_link_id}
+          participants={participants as any}
+          isOwner={isOwner}
         />
       )}
     </div>
