@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { BiSolidMessageRounded } from 'react-icons/bi';
@@ -18,6 +18,7 @@ import { getURL } from '@/lib/utils';
 const LoginView = () => {
   const supabase = createClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const toast = useToast();
 
   const [isLoading, setIsLoading] = useState<{ [key: string]: boolean }>({
@@ -118,10 +119,12 @@ const LoginView = () => {
       setIsLoading((prev) => ({ ...prev, kakao: true }));
 
       // Supabase Auth를 통한 카카오 OAuth 로그인 시작
+      const next = searchParams.get('next');
+      const safeNext = next && next.startsWith('/') ? next : null;
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'kakao',
         options: {
-          redirectTo: `${getURL()}auth/callback`,
+          redirectTo: `${getURL()}auth/callback${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ''}`,
           scopes: 'profile_nickname profile_image account_email',
           queryParams: {
             prompt: 'login',
@@ -174,10 +177,12 @@ const LoginView = () => {
     try {
       setIsLoading((prev) => ({ ...prev, google: true }));
 
+      const next = searchParams.get('next');
+      const safeNext = next && next.startsWith('/') ? next : null;
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${getURL()}auth/callback`,
+          redirectTo: `${getURL()}auth/callback${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ''}`,
           scopes: 'openid email profile',
           queryParams: {
             prompt: 'consent',

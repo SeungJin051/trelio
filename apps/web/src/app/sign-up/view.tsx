@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import type { User } from '@supabase/supabase-js';
 import { IconType } from 'react-icons';
@@ -32,6 +32,7 @@ const SignUpView = () => {
   const [nationality, setNationality] = useState('');
 
   const router = useRouter();
+  const searchParams = useSearchParams();
   const toast = useToast();
   const supabase = createClient();
   const progress = (step / TOTAL_STEPS) * 100;
@@ -161,7 +162,44 @@ const SignUpView = () => {
       // 프로필 저장 후 잠시 대기하여 사용자에게 성공 메시지를 보여줌
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      // 메인 페이지로 리다이렉트 (히스토리 교체로 복귀 방지)
+      // next 처리: 초대 수락 흐름이면 수락 후 해당 여행 상세로 이동
+      const next = searchParams.get('next');
+      const isInternal = next && next.startsWith('/');
+      if (isInternal) {
+        // /invite/p/[shareId] 형태인지 확인
+        const match = /^\/invite\/p\/([0-9a-fA-F-]{36})$/.exec(next!);
+        if (match) {
+          const shareId = match[1];
+          try {
+            const res = await fetch(`/api/invites/plan/${shareId}/accept`, {
+              method: 'POST',
+            });
+            if (res.status === 401) throw new Error('UNAUTHORIZED');
+            if (res.status === 409) {
+              const body = await fetch(`/api/invites/plan/${shareId}`);
+              if (body.ok) {
+                const { planId } = await body.json();
+                router.replace(`/travel/${planId}`);
+                return;
+              }
+            }
+            if (!res.ok) throw new Error('FAILED');
+            const { planId } = (await res.json()) as { planId: string };
+            router.replace(`/travel/${planId}`);
+            return;
+          } catch (_err) {
+            // 초대 수락 실패 시 next로 폴백
+            router.replace(next!);
+            return;
+          }
+        } else {
+          // 내부 경로면 그대로 이동
+          router.replace(next);
+          return;
+        }
+      }
+
+      // 기본: 메인 페이지로 이동
       router.replace('/');
       return;
     } catch (error) {
