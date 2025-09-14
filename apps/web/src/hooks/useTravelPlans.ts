@@ -352,9 +352,10 @@ export const useAccessibleTravelPlans = (limit: number = 100) => {
       }));
     },
     enabled: !!userProfile?.id,
-    staleTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: 'always',
+    // 최적화: 과도한 refetch 방지 (필요 시 Sidebar에서 refetch 호출)
+    staleTime: 30_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 

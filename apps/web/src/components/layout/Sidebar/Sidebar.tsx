@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import Link from 'next/link';
 
@@ -19,7 +19,6 @@ import { Typography } from '@ui/components/typography';
 
 import { useSession } from '@/hooks/useSession';
 import { useAccessibleTravelPlans } from '@/hooks/useTravelPlans';
-import { createClient } from '@/lib/supabase/client/supabase';
 
 interface TravelPlan {
   id: string;
@@ -105,11 +104,8 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
     'all' | 'upcoming' | 'in-progress' | 'completed'
   >('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [travelPlans, setTravelPlans] = useState<TravelPlan[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const [hasInitialized, setHasInitialized] = useState(false);
-  const supabase = createClient();
+  const EMPTY_ARRAY: ReadonlyArray<any> = [];
 
   // 모바일 감지
   useEffect(() => {
@@ -123,71 +119,52 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // 여행 계획 목록 가져오기
-  const { data: accessiblePlans = [] } = useAccessibleTravelPlans(100);
-  const fetchTravelPlans = useCallback(
-    async (forceRefresh = false) => {
-      if (!userProfile) {
-        setLoading(false);
+  // 여행 계획 목록 가져오기 (React Query 상태 사용)
+  const {
+    data: accessiblePlans,
+    isLoading,
+    isFetching,
+    refetch,
+  } = useAccessibleTravelPlans(100);
 
-        return;
+  // 서버 데이터 -> 뷰 모델 변환 (상태 대신 메모이제이션)
+  const travelPlans: TravelPlan[] = useMemo(() => {
+    const source = accessiblePlans ?? EMPTY_ARRAY;
+    return source.map((plan: any) => {
+      const startDate = new Date(plan.start_date);
+      const endDate = new Date(plan.end_date);
+      const today = new Date();
+
+      let status: 'upcoming' | 'in-progress' | 'completed';
+      if (endDate < today) {
+        status = 'completed';
+      } else if (startDate <= today && today <= endDate) {
+        status = 'in-progress';
+      } else {
+        status = 'upcoming';
       }
 
-      // 이미 데이터가 있고 강제 새로고침이 아닌 경우 스킵
-      if (!forceRefresh && travelPlans.length > 0 && hasInitialized) {
-        return;
-      }
+      return {
+        id: plan.id,
+        title: plan.title,
+        start_date: plan.start_date,
+        end_date: plan.end_date,
+        location: plan.location,
+        status,
+        created_at: plan.created_at,
+        participantCount: 1,
+      };
+    });
+  }, [accessiblePlans]);
 
-      setLoading(true);
-      const transformedPlans: TravelPlan[] = (accessiblePlans || []).map(
-        (plan: any) => {
-          const startDate = new Date(plan.start_date);
-          const endDate = new Date(plan.end_date);
-          const today = new Date();
-
-          let status: 'upcoming' | 'in-progress' | 'completed';
-          if (endDate < today) {
-            status = 'completed';
-          } else if (startDate <= today && today <= endDate) {
-            status = 'in-progress';
-          } else {
-            status = 'upcoming';
-          }
-
-          return {
-            id: plan.id,
-            title: plan.title,
-            start_date: plan.start_date,
-            end_date: plan.end_date,
-            location: plan.location,
-            status,
-            created_at: plan.created_at,
-            participantCount: 1,
-          };
-        }
-      );
-
-      setTravelPlans(transformedPlans);
-      setHasInitialized(true);
-      setLoading(false);
-    },
-    [userProfile, travelPlans.length, hasInitialized, accessiblePlans]
-  );
-
-  // 컴포넌트 마운트 시 및 userProfile 변경 시 데이터 가져오기
-  useEffect(() => {
-    if (userProfile) {
-      fetchTravelPlans();
-    }
-  }, [userProfile, fetchTravelPlans]);
+  const loading = isLoading || isFetching;
 
   // 모바일에서 사이드바가 열릴 때 데이터 새로고침
   useEffect(() => {
     if (isOpen && isMobile && userProfile) {
-      // 모바일에서 사이드바가 열릴 때 항상 최신 데이터 확인
-      fetchTravelPlans(true);
+      refetch();
     }
-  }, [isOpen, isMobile, userProfile, fetchTravelPlans]);
+  }, [isOpen, isMobile, userProfile, refetch]);
 
   // 필터링된 여행 계획
   const filteredPlans = travelPlans.filter((plan) => {
@@ -220,7 +197,7 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
 
   // 데이터 새로고침 함수
   const handleRefresh = () => {
-    fetchTravelPlans(true);
+    refetch();
   };
 
   return (
