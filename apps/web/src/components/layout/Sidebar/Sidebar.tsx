@@ -18,6 +18,7 @@ import { Avatar, Badge, Icon } from '@ui/components';
 import { Typography } from '@ui/components/typography';
 
 import { useSession } from '@/hooks/useSession';
+import { useAccessibleTravelPlans } from '@/hooks/useTravelPlans';
 import { createClient } from '@/lib/supabase/client/supabase';
 
 interface TravelPlan {
@@ -123,6 +124,7 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
   }, []);
 
   // 여행 계획 목록 가져오기
+  const { data: accessiblePlans = [] } = useAccessibleTravelPlans(100);
   const fetchTravelPlans = useCallback(
     async (forceRefresh = false) => {
       if (!userProfile) {
@@ -136,34 +138,9 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
         return;
       }
 
-      try {
-        setLoading(true);
-
-        // 사용자가 소유한 여행 계획만 가져오기
-        const { data: plansData, error: plansError } = await supabase
-          .from('travel_plans')
-          .select(
-            `
-          id,
-          title,
-          start_date,
-          end_date,
-          location,
-          created_at
-        `
-          )
-          .eq('owner_id', userProfile.id)
-          .order('created_at', { ascending: false });
-
-        if (plansError) {
-          console.error('여행 계획 조회 실패:', plansError);
-          setTravelPlans([]);
-          setLoading(false);
-          return;
-        }
-
-        // 데이터 변환 및 상태 결정
-        const transformedPlans: TravelPlan[] = (plansData || []).map((plan) => {
+      setLoading(true);
+      const transformedPlans: TravelPlan[] = (accessiblePlans || []).map(
+        (plan: any) => {
           const startDate = new Date(plan.start_date);
           const endDate = new Date(plan.end_date);
           const today = new Date();
@@ -185,20 +162,16 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
             location: plan.location,
             status,
             created_at: plan.created_at,
-            participantCount: 1, // 일단 1명으로 설정 (소유자)
+            participantCount: 1,
           };
-        });
+        }
+      );
 
-        setTravelPlans(transformedPlans);
-        setHasInitialized(true);
-      } catch (error) {
-        console.error(error);
-        setTravelPlans([]);
-      } finally {
-        setLoading(false);
-      }
+      setTravelPlans(transformedPlans);
+      setHasInitialized(true);
+      setLoading(false);
     },
-    [userProfile, travelPlans.length, hasInitialized, supabase]
+    [userProfile, travelPlans.length, hasInitialized, accessiblePlans]
   );
 
   // 컴포넌트 마운트 시 및 userProfile 변경 시 데이터 가져오기

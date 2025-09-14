@@ -316,5 +316,46 @@ export const useInvitedTravelPlans = (limit: number = 5) => {
     enabled: !!userProfile?.id,
   });
 };
+export type AccessibleTravelPlan = {
+  id: string;
+  title: string;
+  location: string;
+  start_date: string;
+  end_date: string;
+  created_at: string;
+};
+
+// RLS 재귀를 피하기 위해 SECURITY DEFINER RPC 사용
+export const useAccessibleTravelPlans = (limit: number = 100) => {
+  const { userProfile } = useSession();
+  const supabase = createClient();
+
+  return useQuery({
+    queryKey: ['accessible-travel-plans', userProfile?.id, limit],
+    queryFn: async (): Promise<AccessibleTravelPlan[]> => {
+      if (!userProfile?.id) return [];
+      const { data, error } = await supabase.rpc(
+        'fn_list_accessible_travel_plans',
+        { p_user_id: userProfile.id, p_limit: limit }
+      );
+      if (error) {
+        console.error('[useAccessibleTravelPlans] RPC error:', error);
+        return [];
+      }
+      return (data || []).map((row: any) => ({
+        id: String(row.id),
+        title: String(row.title),
+        location: String(row.location),
+        start_date: String(row.start_date),
+        end_date: String(row.end_date),
+        created_at: String(row.created_at),
+      }));
+    },
+    enabled: !!userProfile?.id,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
+  });
+};
 
 // 초대 대기 목록 조회 (travel_plan_invitations 테이블 가정)

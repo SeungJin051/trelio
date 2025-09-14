@@ -101,55 +101,56 @@ export const Header = ({
       try {
         setLoading(true);
 
-        // 사용자가 소유한 여행 계획만 가져오기
-        const { data: plansData, error: plansError } = await supabase
-          .from('travel_plans')
-          .select(
-            `
-          id,
-          title,
-          start_date,
-          end_date,
-          location,
-          created_at
-        `
-          )
-          .eq('owner_id', userProfile.id)
-          .order('created_at', { ascending: false });
+        // RLS 재귀 문제 회피: SECURITY DEFINER RPC로 조회
+        const { data: userRes } = await supabase.auth.getUser();
+        const userId = userRes?.user?.id;
+        if (!userId) {
+          setLoading(false);
+          return;
+        }
+        const { data: plansData, error: plansError } = await supabase.rpc(
+          'fn_list_accessible_travel_plans',
+          { p_user_id: userId, p_limit: 100 }
+        );
 
         if (plansError) {
-          console.error('여행 계획 조회 실패:', plansError);
+          console.error(
+            '여행 계획 조회 실패:',
+            plansError?.message || plansError
+          );
           setTravelPlans([]);
           setLoading(false);
           return;
         }
 
         // 데이터 변환 및 상태 결정
-        const transformedPlans: TravelPlan[] = (plansData || []).map((plan) => {
-          const startDate = new Date(plan.start_date);
-          const endDate = new Date(plan.end_date);
-          const today = new Date();
+        const transformedPlans: TravelPlan[] = (plansData || []).map(
+          (plan: any) => {
+            const startDate = new Date(plan.start_date);
+            const endDate = new Date(plan.end_date);
+            const today = new Date();
 
-          let status: 'upcoming' | 'in-progress' | 'completed';
-          if (endDate < today) {
-            status = 'completed';
-          } else if (startDate <= today && today <= endDate) {
-            status = 'in-progress';
-          } else {
-            status = 'upcoming';
+            let status: 'upcoming' | 'in-progress' | 'completed';
+            if (endDate < today) {
+              status = 'completed';
+            } else if (startDate <= today && today <= endDate) {
+              status = 'in-progress';
+            } else {
+              status = 'upcoming';
+            }
+
+            return {
+              id: plan.id,
+              title: plan.title,
+              start_date: plan.start_date,
+              end_date: plan.end_date,
+              location: plan.location,
+              status,
+              created_at: plan.created_at,
+              participantCount: 1, // TODO: 필요 시 participants 집계로 대체
+            };
           }
-
-          return {
-            id: plan.id,
-            title: plan.title,
-            start_date: plan.start_date,
-            end_date: plan.end_date,
-            location: plan.location,
-            status,
-            created_at: plan.created_at,
-            participantCount: 1, // 일단 1명으로 설정 (소유자)
-          };
-        });
+        );
 
         setTravelPlans(transformedPlans);
         setHasInitialized(true);
