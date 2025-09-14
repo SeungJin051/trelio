@@ -8,6 +8,14 @@ export async function POST(
 ) {
   try {
     const { shareId } = await params;
+    // UUID 형식 검증
+    const isUuid = /^[0-9a-fA-F-]{36}$/.test(shareId);
+    if (!isUuid) {
+      return NextResponse.json(
+        { error: 'Invalid share id', shareId },
+        { status: 400 }
+      );
+    }
     const supabase = await createServerSupabaseClient();
 
     // auth
@@ -25,6 +33,7 @@ export async function POST(
     });
 
     if (error) {
+      console.error('[accept_share_link] RPC error', error);
       const msg = String(error.message || '').toUpperCase();
       if (msg.includes('NOT_FOUND'))
         return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -32,7 +41,19 @@ export async function POST(
         return NextResponse.json({ error: 'Already' }, { status: 409 });
       if (msg.includes('PARTICIPATION_LIMIT_EXCEEDED'))
         return NextResponse.json({ error: 'Limit' }, { status: 422 });
-      return NextResponse.json({ error: 'Join failed' }, { status: 500 });
+      if (msg.includes('EXPIRED'))
+        return NextResponse.json({ error: 'Expired' }, { status: 410 });
+      if (msg.includes('INVALID'))
+        return NextResponse.json({ error: 'Invalid' }, { status: 400 });
+      if (msg.includes('CLOSED'))
+        return NextResponse.json({ error: 'Closed' }, { status: 423 });
+      if (msg.includes('OWNER_CANNOT_JOIN'))
+        return NextResponse.json({ error: 'Owner' }, { status: 409 });
+      // 디버깅을 위해 상세 메시지도 함께 반환 (프로덕션에선 제거 고려)
+      return NextResponse.json(
+        { error: 'Join failed', detail: String(error.message || '') },
+        { status: 500 }
+      );
     }
 
     const row = Array.isArray(data) ? data[0] : data;

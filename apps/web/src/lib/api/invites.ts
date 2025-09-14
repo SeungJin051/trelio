@@ -26,6 +26,13 @@ export async function acceptShareLink(
   if (res.status === 401) throw new Error('UNAUTHORIZED');
   if (res.status === 409) throw new Error('ALREADY_PARTICIPANT');
   if (res.status === 422) throw new Error('PARTICIPATION_LIMIT_EXCEEDED');
-  if (!res.ok) throw new Error('FAILED');
+  if (res.status === 410) throw new Error('LINK_EXPIRED');
+  if (res.status === 400) throw new Error('INVALID_REQUEST');
+  if (res.status === 423) throw new Error('LINK_CLOSED');
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}) as any);
+    const detail = (body as any)?.detail as string | undefined;
+    throw new Error(detail ? `FAILED:${detail}` : 'FAILED');
+  }
   return (await res.json()) as { planId: string };
 }

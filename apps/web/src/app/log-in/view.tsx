@@ -54,8 +54,10 @@ const LoginView = () => {
             // 프로필이 존재하는 경우 - 메인 페이지로 리다이렉트
             router.push('/');
           } else {
-            // 프로필이 없는 경우 - 회원가입 페이지로 리다이렉트
-            router.push('/sign-up');
+            // 프로필이 없는 경우 - 회원가입 페이지로 리다이렉트 (next 유지)
+            const next = searchParams.get('next');
+            const safeNext = next && next.startsWith('/') ? next : '/';
+            router.push(`/sign-up?next=${encodeURIComponent(safeNext)}`);
           }
         } catch (error) {
           console.error('자동 로그인 중 프로필 확인 오류:', error);
@@ -89,9 +91,11 @@ const LoginView = () => {
               // 프로필이 존재하는 경우 - 메인 페이지로 리다이렉트
               router.push('/');
             } else {
-              // 프로필이 없는 경우 - 회원가입 페이지로 리다이렉트
+              // 프로필이 없는 경우 - 회원가입 페이지로 리다이렉트 (next 유지)
               toast.success('환영합니다! 프로필을 설정해주세요.');
-              router.push('/sign-up');
+              const next = searchParams.get('next');
+              const safeNext = next && next.startsWith('/') ? next : '/';
+              router.push(`/sign-up?next=${encodeURIComponent(safeNext)}`);
             }
           } catch (error) {
             console.error('onAuthStateChange 프로필 확인 중 오류:', error);

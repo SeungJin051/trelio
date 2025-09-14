@@ -88,6 +88,25 @@ const InviteSharePage = () => {
         });
         return;
       }
+      if (code === 'LINK_EXPIRED') {
+        setBanner({ type: 'error', text: '초대 링크가 만료되었습니다.' });
+        return;
+      }
+      if (code === 'INVALID_REQUEST') {
+        setBanner({ type: 'error', text: '유효하지 않은 요청입니다.' });
+        return;
+      }
+      if (code === 'LINK_CLOSED') {
+        setBanner({
+          type: 'error',
+          text: '이 초대는 더 이상 유효하지 않습니다.',
+        });
+        return;
+      }
+      if (code.startsWith('FAILED:')) {
+        setBanner({ type: 'error', text: `참여 실패: ${code.substring(7)}` });
+        return;
+      }
       setBanner({ type: 'error', text: '참여 처리에 실패했습니다.' });
     } finally {
       setSubmitting(false);

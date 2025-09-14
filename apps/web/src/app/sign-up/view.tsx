@@ -13,6 +13,7 @@ import { Avatar, Button, Icon, Input, Typography } from '@ui/components';
 import { Card } from '@/components';
 import LocationInput from '@/components/travel/inputs/LocationInput';
 import { useToast } from '@/hooks';
+import { useSession } from '@/hooks/useSession';
 import { createClient } from '@/lib/supabase/client/supabase';
 import type { TravelStyle, UserProfile } from '@/types/user/user';
 
@@ -35,6 +36,7 @@ const SignUpView = () => {
   const searchParams = useSearchParams();
   const toast = useToast();
   const supabase = createClient();
+  const { refreshProfile } = useSession();
   const progress = (step / TOTAL_STEPS) * 100;
 
   // 이미지 업로드 훅 사용
@@ -159,8 +161,14 @@ const SignUpView = () => {
         return;
       }
 
-      // 프로필 저장 후 잠시 대기하여 사용자에게 성공 메시지를 보여줌
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // 전역 세션 훅 상태 갱신하여 'incomplete' 리다이렉트 가드를 해제
+      try {
+        await refreshProfile();
+      } catch (e) {
+        console.warn('refreshProfile failed', e);
+      }
+      // 사용자에게 피드백 노출 여유
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // next 처리: 초대 수락 흐름이면 수락 후 해당 여행 상세로 이동
       const next = searchParams.get('next');

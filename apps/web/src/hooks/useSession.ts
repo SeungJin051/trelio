@@ -203,9 +203,12 @@ export const useSession = () => {
       return;
     }
 
-    // 세션이 있고 회원가입이 미완료인 경우 sign-up으로 리다이렉트
+    // 세션이 있고 회원가입이 미완료인 경우 sign-up으로 리다이렉트 (현재 경로를 next로 보존)
     if (session && signUpStatus === 'incomplete') {
-      router.push('/sign-up');
+      const safeNext = normalizedPathname.startsWith('/')
+        ? normalizedPathname
+        : '/';
+      router.push(`/sign-up?next=${encodeURIComponent(safeNext)}`);
       return;
     }
   }, [
