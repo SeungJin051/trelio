@@ -2,7 +2,14 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { IoCopyOutline, IoLinkOutline } from 'react-icons/io5';
+import {
+  IoCopyOutline,
+  IoCreateOutline,
+  IoEyeOutline,
+  IoGlobeOutline,
+  IoLinkOutline,
+  IoPersonOutline,
+} from 'react-icons/io5';
 
 import { Avatar, Button, Input, Typography } from '@ui/components';
 
@@ -37,6 +44,10 @@ const InviteLinkModal: React.FC<InviteLinkModalProps> = ({
   const supabase = createClient();
   const [shareUrl, setShareUrl] = useState('');
   const [localParticipants, setLocalParticipants] = useState(participants);
+  const [accessScope, setAccessScope] = useState<'anyone' | 'owner'>('anyone');
+  const [accessPermission, setAccessPermission] = useState<'edit' | 'view'>(
+    'edit'
+  );
 
   const value = useMemo(() => shareUrl, [shareUrl]);
 
@@ -64,18 +75,77 @@ const InviteLinkModal: React.FC<InviteLinkModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title='동반자 초대' width='lg'>
       <div className='space-y-4 px-6 py-5'>
-        <div>
-          <Typography variant='body2' className='mb-2 text-gray-700'>
-            현재 주소
+        {/* 액세스 수준 */}
+        <div className='space-y-2'>
+          <Typography variant='body2' className='text-gray-700'>
+            액세스 수준
           </Typography>
+          <div className='flex w-full gap-2'>
+            <div
+              className={`min-w-0 ${
+                accessScope === 'owner' ? 'basis-full' : 'basis-[70%]'
+              }`}
+            >
+              <label className='mb-1 block text-xs text-gray-500'>
+                접근 대상
+              </label>
+              <div className='relative'>
+                <span className='pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-gray-500'>
+                  {accessScope === 'anyone' ? (
+                    <IoGlobeOutline className='h-4 w-4' />
+                  ) : (
+                    <IoPersonOutline className='h-4 w-4' />
+                  )}
+                </span>
+                <select
+                  disabled={!isOwner}
+                  value={accessScope}
+                  onChange={(e) =>
+                    setAccessScope(
+                      (e.target.value as 'anyone' | 'owner') || 'anyone'
+                    )
+                  }
+                  className='w-full rounded border border-gray-300 bg-white py-2 pl-8 pr-2 text-sm'
+                >
+                  <option value='anyone'>링크가 있는 모든 사용자</option>
+                  <option value='owner'>본인만 액세스 가능</option>
+                </select>
+              </div>
+            </div>
+            {accessScope !== 'owner' && (
+              <div className='min-w-0 basis-[30%]'>
+                <label className='mb-1 block text-xs text-gray-500'>
+                  권한 수준
+                </label>
+                <div className='relative'>
+                  <span className='pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-gray-500'>
+                    {accessPermission === 'edit' ? (
+                      <IoCreateOutline className='h-4 w-4' />
+                    ) : (
+                      <IoEyeOutline className='h-4 w-4' />
+                    )}
+                  </span>
+                  <select
+                    disabled={!isOwner}
+                    value={accessPermission}
+                    onChange={(e) =>
+                      setAccessPermission(
+                        (e.target.value as 'edit' | 'view') || 'view'
+                      )
+                    }
+                    className='w-full rounded border border-gray-300 bg-white py-2 pl-8 pr-2 text-sm'
+                  >
+                    <option value='edit'>편집 가능</option>
+                    <option value='view'>보기 가능</option>
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div>
           <div className='flex flex-col gap-2'>
-            <Input
-              value={value}
-              readOnly
-              placeholder='생성된 링크가 여기에 표시됩니다'
-              className='w-full'
-              leftIcon={<IoLinkOutline className='h-4 w-4' />}
-            />
             <Button
               onClick={handleCopy}
               variant='filled'
