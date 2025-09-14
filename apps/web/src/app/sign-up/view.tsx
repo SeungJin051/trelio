@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import type { User } from '@supabase/supabase-js';
 import { IconType } from 'react-icons';
@@ -13,6 +13,7 @@ import { Avatar, Button, Icon, Input, Typography } from '@ui/components';
 import { Card } from '@/components';
 import LocationInput from '@/components/travel/inputs/LocationInput';
 import { useToast } from '@/hooks';
+import { useSession } from '@/hooks/useSession';
 import { createClient } from '@/lib/supabase/client/supabase';
 import type { TravelStyle, UserProfile } from '@/types/user/user';
 
@@ -32,8 +33,10 @@ const SignUpView = () => {
   const [nationality, setNationality] = useState('');
 
   const router = useRouter();
+  const searchParams = useSearchParams();
   const toast = useToast();
   const supabase = createClient();
+  const { refreshProfile } = useSession();
   const progress = (step / TOTAL_STEPS) * 100;
 
   // 이미지 업로드 훅 사용
@@ -158,11 +161,55 @@ const SignUpView = () => {
         return;
       }
 
-      // 프로필 저장 후 잠시 대기하여 사용자에게 성공 메시지를 보여줌
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // 전역 세션 훅 상태 갱신하여 'incomplete' 리다이렉트 가드를 해제
+      try {
+        await refreshProfile();
+      } catch (e) {
+        console.warn('refreshProfile failed', e);
+      }
+      // 사용자에게 피드백 노출 여유
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // 메인 페이지로 리다이렉트
-      router.push('/');
+      // next 처리: 초대 수락 흐름이면 수락 후 해당 여행 상세로 이동
+      const next = searchParams.get('next');
+      const isInternal = next && next.startsWith('/');
+      if (isInternal) {
+        // /invite/p/[shareId] 형태인지 확인
+        const match = /^\/invite\/p\/([0-9a-fA-F-]{36})$/.exec(next!);
+        if (match) {
+          const shareId = match[1];
+          try {
+            const res = await fetch(`/api/invites/plan/${shareId}/accept`, {
+              method: 'POST',
+            });
+            if (res.status === 401) throw new Error('UNAUTHORIZED');
+            if (res.status === 409) {
+              const body = await fetch(`/api/invites/plan/${shareId}`);
+              if (body.ok) {
+                const { planId } = await body.json();
+                router.replace(`/travel/${planId}`);
+                return;
+              }
+            }
+            if (!res.ok) throw new Error('FAILED');
+            const { planId } = (await res.json()) as { planId: string };
+            router.replace(`/travel/${planId}`);
+            return;
+          } catch (_err) {
+            // 초대 수락 실패 시 next로 폴백
+            router.replace(next!);
+            return;
+          }
+        } else {
+          // 내부 경로면 그대로 이동
+          router.replace(next);
+          return;
+        }
+      }
+
+      // 기본: 메인 페이지로 이동
+      router.replace('/');
+      return;
     } catch (error) {
       if (error instanceof Error) {
         toast.error(`회원가입 실패: ${error.message}`);

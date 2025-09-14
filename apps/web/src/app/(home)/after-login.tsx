@@ -4,6 +4,7 @@ import React from 'react';
 
 import { Typography } from '@ui/components';
 
+import InvitedTravelWidget from '@/components/travel/overview/InvitedTravelWidget';
 import RecentActivitiesWidget from '@/components/travel/overview/RecentActivitiesWidget';
 import TravelPlansList from '@/components/travel/overview/TravelPlansList';
 
@@ -24,7 +25,7 @@ const AfterLoginHomeView = () => {
         {/* 대시보드 위젯들 */}
         <div className='mb-8 grid gap-6 lg:grid-cols-2'>
           {/* 초대받은 여행 목록 위젯 */}
-          초대받은 여행 목록
+          <InvitedTravelWidget />
           {/* 최근 활동 위젯 */}
           <RecentActivitiesWidget />
         </div>

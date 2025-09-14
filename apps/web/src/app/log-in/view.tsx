@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { BiSolidMessageRounded } from 'react-icons/bi';
@@ -18,6 +18,7 @@ import { getURL } from '@/lib/utils';
 const LoginView = () => {
   const supabase = createClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const toast = useToast();
 
   const [isLoading, setIsLoading] = useState<{ [key: string]: boolean }>({
@@ -53,8 +54,10 @@ const LoginView = () => {
             // 프로필이 존재하는 경우 - 메인 페이지로 리다이렉트
             router.push('/');
           } else {
-            // 프로필이 없는 경우 - 회원가입 페이지로 리다이렉트
-            router.push('/sign-up');
+            // 프로필이 없는 경우 - 회원가입 페이지로 리다이렉트 (next 유지)
+            const next = searchParams.get('next');
+            const safeNext = next && next.startsWith('/') ? next : '/';
+            router.push(`/sign-up?next=${encodeURIComponent(safeNext)}`);
           }
         } catch (error) {
           console.error('자동 로그인 중 프로필 확인 오류:', error);
@@ -88,9 +91,11 @@ const LoginView = () => {
               // 프로필이 존재하는 경우 - 메인 페이지로 리다이렉트
               router.push('/');
             } else {
-              // 프로필이 없는 경우 - 회원가입 페이지로 리다이렉트
+              // 프로필이 없는 경우 - 회원가입 페이지로 리다이렉트 (next 유지)
               toast.success('환영합니다! 프로필을 설정해주세요.');
-              router.push('/sign-up');
+              const next = searchParams.get('next');
+              const safeNext = next && next.startsWith('/') ? next : '/';
+              router.push(`/sign-up?next=${encodeURIComponent(safeNext)}`);
             }
           } catch (error) {
             console.error('onAuthStateChange 프로필 확인 중 오류:', error);
@@ -118,10 +123,12 @@ const LoginView = () => {
       setIsLoading((prev) => ({ ...prev, kakao: true }));
 
       // Supabase Auth를 통한 카카오 OAuth 로그인 시작
+      const next = searchParams.get('next');
+      const safeNext = next && next.startsWith('/') ? next : null;
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'kakao',
         options: {
-          redirectTo: `${getURL()}auth/callback`,
+          redirectTo: `${getURL()}auth/callback${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ''}`,
           scopes: 'profile_nickname profile_image account_email',
           queryParams: {
             prompt: 'login',
@@ -164,6 +171,58 @@ const LoginView = () => {
     } finally {
       // 로딩 상태 비활성화
       setIsLoading((prev) => ({ ...prev, kakao: false }));
+    }
+  };
+
+  /**
+   * 구글 소셜 로그인 처리 함수 (Supabase OAuth - Google)
+   */
+  const handleGoogleLogin = async () => {
+    try {
+      setIsLoading((prev) => ({ ...prev, google: true }));
+
+      const next = searchParams.get('next');
+      const safeNext = next && next.startsWith('/') ? next : null;
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${getURL()}auth/callback${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ''}`,
+          scopes: 'openid email profile',
+          queryParams: {
+            prompt: 'consent',
+            access_type: 'offline',
+          },
+        },
+      });
+
+      if (error) {
+        console.error('구글 로그인 에러:', error);
+        switch (error.message) {
+          case 'Email not confirmed':
+            toast.error('이메일 인증이 필요합니다. 이메일을 확인해주세요.');
+            break;
+          case 'Invalid login credentials':
+            toast.error('로그인 정보가 올바르지 않습니다.');
+            break;
+          case 'Too many requests':
+            toast.error('요청이 많습니다. 잠시 후 다시 시도해주세요.');
+            break;
+          default:
+            toast.error(
+              '구글 로그인 중 오류가 발생했습니다. 다시 시도해주세요.'
+            );
+        }
+        return;
+      }
+
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error('구글 로그인 예외:', error);
+      toast.error('로그인 처리 중 문제가 발생했습니다.');
+    } finally {
+      setIsLoading((prev) => ({ ...prev, google: false }));
     }
   };
 
@@ -212,7 +271,7 @@ const LoginView = () => {
 
             {/* 구글 로그인 버튼 */}
             <button
-              onClick={() => {}}
+              onClick={handleGoogleLogin}
               disabled={isLoading.google || isLoading.kakao}
               className='flex w-full items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70'
             >

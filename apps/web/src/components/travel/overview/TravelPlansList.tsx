@@ -93,16 +93,41 @@ const TravelPlansList: React.FC = () => {
     }
     try {
       if (initialLoad) setLoading(true);
+      // 소유한 여행 계획 조회
       const { data: plansData, error: plansError } = await supabase
         .from('travel_plans')
         .select('id, title, start_date, end_date, location, created_at')
         .eq('owner_id', userProfile.id);
+
       if (plansError) {
         console.error('여행 계획 조회 실패:', plansError);
         setTravelPlans([]);
         return;
       }
-      const transformedPlans: TravelPlan[] = (plansData || []).map((plan) => ({
+
+      const planIds = (plansData || []).map((p) => p.id);
+
+      // 참가자 수 집계 (선택)
+      let participantCountMap = new Map<string, number>();
+      if (planIds.length > 0) {
+        const { data: allParticipants, error: participantsError } =
+          await supabase
+            .from('travel_plan_participants')
+            .select('plan_id')
+            .in('plan_id', planIds);
+        if (participantsError) {
+          console.warn('참가자 수 조회 경고:', participantsError);
+        }
+        participantCountMap = new Map<string, number>();
+        (allParticipants || []).forEach((row) => {
+          participantCountMap.set(
+            row.plan_id as string,
+            (participantCountMap.get(row.plan_id as string) || 0) + 1
+          );
+        });
+      }
+
+      const transformed: TravelPlan[] = (plansData || []).map((plan) => ({
         id: plan.id,
         title: plan.title,
         start_date: plan.start_date,
@@ -110,10 +135,11 @@ const TravelPlansList: React.FC = () => {
         location: plan.location,
         status: getStatus(plan.start_date, plan.end_date),
         created_at: plan.created_at,
-        participantCount: 1,
+        participantCount: participantCountMap.get(plan.id) || 1,
       }));
-      const sortedPlans = sortPlans(transformedPlans, sort);
-      setTravelPlans(sortedPlans);
+
+      const sorted = sortPlans(transformed, sort);
+      setTravelPlans(sorted);
     } catch (error) {
       console.error('여행 계획 조회 중 오류:', error);
       setTravelPlans([]);
@@ -384,13 +410,15 @@ const TravelPlanCard: React.FC<TravelPlanCardProps> = React.memo(
       >
         <div className='mb-4 flex items-start justify-between'>
           <div className='flex-1'>
-            <Typography
-              variant='h6'
-              weight='semiBold'
-              className='mb-1 text-gray-900'
-            >
-              {plan.title}
-            </Typography>
+            <div className='flex items-center gap-2'>
+              <Typography
+                variant='h6'
+                weight='semiBold'
+                className='mb-1 text-gray-900'
+              >
+                {plan.title}
+              </Typography>
+            </div>
             <Typography variant='body2' className='text-gray-600'>
               {plan.location}
             </Typography>

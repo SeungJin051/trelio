@@ -72,13 +72,17 @@ export async function GET(request: NextRequest) {
           }
 
           if (profile) {
-            // 프로필이 존재하는 경우 - 메인 페이지로 리다이렉트
-            return NextResponse.redirect(new URL('/', requestUrl.origin));
+            // 프로필이 존재하는 경우 - next가 있으면 next로, 없으면 홈으로
+            const redirectUrl = next
+              ? new URL(next, requestUrl.origin)
+              : new URL('/', requestUrl.origin);
+            return NextResponse.redirect(redirectUrl);
           } else {
-            // 프로필이 없는 경우 - 회원가입 페이지로 리다이렉트
-            return NextResponse.redirect(
-              new URL('/sign-up', requestUrl.origin)
-            );
+            // 프로필이 없는 경우 - 회원가입 페이지로 리다이렉트 (next 유지)
+            const signUpUrl = new URL('/sign-up', requestUrl.origin);
+            if (next && next.startsWith('/'))
+              signUpUrl.searchParams.set('next', next);
+            return NextResponse.redirect(signUpUrl);
           }
         }
       } catch (profileCheckError) {
@@ -89,10 +93,10 @@ export async function GET(request: NextRequest) {
     }
 
     // next 파라미터가 있으면 해당 페이지로, 없으면 홈으로 리다이렉트
-    const redirectUrl = next
+    const fallbackUrl = next
       ? new URL(next, requestUrl.origin)
       : new URL('/', requestUrl.origin);
-    return NextResponse.redirect(redirectUrl);
+    return NextResponse.redirect(fallbackUrl);
   } catch (error) {
     console.error('콜백 처리 중 예외 발생:', error);
     // 예외 발생 시 로그인 페이지로 리다이렉트

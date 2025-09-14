@@ -53,5 +53,9 @@ export async function createServerSupabaseClient() {
         }
       },
     },
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+    },
   });
 }

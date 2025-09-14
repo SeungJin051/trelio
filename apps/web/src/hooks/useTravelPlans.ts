@@ -32,6 +32,19 @@ import type { Activity, TravelPlan } from '@/types/travel';
 
 import { useSession } from './useSession';
 
+export type InvitedTravelPlanItem = {
+  id: string;
+  title: string;
+  location: string;
+  start_date: string;
+  end_date: string;
+  created_at: string;
+  role: 'editor' | 'viewer' | 'owner';
+  participantCount: number;
+};
+
+// 링크 초대 방식으로 전환: pending 초대 타입 제거
+
 export const useUpcomingTravel = () => {
   const { userProfile } = useSession();
   const supabase = createClient();
@@ -215,3 +228,135 @@ export const useRecentActivities = (limit: number = 10) => {
     enabled: !!userProfile?.id,
   });
 };
+
+export const useInvitedTravelPlans = (limit: number = 5) => {
+  const { userProfile } = useSession();
+  const supabase = createClient();
+
+  return useQuery({
+    queryKey: ['invited-travel-plans', userProfile?.id, limit],
+    queryFn: async (): Promise<InvitedTravelPlanItem[]> => {
+      if (!userProfile?.id) return [];
+
+      // 1) 내가 참여 중이며 소유자가 아닌(plan의 참가자) 레코드 조회
+      const { data: participationRows, error: participationError } =
+        await supabase
+          .from('travel_plan_participants')
+          .select('plan_id, role')
+          .eq('user_id', userProfile.id)
+          .neq('role', 'owner');
+
+      if (participationError) {
+        console.error('Invited plans 참여 조회 오류:', participationError);
+        return [];
+      }
+
+      if (!participationRows || participationRows.length === 0) return [];
+
+      const planIds = Array.from(
+        new Set(participationRows.map((p) => p.plan_id))
+      );
+
+      // 2) 해당 계획들의 메타 정보 조회
+      const { data: plans, error: plansError } = await supabase
+        .from('travel_plans')
+        .select('id, title, location, start_date, end_date, created_at')
+        .in('id', planIds)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (plansError) {
+        console.error('Invited plans 메타 조회 오류:', plansError);
+        return [];
+      }
+
+      if (!plans || plans.length === 0) return [];
+
+      // 3) 참가자 수 계산을 위해 동일한 plan_id에 대한 참가자 전체 조회 후 집계
+      const { data: allParticipants, error: allParticipantsError } =
+        await supabase
+          .from('travel_plan_participants')
+          .select('plan_id')
+          .in(
+            'plan_id',
+            plans.map((p) => p.id)
+          );
+
+      if (allParticipantsError) {
+        console.warn('참가자 수 조회 경고:', allParticipantsError);
+      }
+
+      const participantCountMap = new Map<string, number>();
+      (allParticipants || []).forEach((row) => {
+        participantCountMap.set(
+          row.plan_id,
+          (participantCountMap.get(row.plan_id) || 0) + 1
+        );
+      });
+
+      // 사용자 역할 매핑 (plan 별 내 역할)
+      const roleMap = new Map<string, InvitedTravelPlanItem['role']>();
+      participationRows.forEach((r) => {
+        if (!roleMap.has(r.plan_id)) {
+          roleMap.set(r.plan_id, r.role as InvitedTravelPlanItem['role']);
+        }
+      });
+
+      return plans.map((p) => ({
+        id: p.id,
+        title: p.title,
+        location: p.location,
+        start_date: p.start_date,
+        end_date: p.end_date,
+        created_at: p.created_at,
+        role: roleMap.get(p.id) || 'viewer',
+        participantCount: participantCountMap.get(p.id) || 1,
+      }));
+    },
+    enabled: !!userProfile?.id,
+  });
+};
+export type AccessibleTravelPlan = {
+  id: string;
+  title: string;
+  location: string;
+  start_date: string;
+  end_date: string;
+  created_at: string;
+};
+
+// RLS 재귀를 피하기 위해 SECURITY DEFINER RPC 사용
+export const useAccessibleTravelPlans = (limit: number = 100) => {
+  const { userProfile } = useSession();
+  const supabase = createClient();
+
+  return useQuery({
+    queryKey: ['accessible-travel-plans', userProfile?.id, limit],
+    queryFn: async (): Promise<AccessibleTravelPlan[]> => {
+      if (!userProfile?.id) return [];
+      const { data, error } = await supabase.rpc(
+        'fn_list_accessible_travel_plans',
+        { p_user_id: userProfile.id, p_limit: limit }
+      );
+      if (error) {
+        console.error('[useAccessibleTravelPlans] RPC error:', error);
+        return [];
+      }
+      return (data || []).map((row: any) => ({
+        id: String(row.id),
+        title: String(row.title),
+        location: String(row.location),
+        start_date: String(row.start_date),
+        end_date: String(row.end_date),
+        created_at: String(row.created_at),
+      }));
+    },
+    enabled: !!userProfile?.id,
+    // 최적화: 과도한 refetch 방지 (필요 시 Sidebar에서 refetch 호출)
+    staleTime: 30_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
+};
+
+// 초대 대기 목록 조회 (travel_plan_invitations 테이블 가정)
