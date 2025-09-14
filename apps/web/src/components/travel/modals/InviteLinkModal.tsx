@@ -72,6 +72,44 @@ const InviteLinkModal: React.FC<InviteLinkModalProps> = ({
     }
   }, [toast, value]);
 
+  // 액세스 수준 변경 핸들러 (DB 반영)
+  const handleScopeChange = useCallback(
+    async (next: 'anyone' | 'owner') => {
+      try {
+        setAccessScope(next);
+        if (!isOwner) return;
+        const { error } = await supabase
+          .from('travel_plans')
+          .update({ share_link_scope: next })
+          .eq('id', planId);
+        if (error) throw error;
+        toast.success('접근 대상을 업데이트했어요');
+      } catch {
+        toast.error('접근 대상 업데이트에 실패했어요');
+      }
+    },
+    [isOwner, planId, supabase, toast]
+  );
+
+  const handlePermissionChange = useCallback(
+    async (next: 'edit' | 'view') => {
+      try {
+        setAccessPermission(next);
+        if (!isOwner) return;
+        const mapped = next === 'edit' ? 'editor' : 'viewer';
+        const { error } = await supabase
+          .from('travel_plans')
+          .update({ default_permission: mapped })
+          .eq('id', planId);
+        if (error) throw error;
+        toast.success('권한 수준을 업데이트했어요');
+      } catch {
+        toast.error('권한 수준 업데이트에 실패했어요');
+      }
+    },
+    [isOwner, planId, supabase, toast]
+  );
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title='동반자 초대' width='lg'>
       <div className='space-y-4 px-6 py-5'>
@@ -101,7 +139,7 @@ const InviteLinkModal: React.FC<InviteLinkModalProps> = ({
                   disabled={!isOwner}
                   value={accessScope}
                   onChange={(e) =>
-                    setAccessScope(
+                    handleScopeChange(
                       (e.target.value as 'anyone' | 'owner') || 'anyone'
                     )
                   }
@@ -129,7 +167,7 @@ const InviteLinkModal: React.FC<InviteLinkModalProps> = ({
                     disabled={!isOwner}
                     value={accessPermission}
                     onChange={(e) =>
-                      setAccessPermission(
+                      handlePermissionChange(
                         (e.target.value as 'edit' | 'view') || 'view'
                       )
                     }
