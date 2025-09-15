@@ -11,7 +11,7 @@ import {
 
 import { Avatar, Button, Typography } from '@ui/components';
 
-import { useRealtimeTodos } from '@/hooks/useBlocks';
+import { useRealtimeTodos } from '@/hooks/useRealtimeTodos';
 import {
   CreateTodoRequest,
   TodoWithAssignee,
@@ -62,7 +62,7 @@ const SharedTodoWidgetBase: React.FC<SharedTodoWidgetProps> = ({
   }, [planId]);
 
   // 실시간 할일 동기화
-  useRealtimeTodos(planId, (updatedTodos) => {
+  useRealtimeTodos<TodoWithAssignee>(planId, (updatedTodos) => {
     setTodos(updatedTodos);
   });
 

@@ -9,7 +9,7 @@ import {
   IoPeopleOutline,
 } from 'react-icons/io5';
 
-import { Avatar, AvatarGroup, Button, Typography } from '@ui/components';
+import { Button, Typography } from '@ui/components';
 
 import { useTravelParticipants } from '@/hooks/useTravelDetail';
 
@@ -29,7 +29,6 @@ export const TravelHeader: React.FC<TravelHeaderProps> = ({
   location,
   startDate,
   endDate,
-  participantsCount,
   dDay,
 }) => {
   const router = useRouter();

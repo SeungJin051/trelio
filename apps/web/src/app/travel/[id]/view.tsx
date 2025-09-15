@@ -23,13 +23,11 @@ import { BlockCreateModal } from '@/components/travel/detail/BlockCreateModal';
 import { BlockDetailModal } from '@/components/travel/detail/BlockDetailModal';
 import { TravelTimelineCanvas } from '@/components/travel/detail/TravelTimelineCanvas';
 import InviteLinkModal from '@/components/travel/modals/InviteLinkModal';
-import {
-  useBlocks,
-  useRealtimeBlocks,
-  useRealtimeParticipants,
-  useRealtimeTravelInfo,
-} from '@/hooks/useBlocks';
+import { useBlocks } from '@/hooks/useBlocks';
 import { useParticipantsPresence } from '@/hooks/useParticipantsPresence';
+import { useRealtimeBlocks } from '@/hooks/useRealtimeBlocks';
+import { useRealtimeParticipants } from '@/hooks/useRealtimeParticipants';
+import { useRealtimeTravelInfo } from '@/hooks/useRealtimeTravelInfo';
 import { useSession } from '@/hooks/useSession';
 import { useToast } from '@/hooks/useToast';
 import { useTravelDetail } from '@/hooks/useTravelDetail';
