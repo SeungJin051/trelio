@@ -4,6 +4,16 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useParams, useRouter } from 'next/navigation';
 
+import {
+  closestCenter,
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
 import { IoAddOutline } from 'react-icons/io5';
 
 import { Button, Typography } from '@ui/components';
@@ -42,6 +52,7 @@ const TravelDetailView = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [selectedBlock, setSelectedBlock] = useState<TravelBlock | null>(null);
+  const [activeBlock, setActiveBlock] = useState<TravelBlock | null>(null);
   const [selectedDay, setSelectedDay] = useState<number>(0); // 0은 대시보드
 
   const planId = params.id as string;
@@ -59,6 +70,16 @@ const TravelDetailView = () => {
     () => travelData?.activities ?? [],
     [travelData?.activities]
   );
+
+  // 편집 권한 확인: owner 또는 editor (항상 호출되도록 조기 리턴 이전에 배치)
+  const canEdit = useMemo(() => {
+    if (!userProfile || !travelPlan) return false;
+    if (travelPlan.owner_id === userProfile.id) return true;
+    const role = (participants as ApiParticipant[]).find(
+      (p) => (p as any).user_id === userProfile.id
+    )?.role;
+    return role === 'editor' || role === 'owner';
+  }, [userProfile, travelPlan, participants]);
 
   // 실시간 기능 활성화 (항상 호출)
   useTravelRealtime(planId);
@@ -79,6 +100,68 @@ const TravelDetailView = () => {
       endDate: travelPlan?.end_date || '',
       planLocation: travelPlan?.location || '',
     });
+  // DnD 센서
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    })
+  );
+
+  // DnD 핸들러
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const selectedDayData = timeline.days.find(
+      (d) => d.dayNumber === selectedDay
+    );
+    const found = selectedDayData?.blocks.find((b) => b.id === active.id);
+    if (found) setActiveBlock(found);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveBlock(null);
+    if (!over) return;
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    // 같은 아이템이면 무시
+    if (activeId === overId) return;
+
+    const selectedDayData = timeline.days.find(
+      (d) => d.dayNumber === selectedDay
+    );
+    if (!selectedDayData) return;
+
+    // 같은 날 내 재정렬
+    const droppedInSameList = selectedDayData.blocks.some(
+      (b) => b.id === overId
+    );
+    if (droppedInSameList) {
+      const newIndex = selectedDayData.blocks.findIndex((b) => b.id === overId);
+      if (newIndex >= 0) {
+        moveBlock({
+          id: activeId,
+          newDayNumber: selectedDay,
+          newOrderIndex: newIndex,
+        });
+      }
+      return;
+    }
+
+    // 다른 날 탭으로 드롭: overId = day-<n>
+    const match = /^day-(\d+)$/.exec(overId);
+    if (match) {
+      const targetDay = Number(match[1]);
+      if (targetDay && targetDay !== selectedDay) {
+        const targetDayData = timeline.days.find(
+          (d) => d.dayNumber === targetDay
+        );
+        const newOrderIndex = targetDayData?.blocks.length || 0;
+        moveBlock({ id: activeId, newDayNumber: targetDay, newOrderIndex });
+      }
+    }
+  };
 
   // 탭 데이터 생성
   const tabs = useMemo((): TabItem[] => {
@@ -208,8 +291,6 @@ const TravelDetailView = () => {
     ? calculateDDayWithEnd(travelPlan.start_date, travelPlan.end_date)
     : '';
 
-  // 편집 권한 확인 (임시로 true, 나중에 실제 권한 체크 로직으로 교체)
-  const canEdit = true;
   const isOwner = Boolean(
     travelPlan?.owner_id &&
       userProfile?.id &&
@@ -222,6 +303,7 @@ const TravelDetailView = () => {
       <div className='flex w-full flex-1 flex-col'>
         {/* 헤더 */}
         <TravelHeader
+          planId={travelPlan.id}
           title={travelPlan.title}
           location={travelPlan.location}
           startDate={travelPlan.start_date}
@@ -230,85 +312,99 @@ const TravelDetailView = () => {
           dDay={ddayText}
         />
 
-        {/* 탭 컨테이너 */}
-        <TabContainer
-          tabs={tabs}
-          selectedDay={selectedDay}
-          onDaySelect={setSelectedDay}
-        />
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          {/* 탭 컨테이너 (DayTab은 droppable) */}
+          <TabContainer
+            tabs={tabs}
+            selectedDay={selectedDay}
+            onDaySelect={setSelectedDay}
+          />
 
-        {/* 컨텐츠 영역 */}
-        <div className='flex-1 overflow-x-hidden'>
-          {selectedDay === 0 ? (
-            <div className='h-full'>
-              <BriefingBoard
-                planId={planId}
-                title={travelPlan.title}
-                location={travelPlan.location}
-                startDate={travelPlan.start_date}
-                endDate={travelPlan.end_date}
-                participants={(participants as ApiParticipant[]).map((p) => ({
-                  id: p.id,
-                  nickname: p.nickname || '알 수 없음',
-                  profile_image_url: p.profile_image_url,
-                  isOnline: p.isOnline || false,
-                }))}
-                activities={activities}
-                totalBudget={
-                  (travelPlan as unknown as Partial<{ target_budget: number }>)
-                    ?.target_budget || 0
-                }
-                currency={
-                  (
-                    travelPlan as unknown as Partial<{
-                      budget_currency: string;
-                    }>
-                  )?.budget_currency || 'KRW'
-                }
-                destinationCountry={
-                  (
-                    travelPlan as unknown as Partial<{
-                      destination_country: string;
-                    }>
-                  )?.destination_country
-                }
-                userNationality={userProfile?.nationality}
-                hotTopics={hotTopics}
-                onInviteParticipants={handleInviteParticipants}
-                onExport={handleExport}
-                onSettings={handleSettings}
-                onBudgetClick={handleBudgetClick}
-                onReadinessClick={handleReadinessClick}
-                onBlockClick={handleBlockClick}
-                onHotTopicClick={handleHotTopicClick}
+          {/* 컨텐츠 영역 */}
+          <div className='flex-1 overflow-x-hidden'>
+            {selectedDay === 0 ? (
+              <div className='h-full'>
+                <BriefingBoard
+                  planId={planId}
+                  title={travelPlan.title}
+                  location={travelPlan.location}
+                  startDate={travelPlan.start_date}
+                  endDate={travelPlan.end_date}
+                  participants={(participants as ApiParticipant[]).map((p) => ({
+                    id: p.id,
+                    nickname: p.nickname || '알 수 없음',
+                    profile_image_url: p.profile_image_url,
+                    isOnline: p.isOnline || false,
+                  }))}
+                  activities={activities}
+                  totalBudget={
+                    (
+                      travelPlan as unknown as Partial<{
+                        target_budget: number;
+                      }>
+                    )?.target_budget || 0
+                  }
+                  currency={
+                    (
+                      travelPlan as unknown as Partial<{
+                        budget_currency: string;
+                      }>
+                    )?.budget_currency || 'KRW'
+                  }
+                  destinationCountry={
+                    (
+                      travelPlan as unknown as Partial<{
+                        destination_country: string;
+                      }>
+                    )?.destination_country
+                  }
+                  userNationality={userProfile?.nationality}
+                  hotTopics={hotTopics}
+                  onInviteParticipants={handleInviteParticipants}
+                  onExport={handleExport}
+                  onSettings={handleSettings}
+                  onBudgetClick={handleBudgetClick}
+                  onReadinessClick={handleReadinessClick}
+                  onBlockClick={handleBlockClick}
+                  onHotTopicClick={handleHotTopicClick}
+                />
+              </div>
+            ) : (
+              // 타임라인 캔버스
+              <TravelTimelineCanvas
+                timeline={timeline}
+                canEdit={canEdit}
+                selectedDay={selectedDay}
+                onDaySelect={setSelectedDay}
+                onBlockCreate={(dayNumber: number) => {
+                  setSelectedDay(dayNumber);
+                  setShowCreateModal(true);
+                }}
+                onBlockMove={(
+                  blockId: string,
+                  newDayNumber: number,
+                  newOrderIndex: number
+                ) => {
+                  moveBlock({ id: blockId, newDayNumber, newOrderIndex });
+                }}
+                onBlockClick={handleBlockDetailClick}
               />
-            </div>
-          ) : (
-            // 타임라인 캔버스
-            <TravelTimelineCanvas
-              timeline={timeline}
-              canEdit={canEdit}
-              selectedDay={selectedDay}
-              onDaySelect={setSelectedDay}
-              onBlockCreate={(dayNumber: number) => {
-                setSelectedDay(dayNumber);
-                setShowCreateModal(true);
-              }}
-              onBlockMove={(
-                blockId: string,
-                newDayNumber: number,
-                newOrderIndex: number
-              ) => {
-                moveBlock({
-                  id: blockId,
-                  newDayNumber,
-                  newOrderIndex,
-                });
-              }}
-              onBlockClick={handleBlockDetailClick}
-            />
-          )}
-        </div>
+            )}
+          </div>
+
+          <DragOverlay>
+            {activeBlock ? (
+              <div className='rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm opacity-95 shadow-lg'>
+                {activeBlock.title}
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
 
         {/* 플로팅 액션 버튼 - 대시보드에서는 숨김 */}
         {selectedDay !== 0 && (
