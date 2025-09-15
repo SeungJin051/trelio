@@ -11,7 +11,10 @@ import {
 
 import { Button, Typography } from '@ui/components';
 
+import { useTravelParticipants } from '@/hooks/useTravelDetail';
+
 interface TravelHeaderProps {
+  planId: string;
   title: string;
   location: string;
   startDate: string;
@@ -21,14 +24,15 @@ interface TravelHeaderProps {
 }
 
 export const TravelHeader: React.FC<TravelHeaderProps> = ({
+  planId,
   title,
   location,
   startDate,
   endDate,
-  participantsCount,
   dDay,
 }) => {
   const router = useRouter();
+  const { data: participants = [] } = useTravelParticipants(planId);
 
   return (
     <div className='flex-shrink-0 border-b border-gray-200 bg-white px-6 py-4'>
@@ -69,7 +73,9 @@ export const TravelHeader: React.FC<TravelHeaderProps> = ({
               </div>
               <div className='flex items-center text-gray-600'>
                 <IoPeopleOutline className='mr-1 h-4 w-4' />
-                <Typography variant='caption'>{participantsCount}명</Typography>
+                <Typography variant='caption'>
+                  {participants.length}명
+                </Typography>
               </div>
             </div>
           </div>

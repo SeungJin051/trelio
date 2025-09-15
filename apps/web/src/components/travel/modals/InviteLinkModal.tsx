@@ -7,7 +7,6 @@ import {
   IoCreateOutline,
   IoEyeOutline,
   IoGlobeOutline,
-  IoLinkOutline,
   IoPersonOutline,
 } from 'react-icons/io5';
 
@@ -15,6 +14,7 @@ import { Avatar, Button, Input, Typography } from '@ui/components';
 
 import { Modal } from '@/components/basic';
 import { useToast } from '@/hooks/useToast';
+import { rotateShareLink } from '@/lib/api/invites';
 import { createClient } from '@/lib/supabase/client/supabase';
 
 interface InviteLinkModalProps {
@@ -48,6 +48,7 @@ const InviteLinkModal: React.FC<InviteLinkModalProps> = ({
   const [accessPermission, setAccessPermission] = useState<'edit' | 'view'>(
     'edit'
   );
+  // 회전(재발급) 버튼 제거: 복사 버튼에서 일괄 처리
 
   const value = useMemo(() => shareUrl, [shareUrl]);
 
@@ -58,10 +59,47 @@ const InviteLinkModal: React.FC<InviteLinkModalProps> = ({
 
   const handleCopy = useCallback(async () => {
     try {
+      // 오너: 현재 액세스 설정 적용 후 링크 재발급 + 복사
+      if (isOwner) {
+        // 1) 액세스 수준/기본 권한 적용
+        const mappedPermission =
+          accessPermission === 'edit' ? 'editor' : 'viewer';
+        const { error: scopeErr } = await supabase
+          .from('travel_plans')
+          .update({ share_link_scope: accessScope })
+          .eq('id', planId);
+        if (scopeErr) throw scopeErr;
+        const { error: permErr } = await supabase
+          .from('travel_plans')
+          .update({ default_permission: mappedPermission })
+          .eq('id', planId);
+        if (permErr) throw permErr;
+
+        // 2) 링크 재발급
+        const { shareLinkId: newId } = await rotateShareLink(planId);
+        const origin =
+          typeof window !== 'undefined' ? window.location.origin : '';
+        const newUrl = `${origin}/invite/p/${newId}`;
+        setShareUrl(newUrl);
+
+        // 3) 복사 (클립보드 실패 시 폴백)
+        await navigator.clipboard.writeText(newUrl).catch(() => {
+          const temp = document.createElement('textarea');
+          temp.value = newUrl;
+          document.body.appendChild(temp);
+          temp.select();
+          document.execCommand('copy');
+          document.body.removeChild(temp);
+        });
+        toast.success('설정 적용 후 새 링크를 복사했어요');
+        return;
+      }
+
+      // 오너가 아니면 현재 링크만 복사
       await navigator.clipboard.writeText(value);
       toast.success('링크를 복사했어요');
     } catch {
-      // fallback
+      // fallback (오너 아닐 때 실패한 경우 현재 값 복사)
       const temp = document.createElement('textarea');
       temp.value = value;
       document.body.appendChild(temp);
@@ -70,7 +108,9 @@ const InviteLinkModal: React.FC<InviteLinkModalProps> = ({
       document.body.removeChild(temp);
       toast.success('링크를 복사했어요');
     }
-  }, [toast, value]);
+  }, [isOwner, accessPermission, accessScope, planId, supabase, toast, value]);
+
+  // 재발급 전용 버튼 제거 (handleCopy 내에서 수행)
 
   // 액세스 수준 변경 핸들러 (DB 반영)
   const handleScopeChange = useCallback(
@@ -192,7 +232,7 @@ const InviteLinkModal: React.FC<InviteLinkModalProps> = ({
               disabled={!value}
               leftIcon={<IoCopyOutline className='h-4 w-4' />}
             >
-              링크 복사하기
+              {isOwner ? '설정 적용하고 새 링크 복사' : '링크 복사하기'}
             </Button>
           </div>
         </div>

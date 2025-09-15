@@ -19,6 +19,7 @@ import { Typography } from '@ui/components/typography';
 
 import { useSession } from '@/hooks/useSession';
 import { useAccessibleTravelPlans } from '@/hooks/useTravelPlans';
+import { createClient } from '@/lib/supabase/client/supabase';
 
 interface TravelPlan {
   id: string;
@@ -100,11 +101,15 @@ const overlayVariants = {
 
 export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
   const { userProfile } = useSession();
+  const supabase = createClient();
   const [activeFilter, setActiveFilter] = useState<
     'all' | 'upcoming' | 'in-progress' | 'completed'
   >('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobile, setIsMobile] = useState(false);
+  const [participantCountMap, setParticipantCountMap] = useState<
+    Map<string, number>
+  >(new Map());
   const EMPTY_ARRAY: ReadonlyArray<any> = [];
 
   // 모바일 감지
@@ -126,6 +131,59 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
     isFetching,
     refetch,
   } = useAccessibleTravelPlans(100);
+
+  // 참가자 수 집계 (실시간 업데이트)
+  useEffect(() => {
+    const fetchParticipantCounts = async () => {
+      try {
+        const planIds = (accessiblePlans || []).map((p: any) => p.id);
+        if (!planIds.length) {
+          setParticipantCountMap(new Map());
+          return;
+        }
+
+        const { data } = await supabase
+          .from('travel_plan_participants')
+          .select('plan_id')
+          .in('plan_id', planIds);
+
+        const map = new Map<string, number>();
+        (data || []).forEach((row: any) => {
+          map.set(row.plan_id, (map.get(row.plan_id) || 0) + 1);
+        });
+        setParticipantCountMap(map);
+      } catch (e) {
+        console.warn('참가자 수 집계 실패:', e);
+      }
+    };
+
+    fetchParticipantCounts();
+
+    // 참여자 변경 실시간 감지
+    const planIds = (accessiblePlans || []).map((p: any) => p.id);
+    if (planIds.length > 0) {
+      const subscription = supabase
+        .channel('participant-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'travel_plan_participants',
+            filter: `plan_id=in.(${planIds.join(',')})`,
+          },
+          () => {
+            // 참여자 변경 시 다시 계산
+            fetchParticipantCounts();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
+  }, [accessiblePlans, supabase]);
 
   // 서버 데이터 -> 뷰 모델 변환 (상태 대신 메모이제이션)
   const travelPlans: TravelPlan[] = useMemo(() => {
@@ -152,10 +210,10 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
         location: plan.location,
         status,
         created_at: plan.created_at,
-        participantCount: 1,
+        participantCount: participantCountMap.get(plan.id) || 1,
       };
     });
-  }, [accessiblePlans]);
+  }, [accessiblePlans, participantCountMap]);
 
   const loading = isLoading || isFetching;
 

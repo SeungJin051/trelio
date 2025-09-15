@@ -58,6 +58,8 @@ export const useSession = () => {
     const requestId = ++latestRequestIdRef.current;
     try {
       const supabaseClient = createClient();
+
+      // 먼저 RLS 없이 직접 조회 시도
       const { data: profile, error } = await supabaseClient
         .from('user_profiles')
         .select('nickname, profile_image_url, nationality')

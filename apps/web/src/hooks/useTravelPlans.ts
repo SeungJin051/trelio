@@ -248,6 +248,11 @@ export const useInvitedTravelPlans = (limit: number = 5) => {
 
       if (participationError) {
         console.error('Invited plans 참여 조회 오류:', participationError);
+        console.error('사용자 ID:', userProfile.id);
+        console.error(
+          '에러 상세:',
+          JSON.stringify(participationError, null, 2)
+        );
         return [];
       }
 
