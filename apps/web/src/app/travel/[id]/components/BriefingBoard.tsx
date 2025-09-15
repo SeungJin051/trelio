@@ -175,25 +175,6 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
                   </div>
                 ))}
               </div>
-
-              {/* 참여자 이름 목록 (모바일용) */}
-              <div className='mt-3 flex w-full flex-wrap gap-2'>
-                {participants.map((participant) => (
-                  <div
-                    key={participant.id}
-                    className='flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1'
-                  >
-                    <div
-                      className={`h-2 w-2 rounded-full ${
-                        participant.isOnline ? 'bg-green-400' : 'bg-gray-400'
-                      }`}
-                    ></div>
-                    <Typography variant='caption' className='text-gray-700'>
-                      {participant.nickname}
-                    </Typography>
-                  </div>
-                ))}
-              </div>
             </div>
 
             {/* 빠른 액션 */}

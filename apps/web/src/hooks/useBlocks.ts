@@ -448,188 +448,118 @@ export const useBlocks = ({
     },
   });
 
-  // 블록 이동 Mutation (날짜/순서 변경)
-  const moveBlockMutation = useMutation<unknown, unknown, MoveBlockRequest>({
+  // 블록 이동 Mutation (날짜/순서 변경) - 서버 API 일원화 + 낙관적 업데이트
+  const moveBlockMutation = useMutation<
+    unknown,
+    unknown,
+    MoveBlockRequest,
+    { previous: TravelBlock[] }
+  >({
     mutationFn: async (request: MoveBlockRequest) => {
-      try {
-        // 기존 블록 정보 조회
-        const { data: currentBlock, error: fetchError } = await supabase
-          .from('travel_blocks')
-          .select('*')
-          .eq('id', request.id)
-          .single();
-
-        if (fetchError) {
-          console.error('블록 조회 실패:', fetchError);
-          throw fetchError;
+      const res = await fetch(`/api/blocks/${request.id}/move`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          newDayNumber: request.newDayNumber,
+          newOrderIndex: request.newOrderIndex,
+        }),
+      });
+      if (!res.ok) {
+        let msg = '일정 이동 실패';
+        try {
+          const body = await res.json();
+          msg = body?.error || msg;
+        } catch {
+          // ignore
         }
-
-        if (!currentBlock) {
-          throw new Error('이동할 블록을 찾을 수 없습니다.');
-        }
-
-        // 같은 날짜 내에서 순서만 변경하는 경우
-        const currentRow = currentBlock as SupabaseTravelBlockRow;
-        if (currentRow.day_number === request.newDayNumber) {
-          // 현재 날짜의 모든 블록 조회 (순서대로)
-          const { data: dayBlocks, error: dayBlocksError } = await supabase
-            .from('travel_blocks')
-            .select('*')
-            .eq('plan_id', currentRow.plan_id)
-            .eq('day_number', request.newDayNumber)
-            .order('order_index', { ascending: true });
-
-          if (dayBlocksError) {
-            console.error('날짜별 블록 조회 실패:', dayBlocksError);
-            throw dayBlocksError;
-          }
-
-          if (!dayBlocks) {
-            throw new Error('날짜별 블록을 찾을 수 없습니다.');
-          }
-
-          // 현재 블록의 인덱스 찾기
-          const dayRows = dayBlocks as SupabaseTravelBlockRow[];
-          const currentIndex = dayRows.findIndex(
-            (block) => block.id === request.id
-          );
-          if (currentIndex === -1) {
-            throw new Error('이동할 블록을 찾을 수 없습니다.');
-          }
-
-          // 새로운 순서로 블록들 재배열
-          const reorderedBlocks = arrayMove(
-            dayRows,
-            currentIndex,
-            request.newOrderIndex
-          );
-
-          // 순서 업데이트 (임시로 큰 값으로 설정하여 중복 방지)
-          const tempOrderOffset = 10000;
-
-          // 먼저 모든 블록의 순서를 임시로 변경
-          for (let i = 0; i < reorderedBlocks.length; i++) {
-            const block = reorderedBlocks[i];
-            const { error: tempUpdateError } = await supabase
-              .from('travel_blocks')
-              .update({
-                order_index: tempOrderOffset + i,
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', block.id);
-
-            if (tempUpdateError) {
-              console.error('임시 순서 업데이트 실패:', tempUpdateError);
-              throw tempUpdateError;
-            }
-          }
-
-          // 그 다음 올바른 순서로 설정
-          for (let i = 0; i < reorderedBlocks.length; i++) {
-            const block = reorderedBlocks[i];
-            const { error: finalUpdateError } = await supabase
-              .from('travel_blocks')
-              .update({
-                order_index: i,
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', block.id);
-
-            if (finalUpdateError) {
-              console.error('최종 순서 업데이트 실패:', finalUpdateError);
-              throw finalUpdateError;
-            }
-          }
-        } else {
-          // 다른 날짜로 이동하는 경우
-          // 대상 날짜의 모든 블록 조회
-          const { data: targetDayBlocks, error: targetDayBlocksError } =
-            await supabase
-              .from('travel_blocks')
-              .select('*')
-              .eq('plan_id', currentRow.plan_id)
-              .eq('day_number', request.newDayNumber)
-              .order('order_index', { ascending: true });
-
-          if (targetDayBlocksError) {
-            console.error('대상 날짜 블록 조회 실패:', targetDayBlocksError);
-            throw targetDayBlocksError;
-          }
-
-          // 대상 날짜의 블록들 순서 조정 (새 블록을 위한 공간 확보)
-          const targetBlocks =
-            (targetDayBlocks as SupabaseTravelBlockRow[]) || [];
-          const tempOrderOffset = 10000;
-
-          // 대상 날짜의 블록들을 임시로 순서 조정
-          for (let i = 0; i < targetBlocks.length; i++) {
-            const block = targetBlocks[i];
-            const newOrder = i >= request.newOrderIndex ? i + 1 : i;
-            const { error: tempUpdateError } = await supabase
-              .from('travel_blocks')
-              .update({
-                order_index: tempOrderOffset + newOrder,
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', block.id);
-
-            if (tempUpdateError) {
-              console.error(
-                '대상 날짜 임시 순서 업데이트 실패:',
-                tempUpdateError
-              );
-              throw tempUpdateError;
-            }
-          }
-
-          // 대상 날짜의 블록들을 최종 순서로 설정
-          for (let i = 0; i < targetBlocks.length; i++) {
-            const block = targetBlocks[i];
-            const newOrder = i >= request.newOrderIndex ? i + 1 : i;
-            const { error: finalUpdateError } = await supabase
-              .from('travel_blocks')
-              .update({
-                order_index: newOrder,
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', block.id);
-
-            if (finalUpdateError) {
-              console.error(
-                '대상 날짜 최종 순서 업데이트 실패:',
-                finalUpdateError
-              );
-              throw finalUpdateError;
-            }
-          }
-
-          // 이동할 블록을 새로운 날짜와 순서로 설정
-          const { error: moveError } = await supabase
-            .from('travel_blocks')
-            .update({
-              day_number: request.newDayNumber,
-              order_index: request.newOrderIndex,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', request.id);
-
-          if (moveError) {
-            console.error('블록 날짜/순서 업데이트 실패:', moveError);
-            throw moveError;
-          }
-        }
-      } catch (error) {
-        console.error('블록 이동 중 에러 발생:', error);
-        throw error;
+        throw new Error(msg);
       }
+      return await res.json();
+    },
+    onMutate: async (request) => {
+      // 기존 데이터 스냅샷 저장
+      const previous = optimisticBlocks.length > 0 ? optimisticBlocks : blocks;
+
+      // 낙관적 재배열 계산
+      const next: TravelBlock[] = (() => {
+        const copy = [...previous];
+        const targetIndex = copy.findIndex((b) => b.id === request.id);
+        if (targetIndex === -1) return copy;
+        const moving = copy[targetIndex];
+
+        // 소스/타겟 일자 블록 분리
+        const sourceDay = moving.dayNumber;
+        const targetDay = request.newDayNumber;
+
+        // 같은 날 내 재정렬
+        if (sourceDay === targetDay) {
+          const dayBlocks = copy
+            .filter((b) => b.dayNumber === sourceDay)
+            .sort((a, b) => a.orderIndex - b.orderIndex);
+
+          const oldIndex = dayBlocks.findIndex((b) => b.id === request.id);
+          const newIndex = Math.max(
+            0,
+            Math.min(request.newOrderIndex, dayBlocks.length - 1)
+          );
+          const reordered = arrayMove(dayBlocks, oldIndex, newIndex).map(
+            (b, idx) => ({ ...b, orderIndex: idx })
+          );
+          const othersSameDayRemoved = copy.filter(
+            (b) => b.dayNumber !== sourceDay
+          );
+          return [...othersSameDayRemoved, ...reordered];
+        }
+
+        // 다른 날로 이동
+        const sourceBlocks = copy
+          .filter((b) => b.dayNumber === sourceDay && b.id !== request.id)
+          .sort((a, b) => a.orderIndex - b.orderIndex)
+          .map((b, idx) => ({ ...b, orderIndex: idx }));
+
+        const targetBlocksBase = copy
+          .filter((b) => b.dayNumber === targetDay && b.id !== request.id)
+          .sort((a, b) => a.orderIndex - b.orderIndex);
+
+        const clampedIndex = Math.max(
+          0,
+          Math.min(request.newOrderIndex, targetBlocksBase.length)
+        );
+        const targetBlocks = [
+          ...targetBlocksBase.slice(0, clampedIndex),
+          { ...moving, dayNumber: targetDay },
+          ...targetBlocksBase.slice(clampedIndex),
+        ].map((b, idx) => ({ ...b, orderIndex: idx }));
+
+        // 다른 일자들은 그대로 유지
+        const others = copy.filter(
+          (b) => b.dayNumber !== sourceDay && b.dayNumber !== targetDay
+        );
+
+        return [...others, ...sourceBlocks, ...targetBlocks];
+      })();
+
+      setOptimisticBlocks(next);
+
+      // 쿼리 무효화 선반영 (협업 동기화를 위해)
+      queryClient.invalidateQueries({ queryKey: ['travel-detail', planId] });
+      queryClient.invalidateQueries({ queryKey: ['travel-blocks', planId] });
+
+      return { previous };
+    },
+    onError: (err, _variables, context) => {
+      // 롤백
+      if (context?.previous) setOptimisticBlocks(context.previous);
+      const msg =
+        err instanceof Error ? err.message : '일정 이동에 실패했습니다.';
+      toast.error(msg);
     },
     onSuccess: () => {
+      // 성공 시 서버 데이터 재동기화
+      setOptimisticBlocks([]);
       queryClient.invalidateQueries({ queryKey: ['travel-blocks', planId] });
+      queryClient.invalidateQueries({ queryKey: ['travel-detail', planId] });
       toast.success('일정이 이동되었습니다.');
-    },
-    onError: (error) => {
-      console.error('블록 이동 실패:', error);
-      toast.error('일정 이동에 실패했습니다.');
     },
   });
 
