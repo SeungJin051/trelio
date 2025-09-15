@@ -23,7 +23,12 @@ import { BlockCreateModal } from '@/components/travel/detail/BlockCreateModal';
 import { BlockDetailModal } from '@/components/travel/detail/BlockDetailModal';
 import { TravelTimelineCanvas } from '@/components/travel/detail/TravelTimelineCanvas';
 import InviteLinkModal from '@/components/travel/modals/InviteLinkModal';
-import { useBlocks } from '@/hooks/useBlocks';
+import {
+  useBlocks,
+  useRealtimeBlocks,
+  useRealtimeParticipants,
+  useRealtimeTravelInfo,
+} from '@/hooks/useBlocks';
 import { useParticipantsPresence } from '@/hooks/useParticipantsPresence';
 import { useSession } from '@/hooks/useSession';
 import { useToast } from '@/hooks/useToast';
@@ -83,6 +88,15 @@ const TravelDetailView = () => {
 
   // 실시간 기능 활성화 (항상 호출)
   useTravelRealtime(planId);
+
+  // 블록 실시간 동기화 추가
+  useRealtimeBlocks(planId);
+
+  // 참여자 실시간 동기화 추가
+  useRealtimeParticipants(planId);
+
+  // 여행 정보 실시간 동기화 추가
+  useRealtimeTravelInfo(planId);
 
   // 참여자 Presence (온라인/오프라인)
   useParticipantsPresence({

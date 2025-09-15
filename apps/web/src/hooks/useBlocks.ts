@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { arrayMove } from '@dnd-kit/sortable';
 import type { PostgrestError } from '@supabase/supabase-js';
@@ -654,4 +654,263 @@ export const useBlocks = ({
     isDeleting: deleteBlockMutation.isPending,
     isMoving: moveBlockMutation.isPending,
   };
+};
+
+/**
+ * 실시간 블록 동기화를 위한 훅
+ * travel_blocks 테이블의 변경사항을 실시간으로 감지하고 캐시를 업데이트합니다.
+ */
+export const useRealtimeBlocks = (planId: string) => {
+  const queryClient = useQueryClient();
+  const supabase = createClient();
+
+  useEffect(() => {
+    if (!planId) return;
+
+    console.log('🔄 블록 실시간 구독 시작:', planId);
+
+    // travel_blocks 테이블 변경사항 구독
+    const blocksChannel = supabase
+      .channel(`blocks-${planId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // INSERT, UPDATE, DELETE 모든 이벤트
+          schema: 'public',
+          table: 'travel_blocks',
+          filter: `plan_id=eq.${planId}`,
+        },
+        (payload) => {
+          console.log('📦 블록 변경 감지:', payload.eventType);
+
+          // 블록 목록 캐시 무효화 및 새로고침
+          queryClient.invalidateQueries({
+            queryKey: ['travel-blocks', planId],
+          });
+
+          // 여행 상세 정보도 함께 갱신 (참여자 활동 반영)
+          queryClient.invalidateQueries({
+            queryKey: ['travel-detail', planId],
+          });
+
+          // 준비율 점수도 함께 갱신 (블록 변경 시에만)
+          if (
+            payload.eventType === 'INSERT' ||
+            payload.eventType === 'DELETE'
+          ) {
+            queryClient.invalidateQueries({
+              queryKey: ['readiness-score', planId],
+            });
+          }
+        }
+      )
+      .subscribe((status, err) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('🔄 블록 실시간 구독 완료');
+        } else if (err) {
+          console.error('🔄 블록 구독 오류:', err);
+        }
+      });
+
+    // travel_activities 테이블도 구독 (활동 로그 실시간 업데이트)
+    const activitiesChannel = supabase
+      .channel(`activities-${planId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'travel_activities',
+          filter: `plan_id=eq.${planId}`,
+        },
+        (payload) => {
+          console.log('📝 활동 로그 추가');
+
+          // 최근 활동 위젯 갱신
+          queryClient.invalidateQueries({
+            queryKey: ['recent-activities', planId],
+          });
+        }
+      )
+      .subscribe();
+
+    // 정리 함수
+    return () => {
+      console.log('🔄 블록 실시간 구독 해제:', planId);
+      supabase.removeChannel(blocksChannel);
+      supabase.removeChannel(activitiesChannel);
+    };
+  }, [planId, queryClient, supabase]);
+};
+
+/**
+ * 실시간 할일 동기화를 위한 훅
+ * travel_todos 테이블의 변경사항을 실시간으로 감지합니다.
+ */
+export const useRealtimeTodos = (
+  planId: string,
+  onTodosChange?: (todos: any[]) => void
+) => {
+  const supabase = createClient();
+
+  useEffect(() => {
+    if (!planId) return;
+
+    console.log('📝 할일 실시간 구독 시작:', planId);
+
+    // travel_todos 테이블 변경사항 구독
+    const todosChannel = supabase
+      .channel(`todos-${planId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // INSERT, UPDATE, DELETE 모든 이벤트
+          schema: 'public',
+          table: 'travel_todos',
+          filter: `plan_id=eq.${planId}`,
+        },
+        async (payload) => {
+          console.log('✅ 할일 변경:', payload.eventType);
+
+          // 할일 목록 다시 조회해서 콜백으로 전달
+          if (onTodosChange) {
+            try {
+              const response = await fetch(`/api/todos?planId=${planId}`);
+              if (response.ok) {
+                const data = await response.json();
+                onTodosChange(data.todos || []);
+              }
+            } catch (error) {
+              console.error('할일 목록 재조회 실패');
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    // 정리 함수
+    return () => {
+      console.log('📝 할일 실시간 구독 해제:', planId);
+      supabase.removeChannel(todosChannel);
+    };
+  }, [planId, onTodosChange, supabase]);
+};
+
+/**
+ * 실시간 참여자 동기화를 위한 훅
+ * travel_plan_participants 테이블의 변경사항을 실시간으로 감지하고 캐시를 업데이트합니다.
+ */
+export const useRealtimeParticipants = (planId: string) => {
+  const queryClient = useQueryClient();
+  const supabase = createClient();
+
+  useEffect(() => {
+    if (!planId) return;
+
+    console.log('👥 참여자 실시간 구독 시작:', planId);
+
+    // travel_plan_participants 테이블 변경사항 구독
+    const participantsChannel = supabase
+      .channel(`participants-${planId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // INSERT, UPDATE, DELETE 모든 이벤트
+          schema: 'public',
+          table: 'travel_plan_participants',
+          filter: `plan_id=eq.${planId}`,
+        },
+        (payload) => {
+          console.log('👥 참여자 변경:', payload.eventType);
+
+          // 참여자 목록 캐시 무효화 및 새로고침
+          queryClient.invalidateQueries({
+            queryKey: ['travel-participants', planId],
+          });
+
+          // 여행 상세 정보도 함께 갱신
+          queryClient.invalidateQueries({
+            queryKey: ['travel-detail', planId],
+          });
+
+          // 참여자 수 변경 시에만 목록 갱신
+          if (
+            payload.eventType === 'INSERT' ||
+            payload.eventType === 'DELETE'
+          ) {
+            queryClient.invalidateQueries({
+              queryKey: ['travel-plans'],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ['invited-travel-plans'],
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    // 정리 함수
+    return () => {
+      console.log('👥 참여자 실시간 구독 해제:', planId);
+      supabase.removeChannel(participantsChannel);
+    };
+  }, [planId, queryClient, supabase]);
+};
+
+/**
+ * 실시간 여행 정보 동기화를 위한 훅
+ * travel_plans 테이블의 변경사항을 실시간으로 감지하고 캐시를 업데이트합니다.
+ */
+export const useRealtimeTravelInfo = (planId: string) => {
+  const queryClient = useQueryClient();
+  const supabase = createClient();
+
+  useEffect(() => {
+    if (!planId) return;
+
+    console.log('🗺️ 여행 정보 실시간 구독 시작:', planId);
+
+    // travel_plans 테이블 변경사항 구독
+    const travelPlansChannel = supabase
+      .channel(`travel-plan-${planId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE', // 여행 정보 수정만 감지
+          schema: 'public',
+          table: 'travel_plans',
+          filter: `id=eq.${planId}`,
+        },
+        (payload) => {
+          console.log('🗺️ 여행 정보 변경');
+
+          // 여행 상세 정보 캐시 무효화 및 새로고침
+          queryClient.invalidateQueries({
+            queryKey: ['travel-detail', planId],
+          });
+
+          // 사이드바 여행 목록도 갱신 (제목, 날짜 등이 변경될 수 있음)
+          queryClient.invalidateQueries({
+            queryKey: ['travel-plans'],
+          });
+
+          // 초대받은 여행 목록도 갱신
+          queryClient.invalidateQueries({
+            queryKey: ['invited-travel-plans'],
+          });
+
+          // 준비율 점수도 갱신 (날짜가 변경되면 준비율 계산이 달라짐)
+          queryClient.invalidateQueries({
+            queryKey: ['readiness-score', planId],
+          });
+        }
+      )
+      .subscribe();
+
+    // 정리 함수
+    return () => {
+      console.log('🗺️ 여행 정보 실시간 구독 해제:', planId);
+      supabase.removeChannel(travelPlansChannel);
+    };
+  }, [planId, queryClient, supabase]);
 };
