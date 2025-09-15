@@ -65,36 +65,52 @@ const SignUpView = () => {
   // 컴포넌트 마운트 시 현재 사용자 정보 확인
   useEffect(() => {
     const getCurrentUser = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      try {
+        // 먼저 현재 사용자 정보를 확인
+        const {
+          data: { user: currentUser },
+          error: userError,
+        } = await supabase.auth.getUser();
 
-      if (!session) {
-        // 로그인되지 않은 경우 로그인 페이지로 리다이렉트
+        if (userError || !currentUser) {
+          // JWT 토큰이 무효한 경우 세션을 정리
+          if (
+            userError?.message?.includes(
+              'User from sub claim in JWT does not exist'
+            )
+          ) {
+            await supabase.auth.signOut();
+            toast.error('세션이 만료되었습니다. 다시 로그인해주세요.');
+          }
+
+          router.push('/log-in');
+          return;
+        }
+
+        setUser(currentUser);
+
+        // 소셜 로그인 정보에서 기본값 설정
+        if (currentUser.user_metadata) {
+          const metadata = currentUser.user_metadata;
+          setProfile((prev) => ({
+            ...prev,
+            nickname:
+              metadata.full_name ||
+              metadata.name ||
+              metadata.preferred_username ||
+              '',
+            profile_image_url:
+              metadata.avatar_url || metadata.picture || undefined,
+          }));
+        }
+      } catch (error) {
+        toast.error('사용자 정보를 확인하는 중 오류가 발생했습니다.');
         router.push('/log-in');
-        return;
-      }
-
-      setUser(session.user);
-
-      // 소셜 로그인 정보에서 기본값 설정
-      if (session.user.user_metadata) {
-        const metadata = session.user.user_metadata;
-        setProfile((prev) => ({
-          ...prev,
-          nickname:
-            metadata.full_name ||
-            metadata.name ||
-            metadata.preferred_username ||
-            '',
-          profile_image_url:
-            metadata.avatar_url || metadata.picture || undefined,
-        }));
       }
     };
 
     getCurrentUser();
-  }, [supabase, router]);
+  }, [supabase, router, toast]);
 
   const toggleStyle = (id: TravelStyle) => {
     setProfile((prev) => ({
@@ -135,16 +151,40 @@ const SignUpView = () => {
 
     setLoading(true);
     try {
+      // 먼저 현재 사용자가 auth.users에 존재하는지 확인
+      const {
+        data: { user: currentUser },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !currentUser) {
+        // JWT 토큰이 무효한 경우 세션을 정리하고 로그인 페이지로 이동
+        if (
+          userError?.message?.includes(
+            'User from sub claim in JWT does not exist'
+          )
+        ) {
+          await supabase.auth.signOut();
+          toast.error('세션이 만료되었습니다. 다시 로그인해주세요.');
+        } else {
+          toast.error('사용자 인증에 문제가 있습니다. 다시 로그인해주세요.');
+        }
+
+        router.push('/log-in');
+        return;
+      }
+
+      // 사용자가 인증된 상태에서 프로필 생성
       const { error } = await supabase.from('user_profiles').insert({
-        id: user.id,
-        email: user.email || '',
+        id: currentUser.id,
+        email: currentUser.email || '',
         nickname: profile.nickname,
         profile_image_option: profile.profile_image_option,
         profile_image_url: profile.profile_image_url,
         preferred_destinations: profile.preferred_destinations,
         travel_styles: profile.travel_styles,
         nationality: nationality || null,
-        provider: user.app_metadata?.provider || 'unknown',
+        provider: currentUser.app_metadata?.provider || 'unknown',
       });
 
       if (error) {
@@ -161,14 +201,47 @@ const SignUpView = () => {
         return;
       }
 
-      // 전역 세션 훅 상태 갱신하여 'incomplete' 리다이렉트 가드를 해제
-      try {
-        await refreshProfile();
-      } catch (e) {
-        console.warn('refreshProfile failed', e);
+      toast.success('회원가입이 완료되었습니다!');
+
+      // 프로필 생성 확인을 위한 재시도 로직 (세션 새로고침 포함)
+      let retryCount = 0;
+      const maxRetries = 5;
+      let profileVerified = false;
+
+      while (retryCount < maxRetries && !profileVerified) {
+        try {
+          // 세션 새로고침
+          await refreshProfile();
+
+          // 프로필 존재 확인
+          const { data: verifyProfile } = await supabase
+            .from('user_profiles')
+            .select('id, nickname')
+            .eq('id', currentUser.id)
+            .single();
+
+          if (verifyProfile) {
+            profileVerified = true;
+            break;
+          }
+        } catch (verifyError) {
+          console.error('프로필 확인 오류');
+        }
+
+        retryCount++;
+        if (retryCount < maxRetries) {
+          // 재시도 간격을 점진적으로 증가
+          const delay = Math.min(1000 * retryCount, 3000);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
       }
-      // 사용자에게 피드백 노출 여유
-      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      if (!profileVerified) {
+        console.warn('⚠️ 프로필 확인에 실패했지만 계속 진행');
+      }
+
+      // 추가 안정화 대기 시간
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // next 처리: 초대 수락 흐름이면 수락 후 해당 여행 상세로 이동
       const next = searchParams.get('next');
@@ -187,13 +260,13 @@ const SignUpView = () => {
               const body = await fetch(`/api/invites/plan/${shareId}`);
               if (body.ok) {
                 const { planId } = await body.json();
-                router.replace(`/travel/${planId}`);
+                window.location.href = `/travel/${planId}`;
                 return;
               }
             }
             if (!res.ok) throw new Error('FAILED');
             const { planId } = (await res.json()) as { planId: string };
-            router.replace(`/travel/${planId}`);
+            window.location.href = `/travel/${planId}`;
             return;
           } catch (_err) {
             // 초대 수락 실패 시 next로 폴백
@@ -202,13 +275,16 @@ const SignUpView = () => {
           }
         } else {
           // 내부 경로면 그대로 이동
-          router.replace(next);
+          window.location.href = next;
           return;
         }
       }
 
       // 기본: 메인 페이지로 이동
-      router.replace('/');
+      console.log('🏠 메인 페이지로 이동');
+
+      // 강제 페이지 새로고침으로 세션 상태 완전 갱신
+      window.location.href = '/';
       return;
     } catch (error) {
       if (error instanceof Error) {
