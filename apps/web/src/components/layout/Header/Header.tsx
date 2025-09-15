@@ -123,6 +123,22 @@ export const Header = ({
           return;
         }
 
+        // 참가자 수 집계
+        const planIds = (plansData || []).map((p: any) => p.id);
+        const participantCountMap = new Map<string, number>();
+        if (planIds.length > 0) {
+          const { data: allParticipants } = await supabase
+            .from('travel_plan_participants')
+            .select('plan_id')
+            .in('plan_id', planIds);
+          (allParticipants || []).forEach((row: any) => {
+            participantCountMap.set(
+              row.plan_id,
+              (participantCountMap.get(row.plan_id) || 0) + 1
+            );
+          });
+        }
+
         // 데이터 변환 및 상태 결정
         const transformedPlans: TravelPlan[] = (plansData || []).map(
           (plan: any) => {
@@ -147,7 +163,7 @@ export const Header = ({
               location: plan.location,
               status,
               created_at: plan.created_at,
-              participantCount: 1, // TODO: 필요 시 participants 집계로 대체
+              participantCount: participantCountMap.get(plan.id) || 1,
             };
           }
         );
