@@ -32,6 +32,7 @@ export interface ModalProps {
   onSecondaryAction?: () => void;
   children?: React.ReactNode;
   width?: 'sm' | 'md' | 'lg' | 'xl' | 'full' | 'responsive';
+  showCloseButton?: boolean;
 }
 
 const modalVariants: Variants = {
@@ -88,6 +89,7 @@ export const Modal = ({
   onSecondaryAction,
   children,
   width = 'md',
+  showCloseButton = true,
 }: ModalProps) => {
   const [isMounted, setIsMounted] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -394,16 +396,18 @@ export const Modal = ({
               aria-modal='true'
               aria-labelledby='modal-title'
             >
-              <div className='absolute right-4 top-4 z-10'>
-                <Button
-                  variant='text'
-                  size='small'
-                  onClick={onClose}
-                  aria-label='닫기'
-                >
-                  <IoCloseOutline className='h-5 w-5 text-gray-500' />
-                </Button>
-              </div>
+              {showCloseButton && (
+                <div className='absolute right-4 top-4 z-10'>
+                  <Button
+                    variant='text'
+                    size='small'
+                    onClick={onClose}
+                    aria-label='닫기'
+                  >
+                    <IoCloseOutline className='h-5 w-5 text-gray-500' />
+                  </Button>
+                </div>
+              )}
               {renderModalContent()}
             </motion.div>
           </motion.div>
