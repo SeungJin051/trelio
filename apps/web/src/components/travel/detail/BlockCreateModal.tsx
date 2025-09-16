@@ -11,10 +11,8 @@ import { Button, Typography } from '@ui/components';
 import { Modal } from '@/components/basic/Modal';
 import {
   blockTypeConfigs,
-  getArrivalAirportSuggestions,
   getDefaultCurrencyForBlock,
   getDefaultDuration,
-  getDepartureAirportSuggestions,
 } from '@/lib/block-helpers';
 import { CurrencyCode, parseCurrencyInput } from '@/lib/currency';
 import { BlockType, CreateBlockRequest } from '@/types/travel/blocks';
@@ -289,16 +287,14 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
                 label='출발공항'
                 value={departureAirport}
                 onChange={setDepartureAirport}
-                placeholder='공항을 선택하세요'
-                suggestions={getDepartureAirportSuggestions(userNationality)}
+                placeholder='예: 인천국제공항 (ICN)'
                 disableLabelAnimation={true}
               />
               <SmartInput
                 label='도착공항'
                 value={arrivalAirport}
                 onChange={setArrivalAirport}
-                placeholder='공항을 선택하세요'
-                suggestions={getArrivalAirportSuggestions(planLocation)}
+                placeholder='예: 나리타공항 (NRT)'
                 disableLabelAnimation={true}
               />
             </div>
@@ -332,14 +328,14 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
                 label='출발지'
                 value={fromLocation}
                 onChange={setFromLocation}
-                placeholder='출발 위치를 입력하세요'
+                placeholder='예: 강남역, 인천공항'
                 disableLabelAnimation={true}
               />
               <SmartInput
                 label='도착지'
                 value={toLocation}
                 onChange={setToLocation}
-                placeholder='도착 위치를 입력하세요'
+                placeholder='예: 홍대입구역, 호텔'
                 disableLabelAnimation={true}
               />
             </div>

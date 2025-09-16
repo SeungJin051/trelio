@@ -71,12 +71,12 @@ export const TravelBlockItem: React.FC<TravelBlockItemProps> = ({
     <div
       ref={setNodeRef}
       style={style}
-      className={`group relative rounded-xl border bg-white transition-all duration-200 ${
-        isDragging ? 'scale-105 opacity-50 shadow-2xl' : ''
+      className={`group relative overflow-hidden rounded-2xl border bg-white transition-all duration-300 ${
+        isDragging ? 'scale-105 opacity-50 shadow-2xl ring-4 ring-blue-100' : ''
       } ${
         isHovered
-          ? 'border-gray-300 shadow-lg'
-          : 'border-gray-200 shadow-sm hover:border-gray-300 hover:shadow-md'
+          ? '-translate-y-1 border-gray-300 shadow-xl shadow-gray-100/50'
+          : 'border-gray-200/60 shadow-md shadow-gray-100/30 hover:border-gray-300 hover:shadow-lg hover:shadow-gray-100/40'
       } ${onClick ? 'cursor-pointer' : ''}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -87,18 +87,18 @@ export const TravelBlockItem: React.FC<TravelBlockItemProps> = ({
         <div
           {...attributes}
           {...listeners}
-          className={`absolute left-2 top-1/2 -translate-y-1/2 rounded-md p-1 transition-colors ${
+          className={`absolute left-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 transition-all duration-200 ${
             isHovered
-              ? 'bg-gray-100 text-gray-600'
-              : 'text-gray-400 opacity-0 group-hover:opacity-100'
-          } cursor-grab active:cursor-grabbing`}
+              ? 'scale-110 bg-gray-100/80 text-gray-600'
+              : 'text-gray-300 opacity-0 group-hover:text-gray-400 group-hover:opacity-100'
+          } cursor-grab active:scale-95 active:cursor-grabbing`}
           onClick={(e) => e.stopPropagation()} // 카드 클릭 이벤트 방지
         >
-          <IoSwapVerticalOutline className='h-4 w-4' />
+          <IoSwapVerticalOutline className='h-3.5 w-3.5' />
         </div>
       )}
 
-      <div className={`p-4 ${canEdit ? 'pl-10' : ''}`}>
+      <div className={`p-5 ${canEdit ? 'pl-12' : ''}`}>
         {/* 헤더 영역 */}
         <div className='mb-3 flex items-start justify-between'>
           <div className='flex items-center space-x-3'>
@@ -123,11 +123,11 @@ export const TravelBlockItem: React.FC<TravelBlockItemProps> = ({
           {/* 메뉴 버튼 */}
           {canEdit && (
             <button
-              className={`rounded-md p-1 transition-colors ${
+              className={`rounded-lg p-1.5 transition-all duration-200 ${
                 isHovered
-                  ? 'bg-gray-100 text-gray-600'
-                  : 'text-gray-400 opacity-0 group-hover:opacity-100'
-              }`}
+                  ? 'scale-110 bg-gray-100/80 text-gray-600'
+                  : 'text-gray-300 opacity-0 group-hover:text-gray-400 group-hover:opacity-100'
+              } hover:bg-gray-200/60 active:scale-95`}
               onClick={(e) => e.stopPropagation()}
             >
               <IoEllipsisVerticalOutline className='h-4 w-4' />
@@ -212,7 +212,6 @@ export const TravelBlockItem: React.FC<TravelBlockItemProps> = ({
             </div>
           )}
         </div>
-        <div className='mt-3 border-t border-gray-100 pt-3' />
       </div>
     </div>
   );

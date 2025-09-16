@@ -37,19 +37,6 @@ interface TravelTimelineCanvasProps {
   onBlockClick?: (block: TravelBlock) => void;
 }
 
-// 블록 타입별 아이콘 매핑 함수
-const getBlockIcon = (blockType: BlockType) => {
-  const iconMap = {
-    flight: <IoAirplaneOutline className='h-4 w-4' />,
-    move: <IoCarOutline className='h-4 w-4' />,
-    food: <IoRestaurantOutline className='h-4 w-4' />,
-    hotel: <IoBedOutline className='h-4 w-4' />,
-    activity: <IoGameControllerOutline className='h-4 w-4' />,
-    memo: <IoDocumentTextOutline className='h-4 w-4' />,
-  };
-  return iconMap[blockType] || <IoDocumentTextOutline className='h-4 w-4' />;
-};
-
 export const TravelTimelineCanvas: React.FC<TravelTimelineCanvasProps> = ({
   timeline,
   canEdit,

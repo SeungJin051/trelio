@@ -145,6 +145,7 @@ export async function POST(request: NextRequest) {
       end_time,
       cost,
       currency,
+      meta,
     } = body;
 
     // 필수 필드 검증
@@ -198,6 +199,7 @@ export async function POST(request: NextRequest) {
         location,
         time_range: timeRangeData,
         cost: costData,
+        meta: meta || null,
         created_by: user.id,
       })
       .select()
