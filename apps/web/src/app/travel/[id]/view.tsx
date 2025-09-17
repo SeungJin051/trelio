@@ -463,6 +463,7 @@ const TravelDetailView = () => {
                 endDate={travelPlan.end_date}
                 participants={(participants as ApiParticipant[]).map((p) => ({
                   id: p.id,
+                  user_id: p.user_id,
                   nickname: p.nickname || '알 수 없음',
                   profile_image_url: p.profile_image_url,
                   isOnline: p.isOnline || false,

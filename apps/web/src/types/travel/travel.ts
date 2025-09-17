@@ -137,7 +137,7 @@ export interface UpdateTodoRequest {
   title?: string;
   description?: string;
   is_completed?: boolean;
-  assigned_user_id?: string;
+  assigned_user_id?: string | null;
   due_date?: string;
   priority?: TodoPriority;
 }

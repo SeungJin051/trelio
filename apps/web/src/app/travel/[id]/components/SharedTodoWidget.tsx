@@ -20,6 +20,7 @@ import {
 
 interface Participant {
   id: string;
+  user_id?: string; // API 검증용
   nickname: string;
   profile_image_url?: string;
   isOnline?: boolean;
@@ -124,7 +125,10 @@ const SharedTodoWidgetBase: React.FC<SharedTodoWidgetProps> = ({
   };
 
   // 담당자 지정
-  const handleAssignTodo = async (todoId: string, assigneeId: string) => {
+  const handleAssignTodo = async (
+    todoId: string,
+    assigneeId: string | null
+  ) => {
     try {
       const updateData: UpdateTodoRequest = {
         assigned_user_id: assigneeId,
@@ -142,6 +146,9 @@ const SharedTodoWidgetBase: React.FC<SharedTodoWidgetProps> = ({
 
       if (response.ok) {
         setTodos((prev) => prev.map((t) => (t.id === todoId ? data.todo : t)));
+        setShowAssigneeDropdown(null);
+      } else {
+        console.error('담당자 지정 실패:', data.error);
       }
     } catch (error) {
       console.error('담당자 지정 에러:', error);
@@ -172,6 +179,21 @@ const SharedTodoWidgetBase: React.FC<SharedTodoWidgetProps> = ({
       handleAddTodo();
     }
   };
+
+  // 외부 클릭 시 드롭다운 닫기
+  const handleClickOutside = useCallback((e: MouseEvent) => {
+    const target = e.target as Element;
+    if (!target.closest('.assignee-dropdown')) {
+      setShowAssigneeDropdown(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (showAssigneeDropdown) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showAssigneeDropdown, handleClickOutside]);
 
   // 컴포넌트 마운트 및 planId 변경 시 투두리스트 조회
   useEffect(() => {
@@ -262,7 +284,7 @@ const SharedTodoWidgetBase: React.FC<SharedTodoWidgetProps> = ({
               </div>
 
               {/* 담당자 지정 */}
-              <div className='relative'>
+              <div className='assignee-dropdown relative'>
                 <button
                   onClick={() =>
                     setShowAssigneeDropdown(
@@ -271,16 +293,20 @@ const SharedTodoWidgetBase: React.FC<SharedTodoWidgetProps> = ({
                   }
                   className='flex items-center space-x-2 rounded-full border border-gray-300 bg-white px-3 py-2 text-xs transition-all duration-200 hover:border-blue-300 hover:bg-gray-50'
                 >
-                  {todo.assignee ? (
-                    <Avatar
-                      src={todo.assignee.profile_image_url}
-                      alt={todo.assignee.nickname}
-                      size='small'
-                      className='h-4 w-4'
-                    />
-                  ) : (
-                    <IoPersonOutline className='h-3 w-3 text-gray-400' />
-                  )}
+                  <div className='flex h-6 w-6 items-center justify-center'>
+                    {todo.assignee ? (
+                      <div className='h-6 w-6 overflow-hidden rounded'>
+                        <Avatar
+                          src={todo.assignee.profile_image_url}
+                          alt={todo.assignee.nickname}
+                          size='small'
+                          className='h-full w-full object-cover'
+                        />
+                      </div>
+                    ) : (
+                      <IoPersonOutline className='h-5 w-5 text-gray-400' />
+                    )}
+                  </div>
                   <span className='font-medium text-gray-600'>
                     {todo.assignee?.nickname || '담당자'}
                   </span>
@@ -288,27 +314,57 @@ const SharedTodoWidgetBase: React.FC<SharedTodoWidgetProps> = ({
 
                 {/* 담당자 드롭다운 */}
                 {showAssigneeDropdown === todo.id && (
-                  <div className='absolute right-0 top-full z-10 mt-2 w-48 rounded-lg border border-gray-200 bg-white py-2 shadow-lg'>
+                  <div className='absolute right-0 top-full z-20 mt-2 w-52 rounded-lg border border-gray-200 bg-white py-2 shadow-lg'>
+                    {/* 담당자 해제 옵션 */}
+                    {todo.assignee && (
+                      <>
+                        <button
+                          onClick={() => handleAssignTodo(todo.id, null)}
+                          className='flex w-full items-center space-x-3 px-3 py-2 text-left text-sm transition-colors duration-150 hover:bg-gray-100'
+                        >
+                          <div className='flex h-5 w-5 items-center justify-center rounded-full border border-gray-300'>
+                            <IoPersonOutline className='h-3 w-3 text-gray-400' />
+                          </div>
+                          <span className='font-medium text-gray-700'>
+                            담당자 해제
+                          </span>
+                        </button>
+                        <div className='mx-2 my-1 border-t border-gray-200'></div>
+                      </>
+                    )}
+
+                    {/* 참여자 목록 */}
                     {participants.map((participant) => (
                       <button
                         key={participant.id}
-                        onClick={() => {
-                          handleAssignTodo(todo.id, participant.id);
-                          setShowAssigneeDropdown(null);
-                        }}
-                        className='flex w-full items-center space-x-3 px-3 py-2 text-left text-sm transition-colors duration-150 hover:bg-gray-100'
+                        onClick={() =>
+                          handleAssignTodo(
+                            todo.id,
+                            participant.user_id || participant.id
+                          )
+                        }
+                        className={`flex w-full items-center space-x-3 px-3 py-2 text-left text-sm transition-colors duration-150 hover:bg-gray-100 ${
+                          todo.assignee?.id === participant.id
+                            ? 'bg-blue-50'
+                            : ''
+                        }`}
                       >
-                        <Avatar
-                          src={participant.profile_image_url}
-                          alt={participant.nickname}
-                          size='small'
-                          className='h-5 w-5'
-                        />
-                        <span className='font-medium text-gray-700'>
+                        <div className='h-7 w-7 overflow-hidden rounded'>
+                          <Avatar
+                            src={participant.profile_image_url}
+                            alt={participant.nickname}
+                            size='small'
+                            className='h-full w-full object-cover'
+                          />
+                        </div>
+                        <span className='flex-1 font-medium text-gray-700'>
                           {participant.nickname}
                         </span>
                         {participant.isOnline && (
                           <div className='h-2 w-2 rounded-full bg-green-400'></div>
+                        )}
+                        {todo.assignee?.id === participant.id && (
+                          <div className='h-2 w-2 rounded-full bg-blue-500'></div>
                         )}
                       </button>
                     ))}
@@ -368,12 +424,14 @@ const SharedTodoWidgetBase: React.FC<SharedTodoWidgetProps> = ({
                 </div>
 
                 {todo.assignee && (
-                  <Avatar
-                    src={todo.assignee.profile_image_url}
-                    alt={todo.assignee.nickname}
-                    size='small'
-                    className='h-5 w-5'
-                  />
+                  <div className='h-6 w-6 overflow-hidden rounded border border-gray-300'>
+                    <Avatar
+                      src={todo.assignee.profile_image_url}
+                      alt={todo.assignee.nickname}
+                      size='small'
+                      className='h-full w-full object-cover'
+                    />
+                  </div>
                 )}
 
                 {/* 삭제 버튼 */}

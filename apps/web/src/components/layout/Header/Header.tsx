@@ -345,14 +345,14 @@ export const Header = ({
                 </Typography>
               </div>
 
-              <Link
+              {/* <Link
                 href='/profile'
                 className='flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
                 onClick={() => setProfileDropdownOpen(false)}
               >
-                <Icon as={CiUser} className='mr-2 h-4 w-4' />
+                <Icon as={CiUser} className='w-4 h-4 mr-2' />
                 프로필 설정
-              </Link>
+              </Link> */}
 
               <button
                 onClick={handleSignOut}
@@ -452,13 +452,13 @@ export const Header = ({
           </div>
 
           {/* 프로필 설정 버튼 */}
-          <Link
+          {/* <Link
             href='/profile'
-            className='flex w-full items-center justify-center rounded-xl bg-gray-100 px-4 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-200'
+            className='flex items-center justify-center w-full px-4 py-3 font-medium text-gray-700 transition-colors bg-gray-100 rounded-xl hover:bg-gray-200'
             onClick={() => setMobileMenuOpen(false)}
           >
             프로필 설정
-          </Link>
+          </Link> */}
 
           {/* 로그아웃 버튼 */}
           <button

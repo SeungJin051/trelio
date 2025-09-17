@@ -126,7 +126,7 @@ export async function GET(request: Request) {
 
       if (userIds.size > 0) {
         const { data: users, error: usersError } = await supabase
-          .from('profiles')
+          .from('user_profiles')
           .select('id, nickname, profile_image_url')
           .in('id', Array.from(userIds));
 
@@ -265,7 +265,7 @@ export async function POST(request: Request) {
 
       if (userIds.size > 0) {
         const { data: users, error: usersError } = await supabase
-          .from('profiles')
+          .from('user_profiles')
           .select('id, nickname, profile_image_url')
           .in('id', Array.from(userIds));
 
