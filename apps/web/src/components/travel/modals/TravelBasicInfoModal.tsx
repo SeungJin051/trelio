@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { IoPersonOutline, IoWalletOutline } from 'react-icons/io5';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -45,6 +46,7 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
   const router = useRouter();
   const toast = useToast();
   const supabase = createClient();
+  const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(false);
   const [basicInfo, setBasicInfo] = useState<TravelBasicInfo>({
@@ -252,6 +254,17 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
       }
       toast.success('여행 계획이 생성되었습니다!');
       onClose();
+      // 목록 즉시 반영: 관련 쿼리 무효화
+      try {
+        queryClient.invalidateQueries({
+          queryKey: ['accessible-travel-plans'],
+        });
+        queryClient.invalidateQueries({ queryKey: ['invited-travel-plans'] });
+        queryClient.invalidateQueries({ queryKey: ['upcoming-travel'] });
+        queryClient.invalidateQueries({ queryKey: ['recent-activities'] });
+      } catch (error) {
+        console.error('Failed to invalidate queries:', error);
+      }
       router.push('/');
     } catch {
       toast.error('여행 계획 생성 중 오류가 발생했습니다.');
