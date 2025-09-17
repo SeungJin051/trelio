@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // 필수 필드 검증
-    if (!plan_id || !title || !day_number || order_index === undefined) {
+    if (!plan_id || !title || !day_number) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -168,23 +168,63 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    // 비용 정보를 JSONB 형태로 구성
+    // order_index 자동 계산 (해당 날짜의 마지막 순서 + 1)
+    let calculatedOrderIndex = 0;
+    if (order_index === undefined) {
+      const { data: existingBlocks, error: blocksError } = await supabase
+        .from('travel_blocks')
+        .select('order_index')
+        .eq('plan_id', plan_id)
+        .eq('day_number', day_number)
+        .order('order_index', { ascending: false })
+        .limit(1);
+
+      if (blocksError) {
+        console.error('Error fetching existing blocks:', blocksError);
+        return NextResponse.json(
+          { error: 'Failed to calculate order index' },
+          { status: 500 }
+        );
+      }
+
+      calculatedOrderIndex =
+        existingBlocks && existingBlocks.length > 0
+          ? (existingBlocks[0].order_index || 0) + 1
+          : 0;
+    } else {
+      calculatedOrderIndex = order_index;
+    }
+
+    // 비용 정보를 JSONB 형태로 구성 (문자/숫자 모두 허용)
     const costData =
-      cost && currency
+      cost !== undefined && cost !== null && currency
         ? {
-            amount: parseFloat(cost),
-            currency: currency,
+            amount: typeof cost === 'number' ? cost : parseFloat(String(cost)),
+            currency: String(currency),
           }
         : null;
 
-    // 시간 정보를 JSONB 형태로 구성
+    // 시간 범위 JSONB (스키마: time_range JSONB, startTime/endTime 키)
     const timeRangeData =
       start_time && end_time
         ? {
-            startTime: start_time,
-            endTime: end_time,
+            startTime: String(start_time),
+            endTime: String(end_time),
           }
         : null;
+
+    // 위치 JSONB (스키마: location JSONB, 최소 address 키 필요)
+    const locationData =
+      location === undefined || location === null
+        ? null
+        : typeof location === 'string'
+          ? { address: location }
+          : {
+              address: (location as any)?.address ?? '',
+              latitude: (location as any)?.latitude ?? undefined,
+              longitude: (location as any)?.longitude ?? undefined,
+              placeId: (location as any)?.placeId ?? undefined,
+            };
 
     // 블록 생성
     const { data: newBlock, error: blockError } = await supabase
@@ -194,9 +234,18 @@ export async function POST(request: NextRequest) {
         title,
         description,
         day_number,
-        order_index,
-        block_type,
-        location,
+        order_index: calculatedOrderIndex,
+        block_type: [
+          'flight',
+          'move',
+          'food',
+          'hotel',
+          'activity',
+          'memo',
+        ].includes(String(block_type))
+          ? String(block_type)
+          : 'activity',
+        location: locationData,
         time_range: timeRangeData,
         cost: costData,
         meta: meta || null,
@@ -208,7 +257,12 @@ export async function POST(request: NextRequest) {
     if (blockError) {
       console.error('Error creating block:', blockError);
       return NextResponse.json(
-        { error: 'Failed to create block' },
+        {
+          error: blockError.message || 'Failed to create block',
+          details: (blockError as any).details,
+          hint: (blockError as any).hint,
+          code: (blockError as any).code,
+        },
         { status: 500 }
       );
     }

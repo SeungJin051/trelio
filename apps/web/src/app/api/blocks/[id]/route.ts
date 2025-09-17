@@ -125,19 +125,27 @@ export async function PUT(
       return NextResponse.json({ error: 'Block not found' }, { status: 404 });
     }
 
-    // 참여자 권한 확인
-    const { data: participant, error: participantError } = await supabase
-      .from('travel_plan_participants')
-      .select('role')
-      .eq('plan_id', existingBlock.plan_id)
-      .eq('user_id', user.id)
+    // 권한 확인: 오너 또는 편집 권한 참가자
+    const { data: planRow } = await supabase
+      .from('travel_plans')
+      .select('owner_id')
+      .eq('id', existingBlock.plan_id)
       .single();
 
-    if (
-      participantError ||
-      !participant ||
-      !['owner', 'editor'].includes(participant.role)
-    ) {
+    const isOwner = planRow?.owner_id === user.id;
+    let isEditor = false;
+    if (!isOwner) {
+      const { data: participant } = await supabase
+        .from('travel_plan_participants')
+        .select('role')
+        .eq('plan_id', existingBlock.plan_id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      isEditor =
+        participant?.role === 'owner' || participant?.role === 'editor';
+    }
+
+    if (!isOwner && !isEditor) {
       return NextResponse.json(
         { error: 'Insufficient permissions' },
         { status: 403 }
@@ -214,46 +222,62 @@ export async function DELETE(
       return NextResponse.json({ error: 'Block not found' }, { status: 404 });
     }
 
-    // 참여자 권한 확인
-    const { data: participant, error: participantError } = await supabase
-      .from('travel_plan_participants')
-      .select('role')
-      .eq('plan_id', existingBlock.plan_id)
-      .eq('user_id', user.id)
+    // 권한 확인: 오너 또는 편집 권한 참가자
+    const { data: planRow } = await supabase
+      .from('travel_plans')
+      .select('owner_id')
+      .eq('id', existingBlock.plan_id)
       .single();
-
-    if (
-      participantError ||
-      !participant ||
-      !['owner', 'editor'].includes(participant.role)
-    ) {
+    const isOwner = planRow?.owner_id === user.id;
+    let isEditor = false;
+    if (!isOwner) {
+      const { data: participant } = await supabase
+        .from('travel_plan_participants')
+        .select('role')
+        .eq('plan_id', existingBlock.plan_id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      isEditor =
+        participant?.role === 'owner' || participant?.role === 'editor';
+    }
+    if (!isOwner && !isEditor) {
       return NextResponse.json(
         { error: 'Insufficient permissions' },
         { status: 403 }
       );
     }
 
-    // 블록 삭제
+    // 블록 삭제 (참조 활동 로그의 block_id는 ON DELETE SET NULL로 정리됨)
     const { error: deleteError } = await supabase
       .from('travel_blocks')
       .delete()
       .eq('id', blockId);
-
     if (deleteError) {
       console.error('Block delete error:', deleteError);
       return NextResponse.json(
-        { error: 'Failed to delete block' },
+        {
+          error: deleteError.message || 'Failed to delete block',
+          details: (deleteError as any).details,
+          hint: (deleteError as any).hint,
+          code: (deleteError as any).code,
+        },
         { status: 500 }
       );
     }
 
-    // 활동 로그 생성
-    await supabase.from('travel_activities').insert({
-      plan_id: existingBlock.plan_id,
-      user_id: user.id,
-      type: 'block_deleted',
-      content: `블록 "${existingBlock.title}"을(를) 삭제했습니다.`,
-    });
+    // 활동 로그 생성 (삭제 후에는 FK가 존재하지 않으므로 block_id를 저장하지 않음)
+    const { error: activityError } = await supabase
+      .from('travel_activities')
+      .insert({
+        plan_id: existingBlock.plan_id,
+        user_id: user.id,
+        type: 'block_deleted',
+        content: `블록 "${existingBlock.title}"을(를) 삭제했습니다.`,
+      });
+    if (activityError) {
+      console.error('Activity insert after delete error:', activityError);
+      // 활동 로그 실패는 삭제 자체에 영향을 주지 않으므로 200 반환 유지
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
