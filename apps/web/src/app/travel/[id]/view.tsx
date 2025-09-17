@@ -13,6 +13,7 @@ import { BlockCreateModal } from '@/components/travel/detail/BlockCreateModal';
 import { BlockDetailModal } from '@/components/travel/detail/BlockDetailModal';
 import { TravelTimelineCanvas } from '@/components/travel/detail/TravelTimelineCanvas';
 import InviteLinkModal from '@/components/travel/modals/InviteLinkModal';
+import TravelEditInfoModal from '@/components/travel/modals/TravelEditInfoModal';
 import { useParticipantsPresence } from '@/hooks/useParticipantsPresence';
 import { useRealtimeBlocks } from '@/hooks/useRealtimeBlocks';
 import { useRealtimeParticipants } from '@/hooks/useRealtimeParticipants';
@@ -55,6 +56,7 @@ const TravelDetailView = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showEditInfoModal, setShowEditInfoModal] = useState(false);
   const [selectedBlock, setSelectedBlock] = useState<TravelBlock | null>(null);
   const [editingBlock, setEditingBlock] = useState<TravelBlock | null>(null);
   const [selectedDay, setSelectedDay] = useState<number>(0); // 0은 대시보드
@@ -326,7 +328,7 @@ const TravelDetailView = () => {
   };
 
   const handleSettings = () => {
-    toast('설정 기능은 준비 중입니다.');
+    setShowEditInfoModal(true);
   };
 
   const handleBudgetClick = () => {
@@ -491,6 +493,7 @@ const TravelDetailView = () => {
                   )?.destination_country
                 }
                 userNationality={userProfile?.nationality}
+                isOwner={isOwner}
                 hotTopics={hotTopics}
                 onInviteParticipants={handleInviteParticipants}
                 onExport={handleExport}
@@ -594,6 +597,18 @@ const TravelDetailView = () => {
           }
           participants={participants}
           isOwner={isOwner}
+        />
+      )}
+
+      {showEditInfoModal && (
+        <TravelEditInfoModal
+          isOpen={showEditInfoModal}
+          onClose={() => setShowEditInfoModal(false)}
+          travelPlan={travelPlan}
+          onUpdate={() => {
+            // 여행 정보 업데이트 후 데이터 새로고침
+            // useTravelDetail 훅이 자동으로 refetch할 것입니다
+          }}
         />
       )}
     </div>

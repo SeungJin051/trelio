@@ -3,7 +3,7 @@
 import {
   IoAddOutline,
   IoDownloadOutline,
-  IoSettingsOutline,
+  IoPencilOutline,
   IoTimeOutline,
   IoWalletOutline,
 } from 'react-icons/io5';
@@ -18,8 +18,6 @@ import {
 
 import { useBudgetWithExchange } from '@/hooks/useBudgetWithExchange';
 import { usePlanningProgress } from '@/hooks/usePlanningProgress';
-
-// import { calculateDDayWithEnd } from '@/lib/travel-utils';
 
 import { SharedTodoWidget } from './SharedTodoWidget';
 
@@ -64,6 +62,7 @@ interface BriefingBoardProps {
   currency: string;
   destinationCountry?: string; // 목적지 국가 코드
   userNationality?: string; // 사용자 국적
+  isOwner?: boolean; // 현재 사용자가 오너인지 여부
   hotTopics: Array<{
     id: string;
     title: string;
@@ -89,6 +88,7 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
   currency,
   destinationCountry,
   userNationality,
+  isOwner = false,
   onInviteParticipants,
   onExport,
   onSettings,
@@ -177,58 +177,62 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
               </div>
             </div>
 
-            {/* 빠른 액션 */}
-            <div className='w-full rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4 md:p-5 lg:p-6'>
-              <Typography
-                variant='h6'
-                className='mb-3 font-semibold text-gray-900 sm:mb-4'
-              >
-                빠른 액션
-              </Typography>
-              <div className='grid w-full grid-cols-1 gap-2 sm:gap-3'>
-                <Button
-                  onClick={onInviteParticipants}
-                  colorTheme='blue'
-                  size='medium'
-                  className='h-10 w-full justify-start rounded-lg shadow-sm transition-all duration-200 hover:shadow-md sm:h-11 sm:rounded-xl md:h-12 lg:h-14'
-                  leftIcon={<IoAddOutline className='h-4 w-4 sm:h-5 sm:w-5' />}
+            {/* 빠른 액션 - 오너만 표시 */}
+            {isOwner && (
+              <div className='w-full rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4 md:p-5 lg:p-6'>
+                <Typography
+                  variant='h6'
+                  className='mb-3 font-semibold text-gray-900 sm:mb-4'
                 >
-                  <div className='ml-2 text-left sm:ml-3'>
-                    <Typography variant='h6' className='text-white'>
-                      동반자 초대하기
-                    </Typography>
+                  빠른 액션
+                </Typography>
+                <div className='grid w-full grid-cols-1 gap-2 sm:gap-3'>
+                  <Button
+                    onClick={onInviteParticipants}
+                    colorTheme='blue'
+                    size='medium'
+                    className='h-10 w-full justify-start rounded-lg shadow-sm transition-all duration-200 hover:shadow-md sm:h-11 sm:rounded-xl md:h-12 lg:h-14'
+                    leftIcon={
+                      <IoAddOutline className='h-4 w-4 sm:h-5 sm:w-5' />
+                    }
+                  >
+                    <div className='ml-2 text-left sm:ml-3'>
+                      <Typography variant='h6' className='text-white'>
+                        동반자 초대하기
+                      </Typography>
+                    </div>
+                  </Button>
+                  <div className='grid w-full grid-cols-2 gap-2 sm:gap-3'>
+                    <Button
+                      onClick={onExport}
+                      colorTheme='gray'
+                      size='medium'
+                      className='h-9 w-full justify-start rounded-lg shadow-sm transition-all duration-200 hover:shadow-md sm:h-10 sm:rounded-xl md:h-11'
+                      leftIcon={
+                        <IoDownloadOutline className='h-3 w-3 sm:h-4 sm:w-4' />
+                      }
+                    >
+                      <span className='ml-1 text-xs sm:ml-2 sm:text-sm'>
+                        내보내기
+                      </span>
+                    </Button>
+                    <Button
+                      onClick={onSettings}
+                      colorTheme='gray'
+                      size='medium'
+                      className='h-9 w-full justify-start rounded-lg shadow-sm transition-all duration-200 hover:shadow-md sm:h-10 sm:rounded-xl md:h-11'
+                      leftIcon={
+                        <IoPencilOutline className='h-3 w-3 sm:h-4 sm:w-4' />
+                      }
+                    >
+                      <span className='ml-1 text-xs sm:ml-2 sm:text-sm'>
+                        여행 정보 수정
+                      </span>
+                    </Button>
                   </div>
-                </Button>
-                <div className='grid w-full grid-cols-2 gap-2 sm:gap-3'>
-                  <Button
-                    onClick={onExport}
-                    colorTheme='gray'
-                    size='medium'
-                    className='h-9 w-full justify-start rounded-lg shadow-sm transition-all duration-200 hover:shadow-md sm:h-10 sm:rounded-xl md:h-11'
-                    leftIcon={
-                      <IoDownloadOutline className='h-3 w-3 sm:h-4 sm:w-4' />
-                    }
-                  >
-                    <span className='ml-1 text-xs sm:ml-2 sm:text-sm'>
-                      내보내기
-                    </span>
-                  </Button>
-                  <Button
-                    onClick={onSettings}
-                    colorTheme='gray'
-                    size='medium'
-                    className='h-9 w-full justify-start rounded-lg shadow-sm transition-all duration-200 hover:shadow-md sm:h-10 sm:rounded-xl md:h-11'
-                    leftIcon={
-                      <IoSettingsOutline className='h-3 w-3 sm:h-4 sm:w-4' />
-                    }
-                  >
-                    <span className='ml-1 text-xs sm:ml-2 sm:text-sm'>
-                      설정
-                    </span>
-                  </Button>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* 최근 변경사항 */}
             <div className='w-full rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4 md:p-5 lg:p-6'>

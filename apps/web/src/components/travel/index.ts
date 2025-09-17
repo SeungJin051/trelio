@@ -1,5 +1,6 @@
 // 여행 계획 관련 컴포넌트
 export { default as TravelBasicInfoModal } from './modals/TravelBasicInfoModal';
+export { default as TravelEditInfoModal } from './modals/TravelEditInfoModal';
 export { default as LocationInput } from './inputs/LocationInput';
 export { default as TravelDatePicker } from './inputs/TravelDatePicker';
 
