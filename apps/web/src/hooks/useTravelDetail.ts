@@ -8,7 +8,7 @@ import {
   type MoveBlockRequest,
   type TravelDetailResponse,
   updateBlock,
-  type UpdateBlockRequest,
+  type UpdateBlockData,
 } from '@/lib/api/travel';
 import { createClient } from '@/lib/supabase/client/supabase';
 
@@ -79,7 +79,7 @@ export function useUpdateBlock() {
       data,
     }: {
       blockId: string;
-      data: UpdateBlockRequest;
+      data: UpdateBlockData;
     }) => updateBlock(blockId, data),
     onSuccess: (updatedBlock) => {
       // 여행 상세 정보 캐시 업데이트
