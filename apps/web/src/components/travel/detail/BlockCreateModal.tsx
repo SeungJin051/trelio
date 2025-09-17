@@ -6,23 +6,46 @@ import {
   IoInformationCircleOutline,
 } from 'react-icons/io5';
 
-import { Button, Typography } from '@ui/components';
+import { Button, Select, Typography } from '@ui/components';
 
 import { Modal } from '@/components/basic/Modal';
+import TimeRangePicker from '@/components/travel/inputs/TimeRangePicker';
+import TravelDatePicker from '@/components/travel/inputs/TravelDatePicker';
+import { CreateBlockRequest, UpdateBlockRequest } from '@/lib/api/travel';
 import {
   blockTypeConfigs,
   getDefaultCurrencyForBlock,
   getDefaultDuration,
 } from '@/lib/block-helpers';
 import { CurrencyCode, parseCurrencyInput } from '@/lib/currency';
-import {
-  BlockType,
-  CreateBlockRequest,
-  TravelBlock,
-  UpdateBlockRequest,
-} from '@/types/travel/blocks';
+import { BlockType, TravelBlock } from '@/types/travel/blocks';
 
-import { SmartBudgetInput, SmartInput, SmartTimeInput } from './SmartInputs';
+import { SmartBudgetInput, SmartInput } from './SmartInputs';
+
+// Select 옵션 상수
+const transportTypeOptions = [
+  { value: 'walk', label: '🚶 도보' },
+  { value: 'car', label: '🚗 자동차' },
+  { value: 'bus', label: '🚌 버스' },
+  { value: 'subway', label: '🚇 지하철' },
+  { value: 'taxi', label: '🚕 택시' },
+  { value: 'train', label: '🚄 기차' },
+];
+
+const mealTypeOptions = [
+  { value: 'breakfast', label: '🌅 아침식사' },
+  { value: 'lunch', label: '☀️ 점심식사' },
+  { value: 'dinner', label: '🌙 저녁식사' },
+  { value: 'snack', label: '🍿 간식' },
+];
+
+const activityTypeOptions = [
+  { value: 'sightseeing', label: '🏛️ 관광' },
+  { value: 'shopping', label: '🛍️ 쇼핑' },
+  { value: 'entertainment', label: '🎭 엔터테인먼트' },
+  { value: 'sports', label: '⚽ 스포츠' },
+  { value: 'culture', label: '🎨 문화' },
+];
 
 interface BlockCreateModalProps {
   isOpen: boolean;
@@ -154,6 +177,21 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
   );
   const suggestedDuration = getDefaultDuration(selectedType);
 
+  // 날짜 유틸리티 (YYYY-MM-DD <-> Date)
+  const toDate = (ymd?: string) => {
+    if (!ymd) return null;
+    const [y, m, d] = ymd.split('-').map((v) => Number(v));
+    if (!y || !m || !d) return null;
+    return new Date(y, m - 1, d);
+  };
+  const toYmd = (date: Date | null) => {
+    if (!date) return '';
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
   // 폼 제출 처리
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,6 +206,9 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
         if (departureAirport) meta.departureAirport = departureAirport;
         if (arrivalAirport) meta.arrivalAirport = arrivalAirport;
         if (seatNumber) meta.seatNumber = seatNumber;
+        // 항공편의 경우 fromLocation과 toLocation도 설정
+        if (departureAirport) meta.fromLocation = { address: departureAirport };
+        if (arrivalAirport) meta.toLocation = { address: arrivalAirport };
         break;
       case 'move':
         if (transportType) meta.transportType = transportType;
@@ -177,7 +218,6 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
       case 'hotel':
         if (checkIn) meta.checkIn = checkIn;
         if (checkOut) meta.checkOut = checkOut;
-        if (roomType) meta.roomType = roomType;
         break;
       case 'food':
         if (mealType) meta.mealType = mealType;
@@ -190,52 +230,38 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
     }
 
     if (isEditMode && editingBlock && onUpdateBlock) {
-      // 수정 모드
-      const updateRequest: UpdateBlockRequest = {
+      // 수정 모드 - API 형식에 맞게 변환
+      const updateRequest = {
         id: editingBlock.id,
-        planId,
-        dayNumber,
-        blockType: selectedType,
+        plan_id: planId,
+        day_number: dayNumber,
+        block_type: selectedType,
         title: title.trim(),
         description: description.trim() || undefined,
         location: address.trim() ? { address: address.trim() } : undefined,
-        timeRange: startTime
-          ? {
-              startTime,
-              endTime: endTime || undefined,
-            }
-          : undefined,
-        cost: amount
-          ? {
-              amount: parseCurrencyInput(amount),
-              currency: currency,
-            }
-          : undefined,
+        start_time:
+          selectedType !== 'hotel' && startTime ? startTime : undefined,
+        end_time: selectedType !== 'hotel' && endTime ? endTime : undefined,
+        cost: amount ? parseCurrencyInput(amount) : undefined,
+        currency: amount ? currency : undefined,
         meta: Object.keys(meta).length > 0 ? meta : undefined,
       };
 
       onUpdateBlock(updateRequest);
     } else {
-      // 생성 모드
-      const createRequest: CreateBlockRequest = {
-        planId,
-        dayNumber,
-        blockType: selectedType,
+      // 생성 모드 - API 형식에 맞게 변환
+      const createRequest = {
+        plan_id: planId,
+        day_number: dayNumber,
+        block_type: selectedType,
         title: title.trim(),
         description: description.trim() || undefined,
         location: address.trim() ? { address: address.trim() } : undefined,
-        timeRange: startTime
-          ? {
-              startTime,
-              endTime: endTime || undefined,
-            }
-          : undefined,
-        cost: amount
-          ? {
-              amount: parseCurrencyInput(amount),
-              currency: currency,
-            }
-          : undefined,
+        start_time:
+          selectedType !== 'hotel' && startTime ? startTime : undefined,
+        end_time: selectedType !== 'hotel' && endTime ? endTime : undefined,
+        cost: amount ? parseCurrencyInput(amount) : undefined,
+        currency: amount ? currency : undefined,
         meta: Object.keys(meta).length > 0 ? meta : undefined,
       };
 
@@ -434,24 +460,13 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
       case 'move':
         return (
           <div className='space-y-6'>
-            <div className='relative'>
-              <select
-                value={transportType}
-                onChange={(e) => setTransportType(e.target.value)}
-                className='w-full rounded-2xl border-2 border-gray-200 bg-gray-50/50 px-4 py-4 pb-2 pt-6 text-gray-900 transition-all focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-0'
-              >
-                <option value=''>선택하세요</option>
-                <option value='walk'>🚶 도보</option>
-                <option value='car'>🚗 자동차</option>
-                <option value='bus'>🚌 버스</option>
-                <option value='subway'>🚇 지하철</option>
-                <option value='taxi'>🚕 택시</option>
-                <option value='train'>🚄 기차</option>
-              </select>
-              <label className='absolute left-4 top-2 text-xs font-medium text-gray-500'>
-                교통수단
-              </label>
-            </div>
+            <Select
+              label='교통수단'
+              value={transportType}
+              onChange={setTransportType}
+              options={transportTypeOptions}
+              placeholder='선택하세요'
+            />
 
             <div className='grid grid-cols-2 gap-4'>
               <SmartInput
@@ -475,29 +490,15 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
       case 'hotel':
         return (
           <div className='space-y-6'>
-            <div className='grid grid-cols-2 gap-4'>
-              <SmartInput
-                label='체크인'
-                value={checkIn}
-                onChange={setCheckIn}
-                type='date'
-                disableLabelAnimation={true}
-              />
-              <SmartInput
-                label='체크아웃'
-                value={checkOut}
-                onChange={setCheckOut}
-                type='date'
-                disableLabelAnimation={true}
-              />
-            </div>
-
-            <SmartInput
-              label='객실 타입'
-              value={roomType}
-              onChange={setRoomType}
-              placeholder='예: 디럭스 더블룸, 스위트룸'
-              disableLabelAnimation={true}
+            <TravelDatePicker
+              label='숙소 체크인/체크아웃'
+              startDate={toDate(checkIn)}
+              endDate={toDate(checkOut)}
+              onDateChange={(start, end) => {
+                setCheckIn(toYmd(start));
+                setCheckOut(toYmd(end));
+              }}
+              helperText='체크인과 체크아웃 날짜를 선택하세요'
             />
           </div>
         );
@@ -506,22 +507,13 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
         return (
           <div className='space-y-6'>
             <div className='grid grid-cols-2 gap-4'>
-              <div className='relative'>
-                <select
-                  value={mealType}
-                  onChange={(e) => setMealType(e.target.value)}
-                  className='w-full rounded-2xl border-2 border-gray-200 bg-gray-50/50 px-4 py-4 pb-2 pt-6 text-gray-900 transition-all focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-0'
-                >
-                  <option value=''>선택하세요</option>
-                  <option value='breakfast'>🌅 아침식사</option>
-                  <option value='lunch'>☀️ 점심식사</option>
-                  <option value='dinner'>🌙 저녁식사</option>
-                  <option value='snack'>🍿 간식</option>
-                </select>
-                <label className='absolute left-4 top-2 text-xs font-medium text-gray-500'>
-                  식사 종류
-                </label>
-              </div>
+              <Select
+                label='식사 종류'
+                value={mealType}
+                onChange={setMealType}
+                options={mealTypeOptions}
+                placeholder='선택하세요'
+              />
 
               <SmartInput
                 label='요리 종류'
@@ -537,23 +529,13 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
       case 'activity':
         return (
           <div className='space-y-6'>
-            <div className='relative'>
-              <select
-                value={activityType}
-                onChange={(e) => setActivityType(e.target.value)}
-                className='w-full rounded-2xl border-2 border-gray-200 bg-gray-50/50 px-4 py-4 pb-2 pt-6 text-gray-900 transition-all focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-0'
-              >
-                <option value=''>선택하세요</option>
-                <option value='sightseeing'>🏛️ 관광</option>
-                <option value='shopping'>🛍️ 쇼핑</option>
-                <option value='entertainment'>🎭 엔터테인먼트</option>
-                <option value='sports'>⚽ 스포츠</option>
-                <option value='culture'>🎨 문화</option>
-              </select>
-              <label className='absolute left-4 top-2 text-xs font-medium text-gray-500'>
-                액티비티 종류
-              </label>
-            </div>
+            <Select
+              label='액티비티 종류'
+              value={activityType}
+              onChange={setActivityType}
+              options={activityTypeOptions}
+              placeholder='선택하세요'
+            />
 
             <motion.div
               whileTap={{ scale: 0.98 }}
@@ -648,13 +630,17 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
                 />
               </div>
 
-              <SmartTimeInput
-                startTime={startTime}
-                endTime={endTime}
-                onStartTimeChange={setStartTime}
-                onEndTimeChange={setEndTime}
-                suggestedDuration={suggestedDuration}
-              />
+              {selectedType !== 'hotel' && (
+                <TimeRangePicker
+                  label='시간'
+                  startTime={startTime}
+                  endTime={endTime}
+                  onStartTimeChange={setStartTime}
+                  onEndTimeChange={setEndTime}
+                  suggestedDuration={suggestedDuration}
+                  helperText='시작/종료 시간을 선택하세요'
+                />
+              )}
             </div>
 
             {/* 블록 타입별 전용 필드 */}
