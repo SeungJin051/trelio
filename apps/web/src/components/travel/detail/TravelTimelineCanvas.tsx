@@ -35,6 +35,7 @@ interface TravelTimelineCanvasProps {
     newOrderIndex: number
   ) => void;
   onBlockClick?: (block: TravelBlock) => void;
+  onBlockEdit?: (block: TravelBlock) => void;
 }
 
 export const TravelTimelineCanvas: React.FC<TravelTimelineCanvasProps> = ({
@@ -45,6 +46,7 @@ export const TravelTimelineCanvas: React.FC<TravelTimelineCanvasProps> = ({
   onBlockCreate: _onBlockCreate,
   onBlockMove,
   onBlockClick,
+  onBlockEdit,
 }) => {
   // 선택된 날짜의 블록 데이터 추출
   const selectedDayData = timeline.days.find(
@@ -100,6 +102,7 @@ export const TravelTimelineCanvas: React.FC<TravelTimelineCanvasProps> = ({
                   block={block}
                   canEdit={canEdit}
                   onClick={onBlockClick}
+                  onEdit={onBlockEdit}
                 />
               ))}
             </div>

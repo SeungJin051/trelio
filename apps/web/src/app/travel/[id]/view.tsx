@@ -31,16 +31,14 @@ import { useTravelRealtime } from '@/hooks/useTravelRealtime';
 import type {
   ActivityItem as ApiActivityItem,
   TravelBlock as ApiBlock,
+  CreateBlockRequest as ApiCreateBlockRequest,
   Participant as ApiParticipant,
+  UpdateBlockData as ApiUpdateBlockData,
+  UpdateBlockRequest as ApiUpdateBlockRequest,
 } from '@/lib/api/travel';
 import { CurrencyCode } from '@/lib/currency';
 import { calculateDDayWithEnd } from '@/lib/travel-utils';
-import {
-  BlockType,
-  CreateBlockRequest,
-  TravelBlock,
-  UpdateBlockRequest,
-} from '@/types/travel/blocks';
+import { BlockType, TravelBlock } from '@/types/travel/blocks';
 
 import { BriefingBoard, TabContainer, TravelHeader } from './components';
 import { TabItem, TRAVEL_DETAIL_CONSTANTS } from './constants';
@@ -119,6 +117,33 @@ const TravelDetailView = () => {
 
   // API 블록을 TravelBlock 타입으로 변환
   const convertApiBlockToTravelBlock = (apiBlock: ApiBlock): TravelBlock => {
+    // 비용 데이터: JSONB({amount,currency}) 또는 (number + currency) 모두 지원
+    const costFromJson =
+      apiBlock && typeof apiBlock.cost === 'object' && apiBlock.cost
+        ? (apiBlock.cost as {
+            amount?: number | null;
+            currency?: string | null;
+          })
+        : undefined;
+    const amountFromJson = costFromJson?.amount ?? undefined;
+    const currencyFromJson =
+      (costFromJson?.currency as CurrencyCode | undefined) ?? undefined;
+
+    const amountFromLegacy =
+      typeof apiBlock.cost === 'number' ? (apiBlock.cost as number) : undefined;
+    const currencyFromLegacy =
+      (apiBlock.currency as CurrencyCode | undefined) ?? undefined;
+
+    const mappedCost = (() => {
+      if (amountFromJson !== undefined && currencyFromJson) {
+        return { amount: amountFromJson, currency: currencyFromJson };
+      }
+      if (amountFromLegacy !== undefined && currencyFromLegacy) {
+        return { amount: amountFromLegacy, currency: currencyFromLegacy };
+      }
+      return undefined;
+    })();
+
     return {
       id: apiBlock.id,
       planId: apiBlock.plan_id,
@@ -139,13 +164,7 @@ const TravelDetailView = () => {
               endTime: apiBlock.end_time,
             }
           : undefined,
-      cost:
-        apiBlock.cost && apiBlock.currency
-          ? {
-              amount: apiBlock.cost,
-              currency: (apiBlock.currency as CurrencyCode) || 'KRW',
-            }
-          : undefined,
+      cost: mappedCost,
       meta: apiBlock.meta || {},
       createdBy: apiBlock.created_by,
       createdAt: apiBlock.created_at,
@@ -183,7 +202,14 @@ const TravelDetailView = () => {
         (block) => block.day_number === dayNumber
       );
       const totalCost = dayBlocks.reduce((sum, block) => {
-        return sum + (block.cost || 0);
+        const amount =
+          typeof block.cost === 'object' && block.cost
+            ? // JSONB 형태
+              ((block.cost as any).amount ?? 0)
+            : typeof block.cost === 'number'
+              ? block.cost
+              : 0;
+        return sum + (Number.isFinite(amount) ? (amount as number) : 0);
       }, 0);
 
       return {
@@ -227,10 +253,15 @@ const TravelDetailView = () => {
       const dayBlocks = blocks.filter(
         (block) => block.day_number === dayNumber
       );
-      const totalCost = dayBlocks.reduce(
-        (sum, block) => sum + (block.cost || 0),
-        0
-      );
+      const totalCost = dayBlocks.reduce((sum, block) => {
+        const amount =
+          typeof block.cost === 'object' && block.cost
+            ? ((block.cost as any).amount ?? 0)
+            : typeof block.cost === 'number'
+              ? block.cost
+              : 0;
+        return sum + (Number.isFinite(amount) ? (amount as number) : 0);
+      }, 0);
       const totalDuration = 0; // TODO: duration 계산 구현
 
       return {
@@ -382,57 +413,24 @@ const TravelDetailView = () => {
     setShowEditModal(true);
   };
 
-  const handleCreateBlock = (request: CreateBlockRequest) => {
-    // API 서버 형식에 맞게 데이터 변환
-    const apiData: import('@/lib/api/travel').CreateBlockRequest = {
-      plan_id: request.planId,
-      title: request.title,
-      description: request.description,
-      day_number: request.dayNumber,
-      order_index: 0, // 새 블록은 맨 뒤에 추가
-      block_type: request.blockType,
-      location:
-        typeof request.location === 'object'
-          ? request.location.address
-          : request.location,
-      start_time: request.timeRange?.startTime,
-      end_time: request.timeRange?.endTime,
-      cost: request.cost?.amount,
-      currency: request.cost?.currency,
-    };
-
-    console.log('[handleCreateBlock] sending data:', apiData);
-
-    createBlockMutation.mutate(apiData);
+  const handleCreateBlock = (request: ApiCreateBlockRequest) => {
+    console.log('[handleCreateBlock] sending data:', request);
+    createBlockMutation.mutate(request);
   };
 
-  const handleUpdateBlock = (request: UpdateBlockRequest) => {
-    // API 서버 형식에 맞게 데이터 변환
-    const apiData = {
-      title: request.title,
-      description: request.description,
-      day_number: request.dayNumber,
-      block_type: request.blockType,
-      location:
-        typeof request.location === 'object'
-          ? request.location.address
-          : request.location,
-      start_time: request.timeRange?.startTime,
-      end_time: request.timeRange?.endTime,
-      cost: request.cost?.amount,
-      currency: request.cost?.currency,
-      meta: request.meta,
-    };
+  const handleUpdateBlock = (request: ApiUpdateBlockRequest) => {
+    // id를 제외한 나머지 필드들만 추출
+    const { id, ...updateData } = request;
 
     // undefined 값들 제거
-    const cleanData = Object.fromEntries(
-      Object.entries(apiData).filter(([_, value]) => value !== undefined)
-    );
+    const cleanData: ApiUpdateBlockData = Object.fromEntries(
+      Object.entries(updateData).filter(([_, value]) => value !== undefined)
+    ) as ApiUpdateBlockData;
 
     console.log('[handleUpdateBlock] sending data:', cleanData);
 
     updateBlockMutation.mutate({
-      blockId: request.id!,
+      blockId: id,
       data: cleanData,
     });
   };
@@ -549,6 +547,7 @@ const TravelDetailView = () => {
                 });
               }}
               onBlockClick={handleBlockDetailClick}
+              onBlockEdit={handleEditBlock}
             />
           )}
         </div>

@@ -39,6 +39,7 @@ export const TravelBlockItem: React.FC<TravelBlockItemProps> = ({
   block,
   canEdit,
   onClick,
+  onEdit,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -128,7 +129,10 @@ export const TravelBlockItem: React.FC<TravelBlockItemProps> = ({
                   ? 'scale-110 bg-gray-100/80 text-gray-600'
                   : 'text-gray-300 opacity-0 group-hover:text-gray-400 group-hover:opacity-100'
               } hover:bg-gray-200/60 active:scale-95`}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!isDragging && onEdit) onEdit(block);
+              }}
             >
               <IoEllipsisVerticalOutline className='h-4 w-4' />
             </button>
