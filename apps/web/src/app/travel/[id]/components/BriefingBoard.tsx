@@ -2,6 +2,7 @@
 
 import {
   IoAddOutline,
+  IoChevronForwardOutline,
   IoDownloadOutline,
   IoPencilOutline,
   IoTimeOutline,
@@ -76,6 +77,7 @@ interface BriefingBoardProps {
   onHotTopicClick: (blockId: string) => void;
   onBudgetClick?: () => void;
   onReadinessClick?: () => void;
+  onViewAllActivities?: () => void;
 }
 
 export const BriefingBoard: React.FC<BriefingBoardProps> = ({
@@ -94,6 +96,8 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
   onSettings,
   onBudgetClick,
   onReadinessClick,
+  onViewAllActivities,
+  onBlockClick,
 }) => {
   // 여행 계획율 계산
   const {
@@ -236,17 +240,40 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
 
             {/* 최근 변경사항 */}
             <div className='w-full rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4 md:p-5 lg:p-6'>
-              <Typography
-                variant='h6'
-                className='mb-3 font-semibold text-gray-900 sm:mb-4'
-              >
-                최근 변경사항
-              </Typography>
+              <div className='mb-3 flex items-center justify-between sm:mb-4'>
+                <Typography
+                  variant='h6'
+                  className='font-semibold text-gray-900'
+                >
+                  최근 변경사항
+                </Typography>
+                {activities.length > 3 && (
+                  <Button
+                    onClick={onViewAllActivities}
+                    variant='outlined'
+                    colorTheme='gray'
+                    size='small'
+                    className='h-8 px-3'
+                    rightIcon={<IoChevronForwardOutline className='h-3 w-3' />}
+                  >
+                    <span className='text-xs'>더 보기</span>
+                  </Button>
+                )}
+              </div>
               <div className='space-y-2 sm:space-y-3'>
-                {activities.map((activity: ActivityItem) => (
+                {activities.slice(0, 3).map((activity: ActivityItem) => (
                   <div
                     key={activity.id}
-                    className='rounded-lg border border-gray-200 p-3'
+                    className={`rounded-lg border border-gray-200 p-3 ${
+                      activity.blockId
+                        ? 'cursor-pointer transition-all duration-200 hover:border-blue-300 hover:bg-blue-50'
+                        : ''
+                    }`}
+                    onClick={() => {
+                      if (activity.blockId) {
+                        onBlockClick(activity.blockId);
+                      }
+                    }}
                   >
                     <div className='flex items-start space-x-3'>
                       <Avatar
@@ -270,13 +297,28 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
                             variant='caption'
                             className='text-gray-400'
                           >
-                            {activity.timestamp}
+                            {new Date(activity.timestamp).toLocaleString(
+                              'ko-KR',
+                              {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              }
+                            )}
                           </Typography>
                         </div>
                       </div>
                     </div>
                   </div>
                 ))}
+                {activities.length === 0 && (
+                  <div className='py-8 text-center'>
+                    <Typography variant='body2' className='text-gray-500'>
+                      아직 활동 내역이 없습니다.
+                    </Typography>
+                  </div>
+                )}
               </div>
             </div>
           </div>

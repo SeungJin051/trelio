@@ -13,6 +13,7 @@ import { BlockCreateModal } from '@/components/travel/detail/BlockCreateModal';
 import { BlockDetailModal } from '@/components/travel/detail/BlockDetailModal';
 import { TravelTimelineCanvas } from '@/components/travel/detail/TravelTimelineCanvas';
 import InviteLinkModal from '@/components/travel/modals/InviteLinkModal';
+import TravelActivitiesModal from '@/components/travel/modals/TravelActivitiesModal';
 import TravelEditInfoModal from '@/components/travel/modals/TravelEditInfoModal';
 import { useParticipantsPresence } from '@/hooks/useParticipantsPresence';
 import { useRealtimeBlocks } from '@/hooks/useRealtimeBlocks';
@@ -57,6 +58,7 @@ const TravelDetailView = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showEditInfoModal, setShowEditInfoModal] = useState(false);
+  const [showActivitiesModal, setShowActivitiesModal] = useState(false);
   const [selectedBlock, setSelectedBlock] = useState<TravelBlock | null>(null);
   const [editingBlock, setEditingBlock] = useState<TravelBlock | null>(null);
   const [selectedDay, setSelectedDay] = useState<number>(0); // 0은 대시보드
@@ -331,6 +333,10 @@ const TravelDetailView = () => {
     setShowEditInfoModal(true);
   };
 
+  const handleViewAllActivities = () => {
+    setShowActivitiesModal(true);
+  };
+
   const handleBudgetClick = () => {
     // TODO: 예산 상세 모달 또는 페이지로 이동
     console.log('Budget detail clicked');
@@ -342,8 +348,22 @@ const TravelDetailView = () => {
   };
 
   const handleBlockClick = (blockId: string) => {
-    // TODO: 새로운 API 데이터와 기존 TravelBlock 타입 매핑 필요
-    console.log('Block click:', blockId);
+    // 해당 블록 찾기
+    const apiBlock = blocks.find((block) => block.id === blockId);
+    if (!apiBlock) {
+      toast.error('블록을 찾을 수 없습니다.');
+      return;
+    }
+
+    // 해당 블록이 있는 날짜로 탭 전환
+    setSelectedDay(apiBlock.day_number);
+
+    // API 블록을 TravelBlock 타입으로 변환
+    const travelBlock = convertApiBlockToTravelBlock(apiBlock);
+
+    // 블록 상세 모달 열기
+    setSelectedBlock(travelBlock);
+    setShowDetailModal(true);
   };
 
   const handleHotTopicClick = (blockId: string) => {
@@ -502,6 +522,7 @@ const TravelDetailView = () => {
                 onReadinessClick={handleReadinessClick}
                 onBlockClick={handleBlockClick}
                 onHotTopicClick={handleHotTopicClick}
+                onViewAllActivities={handleViewAllActivities}
               />
             </div>
           ) : (
@@ -609,6 +630,16 @@ const TravelDetailView = () => {
             // 여행 정보 업데이트 후 데이터 새로고침
             // useTravelDetail 훅이 자동으로 refetch할 것입니다
           }}
+        />
+      )}
+
+      {showActivitiesModal && (
+        <TravelActivitiesModal
+          isOpen={showActivitiesModal}
+          onClose={() => setShowActivitiesModal(false)}
+          activities={activities}
+          travelTitle={travelPlan.title}
+          onBlockClick={handleBlockClick}
         />
       )}
     </div>
