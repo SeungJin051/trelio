@@ -363,30 +363,6 @@ export const BlockDetailModal: React.FC<BlockDetailModalProps> = ({
             )}
           </div>
         </div>
-
-        {/* 액션 버튼 */}
-        {canEdit && (
-          <div className='flex space-x-3 border-t border-gray-100 p-6'>
-            <Button
-              type='button'
-              variant='filled'
-              size='medium'
-              onClick={handleEdit}
-              className='flex-1 rounded-xl'
-            >
-              수정
-            </Button>
-            <Button
-              type='button'
-              variant='outlined'
-              size='medium'
-              onClick={handleDelete}
-              className='flex-1 rounded-xl border-red-600 text-red-600 hover:bg-red-50'
-            >
-              삭제
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );
