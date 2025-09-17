@@ -1,4 +1,3 @@
-import { Analytics } from '@vercel/analytics/next';
 import type { Metadata, Viewport } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
@@ -84,7 +83,6 @@ export default async function RootLayout({
       <body className={pretendard.className}>
         {/* Analytics - 페이지 로드 시 즉시 실행 */}
         <GoogleAnalytics />
-        <Analytics />
 
         {/* App Providers */}
         <NextIntlClientProvider messages={messages}>
