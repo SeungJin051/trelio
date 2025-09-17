@@ -15,7 +15,12 @@ import {
   getDefaultDuration,
 } from '@/lib/block-helpers';
 import { CurrencyCode, parseCurrencyInput } from '@/lib/currency';
-import { BlockType, CreateBlockRequest } from '@/types/travel/blocks';
+import {
+  BlockType,
+  CreateBlockRequest,
+  TravelBlock,
+  UpdateBlockRequest,
+} from '@/types/travel/blocks';
 
 import { SmartBudgetInput, SmartInput, SmartTimeInput } from './SmartInputs';
 
@@ -25,6 +30,9 @@ interface BlockCreateModalProps {
   planId: string;
   dayNumber: number;
   onCreateBlock: (request: CreateBlockRequest) => void;
+  onUpdateBlock?: (request: UpdateBlockRequest) => void;
+  onDeleteBlock?: (blockId: string) => void;
+  editingBlock?: TravelBlock;
   isLoading: boolean;
   planLocation: string;
   userNationality?: string;
@@ -37,11 +45,15 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
   planId,
   dayNumber,
   onCreateBlock,
+  onUpdateBlock,
+  onDeleteBlock,
+  editingBlock,
   isLoading,
   planLocation,
   userNationality = 'KR',
   totalBudget = 0,
 }) => {
+  const isEditMode = !!editingBlock;
   // 기본 필드 상태 관리
   const [selectedType, setSelectedType] = useState<BlockType>('activity');
   const [title, setTitle] = useState('');
@@ -68,15 +80,73 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
   const [activityType, setActivityType] = useState('');
   const [reservationRequired, setReservationRequired] = useState(false);
 
-  // 블록 타입 변경 시 스마트 통화 설정
+  // 수정 모드일 때 초기값 설정
   useEffect(() => {
-    const defaultCurrency = getDefaultCurrencyForBlock(
-      selectedType,
-      userNationality,
-      planLocation
-    );
-    setCurrency(defaultCurrency);
-  }, [selectedType, userNationality, planLocation]);
+    if (isEditMode && editingBlock) {
+      setSelectedType(editingBlock.blockType);
+      setTitle(editingBlock.title);
+      setDescription(editingBlock.description || '');
+      setAddress(
+        typeof editingBlock.location === 'string'
+          ? editingBlock.location
+          : editingBlock.location?.address || ''
+      );
+      setStartTime(editingBlock.timeRange?.startTime || '');
+      setEndTime(editingBlock.timeRange?.endTime || '');
+      setAmount(
+        editingBlock.cost?.amount ? editingBlock.cost.amount.toString() : ''
+      );
+      setCurrency(editingBlock.cost?.currency || 'KRW');
+
+      // 블록 타입별 메타데이터 초기화
+      const meta = editingBlock.meta;
+      if (meta) {
+        // Flight 관련
+        setFlightNumber(meta.flightNumber || '');
+        setDepartureAirport(meta.departureAirport || '');
+        setArrivalAirport(meta.arrivalAirport || '');
+        setSeatNumber(meta.seatNumber || '');
+
+        // Move 관련
+        setFromLocation(
+          typeof meta.fromLocation === 'string'
+            ? meta.fromLocation
+            : meta.fromLocation?.address || ''
+        );
+        setToLocation(
+          typeof meta.toLocation === 'string'
+            ? meta.toLocation
+            : meta.toLocation?.address || ''
+        );
+        setTransportType(meta.transportType || '');
+
+        // Hotel 관련
+        setCheckIn(meta.checkIn || '');
+        setCheckOut(meta.checkOut || '');
+        setRoomType(meta.roomType || '');
+
+        // Food 관련
+        setMealType(meta.mealType || '');
+        setCuisine(meta.cuisine || '');
+
+        // Activity 관련
+        setActivityType(meta.activityType || '');
+        setReservationRequired(meta.reservationRequired || false);
+      }
+    }
+  }, [isEditMode, editingBlock]);
+
+  // 블록 타입 변경 시 스마트 통화 설정 (생성 모드에서만)
+  useEffect(() => {
+    if (!isEditMode) {
+      const defaultCurrency = getDefaultCurrencyForBlock(
+        selectedType,
+        userNationality,
+        planLocation
+      );
+      setCurrency(defaultCurrency);
+    }
+  }, [selectedType, userNationality, planLocation, isEditMode]);
 
   // 현재 선택된 블록 타입 설정
   const currentBlockConfig = blockTypeConfigs.find(
@@ -119,30 +189,70 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
         break;
     }
 
-    const request: CreateBlockRequest = {
-      planId,
-      dayNumber,
-      blockType: selectedType,
-      title: title.trim(),
-      description: description.trim() || undefined,
-      location: address.trim() ? { address: address.trim() } : undefined,
-      timeRange: startTime
-        ? {
-            startTime,
-            endTime: endTime || undefined,
-          }
-        : undefined,
-      cost: amount
-        ? {
-            amount: parseCurrencyInput(amount),
-            currency: currency,
-          }
-        : undefined,
-      meta: Object.keys(meta).length > 0 ? meta : undefined,
-    };
+    if (isEditMode && editingBlock && onUpdateBlock) {
+      // 수정 모드
+      const updateRequest: UpdateBlockRequest = {
+        id: editingBlock.id,
+        planId,
+        dayNumber,
+        blockType: selectedType,
+        title: title.trim(),
+        description: description.trim() || undefined,
+        location: address.trim() ? { address: address.trim() } : undefined,
+        timeRange: startTime
+          ? {
+              startTime,
+              endTime: endTime || undefined,
+            }
+          : undefined,
+        cost: amount
+          ? {
+              amount: parseCurrencyInput(amount),
+              currency: currency,
+            }
+          : undefined,
+        meta: Object.keys(meta).length > 0 ? meta : undefined,
+      };
 
-    onCreateBlock(request);
+      onUpdateBlock(updateRequest);
+    } else {
+      // 생성 모드
+      const createRequest: CreateBlockRequest = {
+        planId,
+        dayNumber,
+        blockType: selectedType,
+        title: title.trim(),
+        description: description.trim() || undefined,
+        location: address.trim() ? { address: address.trim() } : undefined,
+        timeRange: startTime
+          ? {
+              startTime,
+              endTime: endTime || undefined,
+            }
+          : undefined,
+        cost: amount
+          ? {
+              amount: parseCurrencyInput(amount),
+              currency: currency,
+            }
+          : undefined,
+        meta: Object.keys(meta).length > 0 ? meta : undefined,
+      };
+
+      onCreateBlock(createRequest);
+    }
+
     handleClose();
+  };
+
+  // 삭제 처리
+  const handleDelete = () => {
+    if (isEditMode && editingBlock && onDeleteBlock) {
+      if (confirm('정말로 이 일정을 삭제하시겠습니까?')) {
+        onDeleteBlock(editingBlock.id);
+        handleClose();
+      }
+    }
   };
 
   // 모달 닫기 시 모든 상태 초기화
@@ -175,62 +285,82 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
   const renderBlockTypeSelection = () => (
     <div className='border-b border-gray-100 p-3 pb-6'>
       <Typography variant='h5' className='mb-2 font-bold text-gray-900'>
-        {currentBlockConfig?.icon} 새로운 일정 추가
+        {currentBlockConfig?.icon}{' '}
+        {isEditMode ? '일정 수정' : '새로운 일정 추가'}
       </Typography>
       <Typography variant='body2' className='mb-6 text-gray-500'>
-        Day {dayNumber} • 완벽한 여행을 위한 한 걸음
+        Day {dayNumber} •{' '}
+        {isEditMode ? '일정을 수정해보세요' : '완벽한 여행을 위한 한 걸음'}
       </Typography>
 
-      <Typography variant='body1' className='mb-4 font-semibold text-gray-800'>
-        일정 유형을 선택하세요
-      </Typography>
-
-      <div className='grid grid-cols-2 gap-3 sm:grid-cols-3'>
-        {blockTypeConfigs.map((blockType) => (
-          <motion.button
-            key={blockType.type}
-            type='button'
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setSelectedType(blockType.type)}
-            className={`relative overflow-hidden rounded-2xl p-4 text-left transition-all ${
-              selectedType === blockType.type
-                ? 'shadow-lg ring-2 ring-blue-500 ring-offset-2'
-                : 'border border-gray-200 hover:shadow-md'
-            }`}
+      {!isEditMode && (
+        <>
+          <Typography
+            variant='body1'
+            className='mb-4 font-semibold text-gray-800'
           >
-            {/* 그라데이션 배경 */}
-            <div
-              className={`absolute inset-0 bg-gradient-to-br ${blockType.gradient} opacity-10`}
-            />
+            일정 유형을 선택하세요
+          </Typography>
 
-            {/* 콘텐츠 */}
-            <div className='relative'>
-              <div className='mb-2 text-2xl'>{blockType.icon}</div>
-              <Typography
-                variant='body2'
-                className='mb-1 font-semibold text-gray-900'
+          <div className='grid grid-cols-2 gap-3 sm:grid-cols-3'>
+            {blockTypeConfigs.map((blockType) => (
+              <motion.button
+                key={blockType.type}
+                type='button'
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setSelectedType(blockType.type)}
+                className={`relative overflow-hidden rounded-2xl p-4 text-left transition-all ${
+                  selectedType === blockType.type
+                    ? 'shadow-lg ring-2 ring-blue-500 ring-offset-2'
+                    : 'border border-gray-200 hover:shadow-md'
+                }`}
               >
-                {blockType.label}
-              </Typography>
-              <Typography variant='caption' className='text-gray-500'>
-                {blockType.description}
-              </Typography>
-            </div>
+                {/* 그라데이션 배경 */}
+                <div
+                  className={`absolute inset-0 bg-gradient-to-br ${blockType.gradient} opacity-10`}
+                />
 
-            {/* 선택 표시 */}
-            {selectedType === blockType.type && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className='absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-blue-500'
-              >
-                <IoCheckmarkOutline className='h-4 w-4 text-white' />
-              </motion.div>
-            )}
-          </motion.button>
-        ))}
-      </div>
+                {/* 콘텐츠 */}
+                <div className='relative'>
+                  <div className='mb-2 text-2xl'>{blockType.icon}</div>
+                  <Typography
+                    variant='body2'
+                    className='mb-1 font-semibold text-gray-900'
+                  >
+                    {blockType.label}
+                  </Typography>
+                  <Typography variant='caption' className='text-gray-500'>
+                    {blockType.description}
+                  </Typography>
+                </div>
+
+                {/* 선택 표시 */}
+                {selectedType === blockType.type && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className='absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-blue-500'
+                  >
+                    <IoCheckmarkOutline className='h-4 w-4 text-white' />
+                  </motion.div>
+                )}
+              </motion.button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {isEditMode && (
+        <div className='rounded-2xl bg-gray-50 p-4'>
+          <Typography variant='body1' className='font-semibold text-gray-800'>
+            현재 일정 유형: {currentBlockConfig?.label}
+          </Typography>
+          <Typography variant='body2' className='text-gray-600'>
+            {currentBlockConfig?.description}
+          </Typography>
+        </div>
+      )}
     </div>
   );
 
@@ -532,21 +662,37 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
 
             {/* 제출 버튼 */}
             <div className='sticky bottom-0 -mx-6 border-t border-gray-100 bg-white px-6 pb-6 pt-6'>
-              <div className='flex space-x-3'>
+              <div
+                className={`flex space-x-3 ${isEditMode ? 'grid grid-cols-3' : ''}`}
+              >
                 <Button
                   type='button'
                   variant='outlined'
                   size='large'
                   onClick={handleClose}
-                  className='flex-1 rounded-2xl border-gray-300 text-gray-600 hover:bg-gray-50'
+                  className={`rounded-2xl border-gray-300 text-gray-600 hover:bg-gray-50 ${isEditMode ? '' : 'flex-1'}`}
                   disabled={isLoading}
                 >
                   취소
                 </Button>
+
+                {isEditMode && (
+                  <Button
+                    type='button'
+                    variant='outlined'
+                    size='large'
+                    onClick={handleDelete}
+                    className='rounded-2xl border-red-300 text-red-600 hover:bg-red-50'
+                    disabled={isLoading}
+                  >
+                    삭제
+                  </Button>
+                )}
+
                 <motion.div
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className='flex-1'
+                  className={isEditMode ? '' : 'flex-1'}
                 >
                   <Button
                     type='submit'
@@ -562,10 +708,11 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
                     {isLoading ? (
                       <div className='flex items-center space-x-2'>
                         <div className='h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent' />
-                        <span>추가 중...</span>
+                        <span>{isEditMode ? '수정 중...' : '추가 중...'}</span>
                       </div>
+                    ) : isEditMode ? (
+                      '수정하기'
                     ) : (
-                      // `${currentBlockConfig?.label || '일정'} 추가하기`
                       '추가하기'
                     )}
                   </Button>

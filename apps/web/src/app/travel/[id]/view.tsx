@@ -4,16 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useParams, useRouter } from 'next/navigation';
 
-import {
-  closestCenter,
-  DndContext,
-  DragEndEvent,
-  DragOverlay,
-  DragStartEvent,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
 import { IoAddOutline } from 'react-icons/io5';
 
 import { Button, Typography } from '@ui/components';
@@ -23,22 +13,32 @@ import { BlockCreateModal } from '@/components/travel/detail/BlockCreateModal';
 import { BlockDetailModal } from '@/components/travel/detail/BlockDetailModal';
 import { TravelTimelineCanvas } from '@/components/travel/detail/TravelTimelineCanvas';
 import InviteLinkModal from '@/components/travel/modals/InviteLinkModal';
-import { useBlocks } from '@/hooks/useBlocks';
 import { useParticipantsPresence } from '@/hooks/useParticipantsPresence';
 import { useRealtimeBlocks } from '@/hooks/useRealtimeBlocks';
 import { useRealtimeParticipants } from '@/hooks/useRealtimeParticipants';
 import { useRealtimeTravelInfo } from '@/hooks/useRealtimeTravelInfo';
 import { useSession } from '@/hooks/useSession';
 import { useToast } from '@/hooks/useToast';
-import { useTravelDetail } from '@/hooks/useTravelDetail';
+import {
+  useCreateBlock,
+  useDeleteBlock,
+  useTravelDetail,
+  useUpdateBlock,
+} from '@/hooks/useTravelDetail';
 import { useTravelRealtime } from '@/hooks/useTravelRealtime';
 import type {
   ActivityItem as ApiActivityItem,
   TravelBlock as ApiBlock,
   Participant as ApiParticipant,
 } from '@/lib/api/travel';
+import { CurrencyCode } from '@/lib/currency';
 import { calculateDDayWithEnd } from '@/lib/travel-utils';
-import { TravelBlock } from '@/types/travel/blocks';
+import {
+  BlockType,
+  CreateBlockRequest,
+  TravelBlock,
+  UpdateBlockRequest,
+} from '@/types/travel/blocks';
 
 import { BriefingBoard, TabContainer, TravelHeader } from './components';
 import { TabItem, TRAVEL_DETAIL_CONSTANTS } from './constants';
@@ -52,16 +52,20 @@ const TravelDetailView = () => {
   const toast = useToast();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [selectedBlock, setSelectedBlock] = useState<TravelBlock | null>(null);
-  const [activeBlock, setActiveBlock] = useState<TravelBlock | null>(null);
+  const [editingBlock, setEditingBlock] = useState<TravelBlock | null>(null);
   const [selectedDay, setSelectedDay] = useState<number>(0); // 0은 대시보드
 
   const planId = params.id as string;
 
   // 새로운 API 훅 사용
   const { data: travelData, isLoading, error } = useTravelDetail(planId);
+  const createBlockMutation = useCreateBlock();
+  const updateBlockMutation = useUpdateBlock();
+  const deleteBlockMutation = useDeleteBlock();
 
   const travelPlan = travelData?.travelPlan;
   const participants = useMemo(
@@ -79,7 +83,7 @@ const TravelDetailView = () => {
     if (!userProfile || !travelPlan) return false;
     if (travelPlan.owner_id === userProfile.id) return true;
     const role = (participants as ApiParticipant[]).find(
-      (p) => (p as any).user_id === userProfile.id
+      (p) => p.id === userProfile.id
     )?.role;
     return role === 'editor' || role === 'owner';
   }, [userProfile, travelPlan, participants]);
@@ -104,75 +108,45 @@ const TravelDetailView = () => {
     profileImageUrl: userProfile?.profile_image_url,
   });
 
-  // 블록 시스템 Hook (항상 호출)
-  const { timeline, createBlock, moveBlock, deleteBlock, isCreating } =
-    useBlocks({
-      planId,
-      startDate: travelPlan?.start_date || '',
-      endDate: travelPlan?.end_date || '',
-      planLocation: travelPlan?.location || '',
-    });
-  // DnD 센서
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
-    })
-  );
+  // 로딩 상태 관리
+  const isCreating = createBlockMutation.isPending;
+  const isUpdating = updateBlockMutation.isPending;
+  const isDeleting = deleteBlockMutation.isPending;
 
-  // DnD 핸들러
-  const handleDragStart = (event: DragStartEvent) => {
-    const { active } = event;
-    const selectedDayData = timeline.days.find(
-      (d) => d.dayNumber === selectedDay
-    );
-    const found = selectedDayData?.blocks.find((b) => b.id === active.id);
-    if (found) setActiveBlock(found);
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    setActiveBlock(null);
-    if (!over) return;
-
-    const activeId = String(active.id);
-    const overId = String(over.id);
-
-    // 같은 아이템이면 무시
-    if (activeId === overId) return;
-
-    const selectedDayData = timeline.days.find(
-      (d) => d.dayNumber === selectedDay
-    );
-    if (!selectedDayData) return;
-
-    // 같은 날 내 재정렬
-    const droppedInSameList = selectedDayData.blocks.some(
-      (b) => b.id === overId
-    );
-    if (droppedInSameList) {
-      const newIndex = selectedDayData.blocks.findIndex((b) => b.id === overId);
-      if (newIndex >= 0) {
-        moveBlock({
-          id: activeId,
-          newDayNumber: selectedDay,
-          newOrderIndex: newIndex,
-        });
-      }
-      return;
-    }
-
-    // 다른 날 탭으로 드롭: overId = day-<n>
-    const match = /^day-(\d+)$/.exec(overId);
-    if (match) {
-      const targetDay = Number(match[1]);
-      if (targetDay && targetDay !== selectedDay) {
-        const targetDayData = timeline.days.find(
-          (d) => d.dayNumber === targetDay
-        );
-        const newOrderIndex = targetDayData?.blocks.length || 0;
-        moveBlock({ id: activeId, newDayNumber: targetDay, newOrderIndex });
-      }
-    }
+  // API 블록을 TravelBlock 타입으로 변환
+  const convertApiBlockToTravelBlock = (apiBlock: ApiBlock): TravelBlock => {
+    return {
+      id: apiBlock.id,
+      planId: apiBlock.plan_id,
+      dayNumber: apiBlock.day_number,
+      orderIndex: apiBlock.order_index,
+      blockType: (apiBlock.block_type as BlockType) || 'activity',
+      title: apiBlock.title,
+      description: apiBlock.description,
+      location: apiBlock.location
+        ? typeof apiBlock.location === 'string'
+          ? { address: apiBlock.location }
+          : apiBlock.location
+        : undefined,
+      timeRange:
+        apiBlock.start_time || apiBlock.end_time
+          ? {
+              startTime: apiBlock.start_time,
+              endTime: apiBlock.end_time,
+            }
+          : undefined,
+      cost:
+        apiBlock.cost && apiBlock.currency
+          ? {
+              amount: apiBlock.cost,
+              currency: (apiBlock.currency as CurrencyCode) || 'KRW',
+            }
+          : undefined,
+      meta: apiBlock.meta || {},
+      createdBy: apiBlock.created_by,
+      createdAt: apiBlock.created_at,
+      updatedAt: apiBlock.updated_at,
+    };
   };
 
   // 탭 데이터 생성
@@ -184,17 +158,98 @@ const TravelDetailView = () => {
       type: 'dashboard',
     };
 
-    const dayTabs: TabItem[] = timeline.days.map((day) => ({
-      id: `day-${day.dayNumber}`,
-      label: `Day ${day.dayNumber}`,
-      dayNumber: day.dayNumber,
-      type: 'day',
-      date: day.date,
-      totalCost: day.totalCost,
-    }));
+    if (!travelPlan?.start_date || !travelPlan?.end_date) {
+      return [dashboardTab];
+    }
+
+    const startDate = new Date(travelPlan.start_date);
+    const endDate = new Date(travelPlan.end_date);
+    const dayCount =
+      Math.ceil(
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      ) + 1;
+
+    const dayTabs: TabItem[] = Array.from({ length: dayCount }, (_, index) => {
+      const dayNumber = index + 1;
+      const currentDate = new Date(startDate);
+      currentDate.setDate(startDate.getDate() + index);
+
+      // 해당 일의 블록들 찾기
+      const dayBlocks = blocks.filter(
+        (block) => block.day_number === dayNumber
+      );
+      const totalCost = dayBlocks.reduce((sum, block) => {
+        return sum + (block.cost || 0);
+      }, 0);
+
+      return {
+        id: `day-${dayNumber}`,
+        label: `Day ${dayNumber}`,
+        dayNumber: dayNumber,
+        type: 'day',
+        date: currentDate.toISOString().split('T')[0],
+        totalCost: {
+          amount: totalCost,
+          currency: 'KRW' as const, // TODO: 여행 기본 통화로 설정
+        },
+      };
+    });
 
     return [dashboardTab, ...dayTabs];
-  }, [timeline.days]);
+  }, [travelPlan?.start_date, travelPlan?.end_date, blocks]);
+
+  // 타임라인 데이터 생성
+  const timeline = useMemo(() => {
+    if (!travelPlan)
+      return {
+        planId,
+        days: [],
+        totalCost: { amount: 0, currency: 'KRW' as const },
+        lastUpdated: new Date().toISOString(),
+      };
+
+    const startDate = new Date(travelPlan.start_date);
+    const endDate = new Date(travelPlan.end_date);
+    const dayCount =
+      Math.ceil(
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      ) + 1;
+
+    const days = Array.from({ length: dayCount }, (_, index) => {
+      const dayNumber = index + 1;
+      const currentDate = new Date(startDate);
+      currentDate.setDate(startDate.getDate() + index);
+
+      const dayBlocks = blocks.filter(
+        (block) => block.day_number === dayNumber
+      );
+      const totalCost = dayBlocks.reduce(
+        (sum, block) => sum + (block.cost || 0),
+        0
+      );
+      const totalDuration = 0; // TODO: duration 계산 구현
+
+      return {
+        dayNumber,
+        date: currentDate.toISOString().split('T')[0],
+        blocks: dayBlocks.map(convertApiBlockToTravelBlock),
+        totalCost: { amount: totalCost, currency: 'KRW' as const },
+        totalDuration,
+      };
+    });
+
+    const overallTotalCost = days.reduce(
+      (sum, day) => sum + day.totalCost.amount,
+      0
+    );
+
+    return {
+      planId,
+      days,
+      totalCost: { amount: overallTotalCost, currency: 'KRW' as const },
+      lastUpdated: new Date().toISOString(),
+    };
+  }, [planId, travelPlan, blocks]);
 
   // 에러 처리: 동일 에러 중복 토스트 방지 및 무한 루프 방지
   const hasShownErrorRef = useRef(false);
@@ -299,6 +354,71 @@ const TravelDetailView = () => {
     setShowDetailModal(true);
   };
 
+  const handleEditBlock = (block: TravelBlock) => {
+    setEditingBlock(block);
+    setSelectedDay(block.dayNumber);
+    setShowEditModal(true);
+  };
+
+  const handleCreateBlock = (request: CreateBlockRequest) => {
+    // API 서버 형식에 맞게 데이터 변환
+    const apiData: import('@/lib/api/travel').CreateBlockRequest = {
+      plan_id: request.planId,
+      title: request.title,
+      description: request.description,
+      day_number: request.dayNumber,
+      order_index: 0, // 새 블록은 맨 뒤에 추가
+      block_type: request.blockType,
+      location:
+        typeof request.location === 'object'
+          ? request.location.address
+          : request.location,
+      start_time: request.timeRange?.startTime,
+      end_time: request.timeRange?.endTime,
+      cost: request.cost?.amount,
+      currency: request.cost?.currency,
+    };
+
+    console.log('[handleCreateBlock] sending data:', apiData);
+
+    createBlockMutation.mutate(apiData);
+  };
+
+  const handleUpdateBlock = (request: UpdateBlockRequest) => {
+    // API 서버 형식에 맞게 데이터 변환
+    const apiData = {
+      title: request.title,
+      description: request.description,
+      day_number: request.dayNumber,
+      block_type: request.blockType,
+      location:
+        typeof request.location === 'object'
+          ? request.location.address
+          : request.location,
+      start_time: request.timeRange?.startTime,
+      end_time: request.timeRange?.endTime,
+      cost: request.cost?.amount,
+      currency: request.cost?.currency,
+      meta: request.meta,
+    };
+
+    // undefined 값들 제거
+    const cleanData = Object.fromEntries(
+      Object.entries(apiData).filter(([_, value]) => value !== undefined)
+    );
+
+    console.log('[handleUpdateBlock] sending data:', cleanData);
+
+    updateBlockMutation.mutate({
+      blockId: request.id!,
+      data: cleanData,
+    });
+  };
+
+  const handleDeleteBlock = (blockId: string) => {
+    deleteBlockMutation.mutate(blockId);
+  };
+
   const ddayText = travelPlan
     ? calculateDDayWithEnd(travelPlan.start_date, travelPlan.end_date)
     : '';
@@ -324,99 +444,89 @@ const TravelDetailView = () => {
           dDay={ddayText}
         />
 
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-        >
-          {/* 탭 컨테이너 (DayTab은 droppable) */}
-          <TabContainer
-            tabs={tabs}
-            selectedDay={selectedDay}
-            onDaySelect={setSelectedDay}
-          />
+        {/* 탭 컨테이너 (DayTab은 droppable) */}
+        <TabContainer
+          tabs={tabs}
+          selectedDay={selectedDay}
+          onDaySelect={setSelectedDay}
+        />
 
-          {/* 컨텐츠 영역 */}
-          <div className='flex-1 overflow-x-hidden'>
-            {selectedDay === 0 ? (
-              <div className='h-full'>
-                <BriefingBoard
-                  planId={planId}
-                  title={travelPlan.title}
-                  location={travelPlan.location}
-                  startDate={travelPlan.start_date}
-                  endDate={travelPlan.end_date}
-                  participants={(participants as ApiParticipant[]).map((p) => ({
-                    id: p.id,
-                    nickname: p.nickname || '알 수 없음',
-                    profile_image_url: p.profile_image_url,
-                    isOnline: p.isOnline || false,
-                  }))}
-                  activities={activities}
-                  totalBudget={
-                    (
-                      travelPlan as unknown as Partial<{
-                        target_budget: number;
-                      }>
-                    )?.target_budget || 0
-                  }
-                  currency={
-                    (
-                      travelPlan as unknown as Partial<{
-                        budget_currency: string;
-                      }>
-                    )?.budget_currency || 'KRW'
-                  }
-                  destinationCountry={
-                    (
-                      travelPlan as unknown as Partial<{
-                        destination_country: string;
-                      }>
-                    )?.destination_country
-                  }
-                  userNationality={userProfile?.nationality}
-                  hotTopics={hotTopics}
-                  onInviteParticipants={handleInviteParticipants}
-                  onExport={handleExport}
-                  onSettings={handleSettings}
-                  onBudgetClick={handleBudgetClick}
-                  onReadinessClick={handleReadinessClick}
-                  onBlockClick={handleBlockClick}
-                  onHotTopicClick={handleHotTopicClick}
-                />
-              </div>
-            ) : (
-              // 타임라인 캔버스
-              <TravelTimelineCanvas
-                timeline={timeline}
-                canEdit={canEdit}
-                selectedDay={selectedDay}
-                onDaySelect={setSelectedDay}
-                onBlockCreate={(dayNumber: number) => {
-                  setSelectedDay(dayNumber);
-                  setShowCreateModal(true);
-                }}
-                onBlockMove={(
-                  blockId: string,
-                  newDayNumber: number,
-                  newOrderIndex: number
-                ) => {
-                  moveBlock({ id: blockId, newDayNumber, newOrderIndex });
-                }}
-                onBlockClick={handleBlockDetailClick}
+        {/* 컨텐츠 영역 */}
+        <div className='flex-1 overflow-x-hidden'>
+          {selectedDay === 0 ? (
+            <div className='h-full'>
+              <BriefingBoard
+                planId={planId}
+                title={travelPlan.title}
+                location={travelPlan.location}
+                startDate={travelPlan.start_date}
+                endDate={travelPlan.end_date}
+                participants={(participants as ApiParticipant[]).map((p) => ({
+                  id: p.id,
+                  nickname: p.nickname || '알 수 없음',
+                  profile_image_url: p.profile_image_url,
+                  isOnline: p.isOnline || false,
+                }))}
+                activities={activities}
+                totalBudget={
+                  (
+                    travelPlan as unknown as Partial<{
+                      target_budget: number;
+                    }>
+                  )?.target_budget || 0
+                }
+                currency={
+                  (
+                    travelPlan as unknown as Partial<{
+                      budget_currency: string;
+                    }>
+                  )?.budget_currency || 'KRW'
+                }
+                destinationCountry={
+                  (
+                    travelPlan as unknown as Partial<{
+                      destination_country: string;
+                    }>
+                  )?.destination_country
+                }
+                userNationality={userProfile?.nationality}
+                hotTopics={hotTopics}
+                onInviteParticipants={handleInviteParticipants}
+                onExport={handleExport}
+                onSettings={handleSettings}
+                onBudgetClick={handleBudgetClick}
+                onReadinessClick={handleReadinessClick}
+                onBlockClick={handleBlockClick}
+                onHotTopicClick={handleHotTopicClick}
               />
-            )}
-          </div>
-
-          <DragOverlay>
-            {activeBlock ? (
-              <div className='rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm opacity-95 shadow-lg'>
-                {activeBlock.title}
-              </div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
+            </div>
+          ) : (
+            // 타임라인 캔버스
+            <TravelTimelineCanvas
+              timeline={timeline}
+              canEdit={canEdit}
+              selectedDay={selectedDay}
+              onDaySelect={setSelectedDay}
+              onBlockCreate={(dayNumber: number) => {
+                setSelectedDay(dayNumber);
+                setShowCreateModal(true);
+              }}
+              onBlockMove={(
+                blockId: string,
+                newDayNumber: number,
+                newOrderIndex: number
+              ) => {
+                // TODO: moveBlock API 구현 필요
+                console.log('Block move:', {
+                  blockId,
+                  newDayNumber,
+                  newOrderIndex,
+                });
+              }}
+              onBlockClick={handleBlockDetailClick}
+            />
+          )}
+        </div>
 
         {/* 플로팅 액션 버튼 - 대시보드에서는 숨김 */}
         {selectedDay !== 0 && (
@@ -441,8 +551,23 @@ const TravelDetailView = () => {
           onClose={() => setShowCreateModal(false)}
           planId={planId}
           dayNumber={selectedDay}
-          onCreateBlock={createBlock}
+          onCreateBlock={handleCreateBlock}
           isLoading={isCreating}
+          planLocation={travelPlan.location}
+        />
+      )}
+
+      {showEditModal && editingBlock && (
+        <BlockCreateModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          planId={planId}
+          dayNumber={editingBlock.dayNumber}
+          onCreateBlock={handleCreateBlock}
+          onUpdateBlock={handleUpdateBlock}
+          onDeleteBlock={handleDeleteBlock}
+          editingBlock={editingBlock}
+          isLoading={isUpdating || isDeleting}
           planLocation={travelPlan.location}
         />
       )}
@@ -452,7 +577,8 @@ const TravelDetailView = () => {
           isOpen={showDetailModal}
           onClose={() => setShowDetailModal(false)}
           block={selectedBlock}
-          onDelete={deleteBlock}
+          onEdit={handleEditBlock}
+          onDelete={handleDeleteBlock}
           canEdit={canEdit}
         />
       )}
@@ -462,8 +588,10 @@ const TravelDetailView = () => {
           isOpen={showInviteModal}
           onClose={() => setShowInviteModal(false)}
           planId={planId}
-          shareLinkId={(travelPlan as any).share_link_id}
-          participants={participants as any}
+          shareLinkId={
+            (travelPlan as { share_link_id?: string }).share_link_id || ''
+          }
+          participants={participants}
           isOwner={isOwner}
         />
       )}

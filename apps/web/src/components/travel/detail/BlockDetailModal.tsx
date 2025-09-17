@@ -30,8 +30,6 @@ interface BlockDetailModalProps {
   canEdit?: boolean;
 }
 
-// 프리젠테이션 유틸은 import로 대체
-
 export const BlockDetailModal: React.FC<BlockDetailModalProps> = ({
   isOpen,
   onClose,
@@ -163,7 +161,9 @@ export const BlockDetailModal: React.FC<BlockDetailModalProps> = ({
                     위치
                   </Typography>
                   <Typography variant='body2' className='text-gray-600'>
-                    {block.location.address}
+                    {typeof block.location === 'string'
+                      ? block.location
+                      : block.location.address || '위치 정보 없음'}
                   </Typography>
                 </div>
               </div>
@@ -191,13 +191,6 @@ export const BlockDetailModal: React.FC<BlockDetailModalProps> = ({
           {/* 블록 타입별 상세 정보 */}
           {block.meta && (
             <div className='space-y-4'>
-              <Typography
-                variant='body1'
-                className='font-semibold text-gray-800'
-              >
-                상세 정보
-              </Typography>
-
               <div className='grid grid-cols-1 gap-3 md:grid-cols-2'>
                 {/* 교통수단 */}
                 {block.meta.transportType && (
@@ -224,7 +217,10 @@ export const BlockDetailModal: React.FC<BlockDetailModalProps> = ({
                       출발지
                     </Typography>
                     <Typography variant='body2' className='text-blue-600'>
-                      {block.meta.fromLocation.address}
+                      {typeof block.meta.fromLocation === 'string'
+                        ? block.meta.fromLocation
+                        : (block.meta.fromLocation as { address?: string })
+                            ?.address || '출발지 정보 없음'}
                     </Typography>
                   </div>
                 )}
@@ -239,7 +235,10 @@ export const BlockDetailModal: React.FC<BlockDetailModalProps> = ({
                       도착지
                     </Typography>
                     <Typography variant='body2' className='text-blue-600'>
-                      {block.meta.toLocation.address}
+                      {typeof block.meta.toLocation === 'string'
+                        ? block.meta.toLocation
+                        : (block.meta.toLocation as { address?: string })
+                            ?.address || '도착지 정보 없음'}
                     </Typography>
                   </div>
                 )}
@@ -368,15 +367,6 @@ export const BlockDetailModal: React.FC<BlockDetailModalProps> = ({
         {/* 액션 버튼 */}
         {canEdit && (
           <div className='flex space-x-3 border-t border-gray-100 p-6'>
-            <Button
-              type='button'
-              variant='outlined'
-              size='medium'
-              onClick={onClose}
-              className='flex-1 rounded-xl'
-            >
-              닫기
-            </Button>
             <Button
               type='button'
               variant='filled'

@@ -32,8 +32,6 @@ export const TransitCard: React.FC<TransitCardProps> = ({
   data,
   compact = false,
 }) => {
-  const color = getBlockColor('move');
-
   const transportConfig: Record<
     string,
     { label: string; icon: React.ReactNode; color: string; bgColor: string }
@@ -87,7 +85,10 @@ export const TransitCard: React.FC<TransitCardProps> = ({
     : null;
 
   return (
-    <div className='relative overflow-hidden rounded-2xl border border-blue-200/60 bg-gradient-to-br from-blue-50/30 to-white shadow-lg shadow-blue-100/20'>
+    <div className='relative overflow-hidden rounded-2xl border border-blue-200/60 shadow-md shadow-blue-100/20'>
+      {/* 내부 그라디언트 레이어 */}
+      <div className='absolute inset-0 bg-gradient-to-br from-blue-50 to-white' />
+
       {/* 배경 패턴 */}
       <div className='absolute inset-0 opacity-5'>
         <div className='absolute right-4 top-4 text-5xl text-blue-500'>
@@ -95,9 +96,7 @@ export const TransitCard: React.FC<TransitCardProps> = ({
         </div>
       </div>
 
-      <div
-        className={`relative ${compact ? 'p-4' : 'p-5'} bg-white/80 backdrop-blur-sm`}
-      >
+      <div className={`relative ${compact ? 'p-4' : 'p-5'}`}>
         <div className='flex items-start justify-between'>
           <div className='flex items-center space-x-3'>
             {currentTransport && (
@@ -147,17 +146,17 @@ export const TransitCard: React.FC<TransitCardProps> = ({
                   <div className='min-w-0 flex-1'>
                     <Typography
                       variant='caption'
-                      className='font-medium text-green-600'
+                      className='font-medium text-blue-500'
                     >
                       출발
                     </Typography>
                     <div title={data.fromAddress}>
                       <Typography
-                        variant={compact ? 'body2' : 'body1'}
-                        className='truncate font-semibold text-gray-900'
+                        variant={compact ? 'body1' : 'h6'}
+                        className='font-bold tracking-wide text-gray-900'
                       >
                         {data.fromAddress ||
-                          (data.title ? `${data.title} 출발지` : '출발지')}
+                          (data.title ? `${data.title}` : '출발지')}
                       </Typography>
                     </div>
                   </div>
@@ -166,7 +165,6 @@ export const TransitCard: React.FC<TransitCardProps> = ({
 
               {/* 경로 라인과 아이콘 */}
               <div className='flex flex-shrink-0 items-center space-x-2'>
-                <div className='h-px w-8 bg-gradient-to-r from-green-300 to-red-300' />
                 <div
                   className={`rounded-full p-1.5 ${currentTransport?.bgColor || 'bg-blue-100'}`}
                 >
@@ -174,7 +172,6 @@ export const TransitCard: React.FC<TransitCardProps> = ({
                     <IoArrowForwardOutline className='h-3 w-3 text-blue-500' />
                   )}
                 </div>
-                <div className='h-px w-8 bg-gradient-to-r from-green-300 to-red-300' />
               </div>
 
               {/* 도착지 */}
@@ -183,17 +180,17 @@ export const TransitCard: React.FC<TransitCardProps> = ({
                   <div className='min-w-0 flex-1 text-right'>
                     <Typography
                       variant='caption'
-                      className='font-medium text-red-600'
+                      className='font-medium text-blue-500'
                     >
                       도착
                     </Typography>
                     <div title={data.toAddress}>
                       <Typography
-                        variant={compact ? 'body2' : 'body1'}
-                        className='truncate font-semibold text-gray-900'
+                        variant={compact ? 'body1' : 'h6'}
+                        className='font-bold tracking-wide text-gray-900'
                       >
                         {data.toAddress ||
-                          (data.title ? `${data.title} 도착지` : '도착지')}
+                          (data.title ? `${data.title}` : '도착지')}
                       </Typography>
                     </div>
                   </div>

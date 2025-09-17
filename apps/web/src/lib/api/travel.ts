@@ -32,6 +32,7 @@ export interface TravelBlock {
   end_time?: string;
   cost?: number;
   currency?: string;
+  meta?: Record<string, unknown>;
   created_by: string;
   created_at: string;
   updated_at: string;

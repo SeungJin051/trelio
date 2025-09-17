@@ -198,7 +198,11 @@ export const TravelBlockItem: React.FC<TravelBlockItemProps> = ({
           {block.location && (
             <div className='flex items-center space-x-2 text-sm text-gray-600'>
               <IoLocationOutline className='h-4 w-4 text-gray-400' />
-              <span className='truncate'>{block.location.address}</span>
+              <span className='truncate'>
+                {typeof block.location === 'string'
+                  ? block.location
+                  : block.location.address || '위치 정보 없음'}
+              </span>
             </div>
           )}
 
