@@ -7,12 +7,11 @@ import { useRouter } from 'next/navigation';
 import {
   IoAddOutline,
   IoCalendarOutline,
-  IoChevronDownOutline,
   IoPeopleOutline,
   IoSearchOutline,
 } from 'react-icons/io5';
 
-import { Button, Input, Typography } from '@ui/components';
+import { Button, Input, Select, Typography } from '@ui/components';
 
 import TravelBasicInfoModal from '@/components/travel/modals/TravelBasicInfoModal';
 import { useSession } from '@/hooks/useSession';
@@ -283,27 +282,19 @@ const TravelPlansList: React.FC = () => {
             ))}
           </div>
           <div className='flex space-x-3'>
-            <div className='relative'>
-              <select
-                value={sort}
-                onChange={(e) => handleSortChange(e.target.value as SortType)}
-                className='appearance-none rounded-lg border border-gray-300 bg-white px-3 py-3 pr-8 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500'
-              >
-                {sortOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <IoChevronDownOutline className='pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400' />
-            </div>
+            <Select
+              label='정렬'
+              value={sort}
+              onChange={(value) => handleSortChange(value as SortType)}
+              options={sortOptions}
+            />
             <div className='relative'>
               <Input
                 placeholder='여행 제목 또는 장소 검색'
                 value={searchQuery}
                 onChange={handleSearchChange}
                 leftIcon={<IoSearchOutline className='h-4 w-4' />}
-                className='w-64'
+                className='h-[60px] w-64'
               />
             </div>
           </div>
