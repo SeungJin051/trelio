@@ -110,7 +110,7 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
   const [participantCountMap, setParticipantCountMap] = useState<
     Map<string, number>
   >(new Map());
-  const EMPTY_ARRAY: ReadonlyArray<any> = [];
+  const EMPTY_ARRAY: ReadonlyArray<unknown> = [];
 
   // 모바일 감지
   useEffect(() => {
@@ -136,7 +136,9 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
   useEffect(() => {
     const fetchParticipantCounts = async () => {
       try {
-        const planIds = (accessiblePlans || []).map((p: any) => p.id);
+        const planIds = (accessiblePlans || []).map(
+          (p: { id: string }) => p.id
+        );
         if (!planIds.length) {
           setParticipantCountMap(new Map());
           return;
@@ -148,7 +150,7 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
           .in('plan_id', planIds);
 
         const map = new Map<string, number>();
-        (data || []).forEach((row: any) => {
+        (data || []).forEach((row: { plan_id: string }) => {
           map.set(row.plan_id, (map.get(row.plan_id) || 0) + 1);
         });
         setParticipantCountMap(map);
@@ -187,8 +189,15 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
 
   // 서버 데이터 -> 뷰 모델 변환 (상태 대신 메모이제이션)
   const travelPlans: TravelPlan[] = useMemo(() => {
-    const source = accessiblePlans ?? EMPTY_ARRAY;
-    return source.map((plan: any) => {
+    const source = (accessiblePlans ?? EMPTY_ARRAY) as Array<{
+      id: string;
+      title: string;
+      start_date: string;
+      end_date: string;
+      location: string;
+      created_at: string;
+    }>;
+    return source.map((plan) => {
       const startDate = new Date(plan.start_date);
       const endDate = new Date(plan.end_date);
       const today = new Date();
@@ -257,6 +266,52 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
   const handleRefresh = () => {
     refetch();
   };
+
+  // 다른 곳에서 여행 생성이 완료되면 사이드바도 즉시 갱신할 수 있도록 커스텀 이벤트 수신
+  useEffect(() => {
+    const onTravelCreated = () => {
+      refetch();
+    };
+    const onTravelDeleted = () => {
+      refetch();
+    };
+    window.addEventListener('travel:created', onTravelCreated);
+    window.addEventListener('travel:deleted', onTravelDeleted);
+    return () => {
+      window.removeEventListener('travel:created', onTravelCreated);
+      window.removeEventListener('travel:deleted', onTravelDeleted);
+    };
+  }, [refetch]);
+
+  // travel_plans 테이블의 변경사항을 실시간으로 구독하여 즉시 반영
+  useEffect(() => {
+    const planIds = (accessiblePlans || []).map((p: { id: string }) => p.id);
+    if (!planIds.length) return;
+
+    const channel = supabase
+      .channel('travel-plans-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'travel_plans',
+          filter: `id=in.(${planIds.join(',')})`,
+        },
+        () => {
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      try {
+        channel.unsubscribe();
+      } catch (e) {
+        // noop
+      }
+    };
+  }, [accessiblePlans, supabase, refetch]);
 
   return (
     <>

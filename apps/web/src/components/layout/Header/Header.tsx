@@ -5,15 +5,11 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { CiLogin, CiLogout, CiUser } from 'react-icons/ci';
+import { CiLogin, CiLogout } from 'react-icons/ci';
 import { CiMenuBurger } from 'react-icons/ci';
 import { FaExclamationTriangle } from 'react-icons/fa';
 import { IoCloseOutline } from 'react-icons/io5';
-import {
-  IoAddOutline,
-  IoNotificationsOutline,
-  IoSearch,
-} from 'react-icons/io5';
+import { IoAddOutline, IoSearch } from 'react-icons/io5';
 import {
   MdOutlineAccessTime,
   MdOutlineCheckCircle,
@@ -87,7 +83,7 @@ export const Header = ({
 
   // 여행 계획 목록 가져오기 (Sidebar와 동일한 로직)
   const fetchTravelPlans = useCallback(
-    async (forceRefresh = false) => {
+    async (forceRefresh: boolean = false) => {
       if (!userProfile) {
         setLoading(false);
         return;
@@ -124,14 +120,14 @@ export const Header = ({
         }
 
         // 참가자 수 집계
-        const planIds = (plansData || []).map((p: any) => p.id);
+        const planIds = (plansData || []).map((p: { id: string }) => p.id);
         const participantCountMap = new Map<string, number>();
         if (planIds.length > 0) {
           const { data: allParticipants } = await supabase
             .from('travel_plan_participants')
             .select('plan_id')
             .in('plan_id', planIds);
-          (allParticipants || []).forEach((row: any) => {
+          (allParticipants || []).forEach((row: { plan_id: string }) => {
             participantCountMap.set(
               row.plan_id,
               (participantCountMap.get(row.plan_id) || 0) + 1
@@ -141,7 +137,14 @@ export const Header = ({
 
         // 데이터 변환 및 상태 결정
         const transformedPlans: TravelPlan[] = (plansData || []).map(
-          (plan: any) => {
+          (plan: {
+            id: string;
+            title: string;
+            start_date: string;
+            end_date: string;
+            location: string;
+            created_at: string;
+          }) => {
             const startDate = new Date(plan.start_date);
             const endDate = new Date(plan.end_date);
             const today = new Date();
@@ -243,6 +246,8 @@ export const Header = ({
   const handleSignOut = async () => {
     await signOut();
     setProfileDropdownOpen(false);
+    // 로그아웃 후 홈으로 이동
+    window.location.href = '/';
   };
 
   // 로그인 전 헤더 렌더링
@@ -970,6 +975,10 @@ export const Header = ({
       <NewTravelModal
         isOpen={newTravelModalOpen}
         onClose={() => setNewTravelModalOpen(false)}
+        onCreated={() => {
+          // 여행 생성 직후 사이드바/헤더 데이터 즉시 갱신
+          fetchTravelPlans(true);
+        }}
       />
     </header>
   );
