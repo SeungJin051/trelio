@@ -12,11 +12,13 @@ import { TravelBasicInfoModal } from '@/components/travel';
 interface NewTravelModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onCreated?: () => void; // 여행 생성 완료 시 콜백
 }
 
 export const NewTravelModal: React.FC<NewTravelModalProps> = ({
   isOpen,
   onClose,
+  onCreated,
 }) => {
   const [showBasicInfoModal, setShowBasicInfoModal] = useState(false);
 
@@ -127,6 +129,14 @@ export const NewTravelModal: React.FC<NewTravelModalProps> = ({
       <TravelBasicInfoModal
         isOpen={showBasicInfoModal}
         onClose={handleBasicInfoModalClose}
+        onUpdate={() => {
+          // 상위(Header 등)에서 즉시 목록 갱신 요청
+          onCreated?.();
+          // 글로벌 브로드캐스트: 사이드바 등에서 수신하여 refetch
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('travel:created'));
+          }
+        }}
       />
     </>
   );

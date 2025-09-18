@@ -155,6 +155,21 @@ const TravelPlansList: React.FC = () => {
     fetchTravelPlans();
   }, [fetchTravelPlans]);
 
+  // 다른 곳에서 여행 생성이 완료되면 즉시 목록 갱신
+  useEffect(() => {
+    const onTravelCreated = () => {
+      fetchTravelPlans();
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('travel:created', onTravelCreated);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('travel:created', onTravelCreated);
+      }
+    };
+  }, [fetchTravelPlans]);
+
   // 로그인 직후 또는 토큰이 갱신되면 즉시 목록을 다시 가져온다
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange(() => {
