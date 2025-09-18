@@ -32,6 +32,7 @@ export interface TravelBlock {
   end_time?: string;
   cost?: number;
   currency?: string;
+  meta?: Record<string, unknown>;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -69,26 +70,66 @@ export interface CreateBlockRequest {
   title: string;
   description?: string;
   day_number: number;
-  order_index: number;
+  order_index?: number;
   block_type?: string;
-  location?: string;
+  location?:
+    | string
+    | {
+        address: string;
+        latitude?: number;
+        longitude?: number;
+        placeId?: string;
+      };
   start_time?: string;
   end_time?: string;
   cost?: number;
   currency?: string;
+  meta?: Record<string, unknown>;
 }
 
 export interface UpdateBlockRequest {
+  id: string;
+  plan_id?: string;
   title?: string;
   description?: string;
   day_number?: number;
   order_index?: number;
   block_type?: string;
-  location?: string;
+  location?:
+    | string
+    | {
+        address: string;
+        latitude?: number;
+        longitude?: number;
+        placeId?: string;
+      };
   start_time?: string;
   end_time?: string;
   cost?: number;
   currency?: string;
+  meta?: Record<string, unknown>;
+}
+
+export interface UpdateBlockData {
+  plan_id?: string;
+  title?: string;
+  description?: string;
+  day_number?: number;
+  order_index?: number;
+  block_type?: string;
+  location?:
+    | string
+    | {
+        address: string;
+        latitude?: number;
+        longitude?: number;
+        placeId?: string;
+      };
+  start_time?: string;
+  end_time?: string;
+  cost?: number;
+  currency?: string;
+  meta?: Record<string, unknown>;
 }
 
 export interface MoveBlockRequest {
@@ -135,9 +176,28 @@ export async function createBlock(
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    console.error('[createBlock] failed', { status: response.status, error });
-    throw new Error(error.error || 'Failed to create block');
+    let parsed: any = {};
+    try {
+      parsed = await response.json();
+    } catch {
+      try {
+        const text = await response.text();
+        parsed = { raw: text };
+      } catch {
+        parsed = {};
+      }
+    }
+    console.error('[createBlock] failed', {
+      status: response.status,
+      statusText: response.statusText,
+      error: parsed,
+    });
+    const message =
+      parsed?.error ||
+      parsed?.details ||
+      parsed?.hint ||
+      'Failed to create block';
+    throw new Error(message);
   }
 
   const json = (await response.json()) as TravelBlock;
@@ -146,7 +206,7 @@ export async function createBlock(
 
 export async function updateBlock(
   blockId: string,
-  data: UpdateBlockRequest
+  data: UpdateBlockData
 ): Promise<TravelBlock> {
   const response = await fetch(`/api/blocks/${blockId}`, {
     method: 'PUT',
@@ -157,10 +217,18 @@ export async function updateBlock(
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
+    let error: any = {};
+    let errorText = '';
+    try {
+      error = await response.json();
+    } catch (e) {
+      errorText = await response.text();
+    }
     console.error('[updateBlock] failed', {
       status: response.status,
+      statusText: response.statusText,
       error,
+      errorText,
       blockId,
     });
     throw new Error(error.error || 'Failed to update block');
@@ -179,9 +247,28 @@ export async function deleteBlock(blockId: string): Promise<void> {
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    console.error('[deleteBlock] failed', { status: response.status, error });
-    throw new Error(error.error || 'Failed to delete block');
+    let parsed: any = {};
+    try {
+      parsed = await response.json();
+    } catch {
+      try {
+        const text = await response.text();
+        parsed = { raw: text };
+      } catch {
+        parsed = {};
+      }
+    }
+    console.error('[deleteBlock] failed', {
+      status: response.status,
+      statusText: response.statusText,
+      error: parsed,
+    });
+    const message =
+      parsed?.error ||
+      parsed?.details ||
+      parsed?.hint ||
+      'Failed to delete block';
+    throw new Error(message);
   }
 }
 

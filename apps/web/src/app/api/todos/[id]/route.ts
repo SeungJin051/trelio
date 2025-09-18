@@ -109,7 +109,7 @@ export async function PATCH(
       );
     }
 
-    // 담당자가 변경되는 경우, 해당 사용자가 여행 계획 참여자인지 확인
+    // 담당자가 지정되는 경우 (null이 아닌 경우), 해당 사용자가 여행 계획 참여자인지 확인
     if (body.assigned_user_id !== undefined && body.assigned_user_id !== null) {
       const { data: assigneeParticipant, error: assigneeError } = await supabase
         .from('travel_plan_participants')
@@ -155,7 +155,7 @@ export async function PATCH(
 
       if (userIds.size > 0) {
         const { data: users, error: usersError } = await supabase
-          .from('profiles')
+          .from('user_profiles')
           .select('id, nickname, profile_image_url')
           .in('id', Array.from(userIds));
 

@@ -302,15 +302,15 @@ export const Header = ({
       </Button>
 
       {/* 알림 아이콘 */}
-      <button
-        className='flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-gray-100'
+      {/* <button
+        className='flex items-center justify-center w-10 h-10 transition-colors rounded-full hover:bg-gray-100'
         onClick={() => {
           // TODO: 알림 모달 열기
           console.log('알림 모달 열기');
         }}
       >
         <Icon as={IoNotificationsOutline} color='#374151' size={24} />
-      </button>
+      </button> */}
 
       {/* 아바타 */}
       <div className='profile-dropdown relative'>
@@ -345,14 +345,14 @@ export const Header = ({
                 </Typography>
               </div>
 
-              <Link
+              {/* <Link
                 href='/profile'
                 className='flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
                 onClick={() => setProfileDropdownOpen(false)}
               >
-                <Icon as={CiUser} className='mr-2 h-4 w-4' />
+                <Icon as={CiUser} className='w-4 h-4 mr-2' />
                 프로필 설정
-              </Link>
+              </Link> */}
 
               <button
                 onClick={handleSignOut}
@@ -422,8 +422,8 @@ export const Header = ({
           </button>
 
           {/* 알림 버튼 */}
-          <button
-            className='flex w-full items-center justify-center space-x-2 rounded-xl bg-gray-100 px-4 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-200'
+          {/* <button
+            className='flex items-center justify-center w-full px-4 py-3 space-x-2 font-medium text-gray-700 transition-colors bg-gray-100 rounded-xl hover:bg-gray-200'
             onClick={() => {
               // TODO: 알림 모달 열기
               console.log('알림 모달 열기');
@@ -432,7 +432,7 @@ export const Header = ({
           >
             <Icon as={IoNotificationsOutline} size={20} />
             <span>알림</span>
-          </button>
+          </button> */}
 
           {/* 사용자 프로필 정보 */}
           <div className='flex items-center space-x-3 px-4 py-2'>
@@ -452,13 +452,13 @@ export const Header = ({
           </div>
 
           {/* 프로필 설정 버튼 */}
-          <Link
+          {/* <Link
             href='/profile'
-            className='flex w-full items-center justify-center rounded-xl bg-gray-100 px-4 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-200'
+            className='flex items-center justify-center w-full px-4 py-3 font-medium text-gray-700 transition-colors bg-gray-100 rounded-xl hover:bg-gray-200'
             onClick={() => setMobileMenuOpen(false)}
           >
             프로필 설정
-          </Link>
+          </Link> */}
 
           {/* 로그아웃 버튼 */}
           <button
@@ -531,9 +531,9 @@ export const Header = ({
         </button>
 
         {/* 알림 버튼 */}
-        <button className='rounded-full p-2 text-gray-700 transition-colors hover:bg-gray-100'>
-          <IoNotificationsOutline className='h-5 w-5' />
-        </button>
+        {/* <button className='p-2 text-gray-700 transition-colors rounded-full hover:bg-gray-100'>
+          <IoNotificationsOutline className='w-5 h-5' />
+        </button> */}
 
         {/* 프로필 영역 */}
         {renderProfileArea()}

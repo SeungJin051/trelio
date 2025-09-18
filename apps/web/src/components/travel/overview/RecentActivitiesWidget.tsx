@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
@@ -12,8 +12,9 @@ import {
   IoPeopleOutline,
 } from 'react-icons/io5';
 
-import { Typography } from '@ui/components';
+import { Button, Typography } from '@ui/components';
 
+import { Modal } from '@/components/basic/Modal';
 import { useRecentActivities } from '@/hooks/useTravelPlans';
 import { formatTimeAgo, getUserDisplayName } from '@/lib/travel-utils';
 import type { Activity } from '@/types/travel';
@@ -50,7 +51,11 @@ const getActivityColor = (actionType: Activity['action_type']) => {
 
 const RecentActivitiesWidget: React.FC = () => {
   const router = useRouter();
-  const { data: activities = [], isLoading } = useRecentActivities(5);
+  const { data: activities = [], isLoading } = useRecentActivities(10); // 더 많은 데이터를 가져옴
+  const [showAllModal, setShowAllModal] = useState(false);
+
+  const displayedActivities = activities.slice(0, 3); // 처음 3개만 표시
+  const hasMoreActivities = activities.length > 3;
 
   const handleActivityClick = (activity: Activity) => {
     router.push(`/travel/${activity.travel_plan_id}`);
@@ -79,12 +84,12 @@ const RecentActivitiesWidget: React.FC = () => {
 
   return (
     <div className='rounded-lg border border-gray-200 bg-white p-6 shadow-sm'>
-      <Typography variant='h6' weight='semiBold' className='mb-4 text-gray-900'>
+      <Typography variant='h5' weight='semiBold' className='mb-4 text-gray-900'>
         🤝 최근 협업 활동
       </Typography>
 
       {activities.length === 0 ? (
-        <div className='py-8 text-center'>
+        <div className='flex flex-col items-center justify-center py-16 text-center'>
           <div className='mb-2 text-4xl'>📋</div>
           <Typography variant='body2' className='mb-1 text-gray-500'>
             아직 활동이 없어요
@@ -95,7 +100,7 @@ const RecentActivitiesWidget: React.FC = () => {
         </div>
       ) : (
         <div className='space-y-3'>
-          {activities.map((activity) => (
+          {displayedActivities.map((activity) => (
             <div
               key={activity.id}
               onClick={() => handleActivityClick(activity)}
@@ -130,16 +135,82 @@ const RecentActivitiesWidget: React.FC = () => {
         </div>
       )}
 
-      {activities.length > 0 && (
+      {hasMoreActivities && (
         <div className='mt-4 border-t border-gray-100 pt-4'>
           <button
             className='w-full text-center text-sm font-medium text-blue-600 transition-colors hover:text-blue-700'
-            onClick={() => router.push('/travel/activities')}
+            onClick={() => setShowAllModal(true)}
           >
-            모든 활동 보기
+            모든 활동 보기 ({activities.length}개)
           </button>
         </div>
       )}
+
+      {/* 모든 최근 활동 모달 */}
+      <Modal
+        isOpen={showAllModal}
+        onClose={() => setShowAllModal(false)}
+        width='responsive'
+      >
+        <div className='p-4 sm:p-6'>
+          <Typography
+            variant='h5'
+            weight='semiBold'
+            className='mb-4 text-gray-900'
+          >
+            🤝 최근 협업 활동 ({activities.length}개)
+          </Typography>
+          <div className='max-h-[60vh] space-y-3 overflow-y-auto sm:max-h-96'>
+            {activities.map((activity) => (
+              <div
+                key={activity.id}
+                onClick={() => {
+                  handleActivityClick(activity);
+                  setShowAllModal(false);
+                }}
+                className='flex cursor-pointer items-start space-x-3 rounded-lg p-3 transition-colors hover:bg-gray-50'
+              >
+                <div
+                  className={`flex h-8 w-8 items-center justify-center rounded-full ${getActivityColor(activity.action_type)}`}
+                >
+                  {getActivityIcon(activity.action_type)}
+                </div>
+                <div className='min-w-0 flex-1'>
+                  <Typography variant='body2' className='mb-1 text-gray-900'>
+                    <span className='font-medium'>
+                      {activity.user && activity.user.email
+                        ? getUserDisplayName(
+                            activity.user as {
+                              nickname?: string;
+                              email: string;
+                            }
+                          )
+                        : '알 수 없는 사용자'}
+                      님이
+                    </span>{' '}
+                    <span className='font-medium text-blue-600'>
+                      &lsquo;{activity.travel_plan?.title || '여행 계획'}&rsquo;
+                    </span>
+                    {activity.description}
+                  </Typography>
+                  <Typography variant='caption' className='text-gray-500'>
+                    {formatTimeAgo(activity.created_at)}
+                  </Typography>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className='mt-6 flex justify-end border-t border-gray-100 pt-4'>
+            <Button
+              variant='outlined'
+              onClick={() => setShowAllModal(false)}
+              className='w-full sm:w-auto'
+            >
+              닫기
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

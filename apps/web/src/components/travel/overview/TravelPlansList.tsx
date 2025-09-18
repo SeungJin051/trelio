@@ -270,9 +270,6 @@ const TravelPlansList: React.FC = () => {
   return (
     <div className='space-y-6'>
       <div>
-        <Typography variant='h4' weight='bold' className='mb-6 text-gray-900'>
-          여행 계획 목록
-        </Typography>
         <div className='flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0'>
           <div className='flex space-x-2'>
             {filterOptions.map((option) => (

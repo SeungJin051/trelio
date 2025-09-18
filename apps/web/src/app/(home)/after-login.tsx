@@ -18,7 +18,7 @@ const AfterLoginHomeView = () => {
             여행 대시보드
           </Typography>
           <Typography variant='body1' className='text-gray-600'>
-            나의 여행 계획을 한눈에 확인하고 관리해보세요.
+            여행 계획을 한눈에 확인하고 관리해보세요.
           </Typography>
         </div>
 
@@ -33,7 +33,7 @@ const AfterLoginHomeView = () => {
         {/* 여행 계획 목록 */}
         <div className='rounded-lg border border-gray-200 bg-white p-6 shadow-sm'>
           <Typography
-            variant='h4'
+            variant='h5'
             weight='semiBold'
             className='mb-6 text-gray-900'
           >

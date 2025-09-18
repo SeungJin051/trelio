@@ -50,6 +50,149 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { createServerSupabaseClient } from '@/lib/supabase/client/supabase-server';
 
+/**
+ * @api {put} /api/travel/:id 여행 계획 정보 수정
+ * @apiName UpdateTravelPlan
+ * @apiGroup Travel
+ *
+ * @apiParam {String} id 여행 계획의 고유 ID
+ *
+ * @apiBody {String} [title] 여행 제목
+ * @apiBody {String} [location] 여행 장소
+ * @apiBody {String} [start_date] 시작 날짜 (YYYY-MM-DD)
+ * @apiBody {String} [end_date] 종료 날짜 (YYYY-MM-DD)
+ * @apiBody {Number} [target_budget] 목표 예산
+ * @apiBody {String} [budget_currency] 예산 통화
+ * @apiBody {String} [destination_country] 목적지 국가 코드
+ *
+ * @apiSuccess {Object} travelPlan 수정된 여행 계획 정보
+ *
+ * @apiError {Object} 400 Plan ID is required / Invalid request
+ * @apiError {Object} 401 Authentication failed / Unauthorized
+ * @apiError {Object} 403 Insufficient permissions
+ * @apiError {Object} 404 Travel plan not found
+ * @apiError {Object} 500 Internal server error
+ *
+ * @apiDescription 여행 계획의 기본 정보를 수정합니다.
+ * 인증된 사용자만 접근 가능하며, 해당 여행의 소유자(owner) 또는 편집자(editor) 권한이 있는 사용자만 수정할 수 있습니다.
+ */
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: planId } = await params;
+    const body = await request.json();
+
+    const supabase = await createServerSupabaseClient();
+
+    // 사용자 인증 확인
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Authentication failed' },
+        { status: 401 }
+      );
+    }
+
+    if (!planId) {
+      return NextResponse.json(
+        { error: 'Plan ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // 기존 여행 계획 조회
+    const { data: existingPlan, error: fetchError } = await supabase
+      .from('travel_plans')
+      .select('*')
+      .eq('id', planId)
+      .single();
+
+    if (fetchError || !existingPlan) {
+      return NextResponse.json(
+        { error: 'Travel plan not found' },
+        { status: 404 }
+      );
+    }
+
+    // 권한 확인: 소유자이거나 편집자인지 확인
+    const isOwner = existingPlan.owner_id === user.id;
+    let hasEditPermission = isOwner;
+
+    if (!isOwner) {
+      const { data: participant } = await supabase
+        .from('travel_plan_participants')
+        .select('role')
+        .eq('plan_id', planId)
+        .eq('user_id', user.id)
+        .single();
+
+      hasEditPermission = participant?.role === 'editor';
+    }
+
+    if (!hasEditPermission) {
+      return NextResponse.json(
+        { error: 'Insufficient permissions' },
+        { status: 403 }
+      );
+    }
+
+    // 수정할 데이터 준비
+    const updateData: any = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (body.title !== undefined) updateData.title = body.title.trim();
+    if (body.location !== undefined) updateData.location = body.location.trim();
+    if (body.start_date !== undefined) updateData.start_date = body.start_date;
+    if (body.end_date !== undefined) updateData.end_date = body.end_date;
+    if (body.target_budget !== undefined)
+      updateData.target_budget = body.target_budget;
+    if (body.budget_currency !== undefined)
+      updateData.budget_currency = body.budget_currency;
+    if (body.destination_country !== undefined)
+      updateData.destination_country = body.destination_country;
+
+    // 여행 계획 수정
+    const { data: updatedPlan, error: updateError } = await supabase
+      .from('travel_plans')
+      .update(updateData)
+      .eq('id', planId)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error('Travel plan update error:', updateError);
+      return NextResponse.json(
+        { error: 'Failed to update travel plan' },
+        { status: 500 }
+      );
+    }
+
+    // 활동 로그 생성
+    await supabase.from('travel_activities').insert({
+      plan_id: planId,
+      user_id: user.id,
+      type: 'plan_updated',
+      description: '여행 계획 정보가 수정되었습니다.',
+      created_at: new Date().toISOString(),
+    });
+
+    return NextResponse.json({ travelPlan: updatedPlan });
+  } catch (error) {
+    console.error('API: Unexpected error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

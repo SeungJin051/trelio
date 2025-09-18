@@ -10,3 +10,4 @@ export * from './badge';
 export * from './spinner';
 export * from './avatar';
 export * from './progress';
+export * from './select';

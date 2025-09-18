@@ -81,23 +81,25 @@ export const DayTab = forwardRef<HTMLButtonElement, DayTabProps>(
           >
             Day {tab.dayNumber}
           </Typography>
-          {tab.date && (
-            <Typography variant='caption' className='text-xs text-gray-500'>
-              {new Date(tab.date).toLocaleDateString('ko-KR', {
-                month: 'short',
-                day: 'numeric',
-              })}
-            </Typography>
-          )}
-          {tab.totalCost && tab.totalCost.amount > 0 ? (
-            <Typography variant='caption' className='text-xs text-gray-400'>
-              {formatCurrency(
-                tab.totalCost.amount,
-                (tab.totalCost.currency as CurrencyCode) || 'KRW'
+          {(tab.date || (tab.totalCost && tab.totalCost.amount > 0)) && (
+            <div className='flex flex-col items-center'>
+              {tab.date && (
+                <Typography variant='caption' className='text-xs text-gray-500'>
+                  {new Date(tab.date).toLocaleDateString('ko-KR', {
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </Typography>
               )}
-            </Typography>
-          ) : (
-            <div className='h-3'></div> // 비용이 없을 때도 공간 확보
+              {tab.totalCost && tab.totalCost.amount > 0 && (
+                <Typography variant='caption' className='text-xs text-gray-400'>
+                  {formatCurrency(
+                    tab.totalCost.amount,
+                    (tab.totalCost.currency as CurrencyCode) || 'KRW'
+                  )}
+                </Typography>
+              )}
+            </div>
           )}
         </div>
       );

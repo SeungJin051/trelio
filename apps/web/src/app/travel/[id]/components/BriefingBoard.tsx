@@ -2,8 +2,9 @@
 
 import {
   IoAddOutline,
+  IoChevronForwardOutline,
   IoDownloadOutline,
-  IoSettingsOutline,
+  IoPencilOutline,
   IoTimeOutline,
   IoWalletOutline,
 } from 'react-icons/io5';
@@ -18,8 +19,6 @@ import {
 
 import { useBudgetWithExchange } from '@/hooks/useBudgetWithExchange';
 import { usePlanningProgress } from '@/hooks/usePlanningProgress';
-
-// import { calculateDDayWithEnd } from '@/lib/travel-utils';
 
 import { SharedTodoWidget } from './SharedTodoWidget';
 
@@ -64,6 +63,7 @@ interface BriefingBoardProps {
   currency: string;
   destinationCountry?: string; // 목적지 국가 코드
   userNationality?: string; // 사용자 국적
+  isOwner?: boolean; // 현재 사용자가 오너인지 여부
   hotTopics: Array<{
     id: string;
     title: string;
@@ -77,6 +77,7 @@ interface BriefingBoardProps {
   onHotTopicClick: (blockId: string) => void;
   onBudgetClick?: () => void;
   onReadinessClick?: () => void;
+  onViewAllActivities?: () => void;
 }
 
 export const BriefingBoard: React.FC<BriefingBoardProps> = ({
@@ -89,11 +90,14 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
   currency,
   destinationCountry,
   userNationality,
+  isOwner = false,
   onInviteParticipants,
   onExport,
   onSettings,
   onBudgetClick,
   onReadinessClick,
+  onViewAllActivities,
+  onBlockClick,
 }) => {
   // 여행 계획율 계산
   const {
@@ -177,72 +181,99 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
               </div>
             </div>
 
-            {/* 빠른 액션 */}
-            <div className='w-full rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4 md:p-5 lg:p-6'>
-              <Typography
-                variant='h6'
-                className='mb-3 font-semibold text-gray-900 sm:mb-4'
-              >
-                빠른 액션
-              </Typography>
-              <div className='grid w-full grid-cols-1 gap-2 sm:gap-3'>
-                <Button
-                  onClick={onInviteParticipants}
-                  colorTheme='blue'
-                  size='medium'
-                  className='h-10 w-full justify-start rounded-lg shadow-sm transition-all duration-200 hover:shadow-md sm:h-11 sm:rounded-xl md:h-12 lg:h-14'
-                  leftIcon={<IoAddOutline className='h-4 w-4 sm:h-5 sm:w-5' />}
+            {/* 빠른 액션 - 오너만 표시 */}
+            {isOwner && (
+              <div className='w-full rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4 md:p-5 lg:p-6'>
+                <Typography
+                  variant='h6'
+                  className='mb-3 font-semibold text-gray-900 sm:mb-4'
                 >
-                  <div className='ml-2 text-left sm:ml-3'>
-                    <Typography variant='h6' className='text-white'>
-                      동반자 초대하기
-                    </Typography>
+                  빠른 액션
+                </Typography>
+                <div className='grid w-full grid-cols-1 gap-2 sm:gap-3'>
+                  <Button
+                    onClick={onInviteParticipants}
+                    colorTheme='blue'
+                    size='medium'
+                    className='h-10 w-full justify-start rounded-lg shadow-sm transition-all duration-200 hover:shadow-md sm:h-11 sm:rounded-xl md:h-12 lg:h-14'
+                    leftIcon={
+                      <IoAddOutline className='h-4 w-4 sm:h-5 sm:w-5' />
+                    }
+                  >
+                    <div className='ml-2 text-left sm:ml-3'>
+                      <Typography variant='h6' className='text-white'>
+                        동반자 초대하기
+                      </Typography>
+                    </div>
+                  </Button>
+                  <div className='grid w-full grid-cols-2 gap-2 sm:gap-3'>
+                    <Button
+                      onClick={onExport}
+                      colorTheme='gray'
+                      size='medium'
+                      className='h-9 w-full justify-start rounded-lg shadow-sm transition-all duration-200 hover:shadow-md sm:h-10 sm:rounded-xl md:h-11'
+                      leftIcon={
+                        <IoDownloadOutline className='h-3 w-3 sm:h-4 sm:w-4' />
+                      }
+                    >
+                      <span className='ml-1 text-xs sm:ml-2 sm:text-sm'>
+                        내보내기
+                      </span>
+                    </Button>
+                    <Button
+                      onClick={onSettings}
+                      colorTheme='gray'
+                      size='medium'
+                      className='h-9 w-full justify-start rounded-lg shadow-sm transition-all duration-200 hover:shadow-md sm:h-10 sm:rounded-xl md:h-11'
+                      leftIcon={
+                        <IoPencilOutline className='h-3 w-3 sm:h-4 sm:w-4' />
+                      }
+                    >
+                      <span className='ml-1 text-xs sm:ml-2 sm:text-sm'>
+                        여행 정보 수정
+                      </span>
+                    </Button>
                   </div>
-                </Button>
-                <div className='grid w-full grid-cols-2 gap-2 sm:gap-3'>
-                  <Button
-                    onClick={onExport}
-                    colorTheme='gray'
-                    size='medium'
-                    className='h-9 w-full justify-start rounded-lg shadow-sm transition-all duration-200 hover:shadow-md sm:h-10 sm:rounded-xl md:h-11'
-                    leftIcon={
-                      <IoDownloadOutline className='h-3 w-3 sm:h-4 sm:w-4' />
-                    }
-                  >
-                    <span className='ml-1 text-xs sm:ml-2 sm:text-sm'>
-                      내보내기
-                    </span>
-                  </Button>
-                  <Button
-                    onClick={onSettings}
-                    colorTheme='gray'
-                    size='medium'
-                    className='h-9 w-full justify-start rounded-lg shadow-sm transition-all duration-200 hover:shadow-md sm:h-10 sm:rounded-xl md:h-11'
-                    leftIcon={
-                      <IoSettingsOutline className='h-3 w-3 sm:h-4 sm:w-4' />
-                    }
-                  >
-                    <span className='ml-1 text-xs sm:ml-2 sm:text-sm'>
-                      설정
-                    </span>
-                  </Button>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* 최근 변경사항 */}
             <div className='w-full rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4 md:p-5 lg:p-6'>
-              <Typography
-                variant='h6'
-                className='mb-3 font-semibold text-gray-900 sm:mb-4'
-              >
-                최근 변경사항
-              </Typography>
+              <div className='mb-3 flex items-center justify-between sm:mb-4'>
+                <Typography
+                  variant='h6'
+                  className='font-semibold text-gray-900'
+                >
+                  최근 변경사항
+                </Typography>
+                {activities.length > 3 && (
+                  <Button
+                    onClick={onViewAllActivities}
+                    variant='outlined'
+                    colorTheme='gray'
+                    size='small'
+                    className='h-8 px-3'
+                    rightIcon={<IoChevronForwardOutline className='h-3 w-3' />}
+                  >
+                    <span className='text-xs'>더 보기</span>
+                  </Button>
+                )}
+              </div>
               <div className='space-y-2 sm:space-y-3'>
-                {activities.map((activity: ActivityItem) => (
+                {activities.slice(0, 3).map((activity: ActivityItem) => (
                   <div
                     key={activity.id}
-                    className='rounded-lg border border-gray-200 p-3'
+                    className={`rounded-lg border border-gray-200 p-3 ${
+                      activity.blockId
+                        ? 'cursor-pointer transition-all duration-200 hover:border-blue-300 hover:bg-blue-50'
+                        : ''
+                    }`}
+                    onClick={() => {
+                      if (activity.blockId) {
+                        onBlockClick(activity.blockId);
+                      }
+                    }}
                   >
                     <div className='flex items-start space-x-3'>
                       <Avatar
@@ -266,13 +297,28 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
                             variant='caption'
                             className='text-gray-400'
                           >
-                            {activity.timestamp}
+                            {new Date(activity.timestamp).toLocaleString(
+                              'ko-KR',
+                              {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              }
+                            )}
                           </Typography>
                         </div>
                       </div>
                     </div>
                   </div>
                 ))}
+                {activities.length === 0 && (
+                  <div className='py-8 text-center'>
+                    <Typography variant='body2' className='text-gray-500'>
+                      아직 활동 내역이 없습니다.
+                    </Typography>
+                  </div>
+                )}
               </div>
             </div>
           </div>

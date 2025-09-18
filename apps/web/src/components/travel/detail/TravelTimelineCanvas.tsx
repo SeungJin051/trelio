@@ -35,20 +35,8 @@ interface TravelTimelineCanvasProps {
     newOrderIndex: number
   ) => void;
   onBlockClick?: (block: TravelBlock) => void;
+  onBlockEdit?: (block: TravelBlock) => void;
 }
-
-// 블록 타입별 아이콘 매핑 함수
-const getBlockIcon = (blockType: BlockType) => {
-  const iconMap = {
-    flight: <IoAirplaneOutline className='h-4 w-4' />,
-    move: <IoCarOutline className='h-4 w-4' />,
-    food: <IoRestaurantOutline className='h-4 w-4' />,
-    hotel: <IoBedOutline className='h-4 w-4' />,
-    activity: <IoGameControllerOutline className='h-4 w-4' />,
-    memo: <IoDocumentTextOutline className='h-4 w-4' />,
-  };
-  return iconMap[blockType] || <IoDocumentTextOutline className='h-4 w-4' />;
-};
 
 export const TravelTimelineCanvas: React.FC<TravelTimelineCanvasProps> = ({
   timeline,
@@ -58,6 +46,7 @@ export const TravelTimelineCanvas: React.FC<TravelTimelineCanvasProps> = ({
   onBlockCreate: _onBlockCreate,
   onBlockMove,
   onBlockClick,
+  onBlockEdit,
 }) => {
   // 선택된 날짜의 블록 데이터 추출
   const selectedDayData = timeline.days.find(
@@ -113,6 +102,7 @@ export const TravelTimelineCanvas: React.FC<TravelTimelineCanvasProps> = ({
                   block={block}
                   canEdit={canEdit}
                   onClick={onBlockClick}
+                  onEdit={onBlockEdit}
                 />
               ))}
             </div>

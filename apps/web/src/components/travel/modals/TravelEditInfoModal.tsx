@@ -2,11 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 
-import { useRouter } from 'next/navigation';
-
-import { useQueryClient } from '@tanstack/react-query';
-import { IoPersonOutline, IoWalletOutline } from 'react-icons/io5';
-import { v4 as uuidv4 } from 'uuid';
+import { IoWalletOutline } from 'react-icons/io5';
 
 import { Button, Input, Typography } from '@ui/components';
 
@@ -24,38 +20,49 @@ import {
 } from '@/lib/exchange-rate';
 import { createClient } from '@/lib/supabase/client/supabase';
 
-interface TravelBasicInfo {
+interface TravelInfo {
   title: string;
   location: string;
   startDate: Date | null;
   endDate: Date | null;
-  targetBudget: string; // 입력값은 문자열로 받아서 숫자로 변환
-  allowEdit: boolean;
+  targetBudget: string;
 }
 
-interface TravelBasicInfoModalProps {
+interface TravelPlan {
+  id: string;
+  title: string;
+  location: string;
+  start_date: string;
+  end_date: string;
+  target_budget?: number;
+  budget_currency?: string;
+  destination_country?: string;
+}
+
+interface TravelEditInfoModalProps {
   isOpen: boolean;
   onClose: () => void;
+  travelPlan: TravelPlan;
+  onUpdate?: () => void;
 }
 
-const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
+const TravelEditInfoModal: React.FC<TravelEditInfoModalProps> = ({
   isOpen,
   onClose,
+  travelPlan,
+  onUpdate,
 }) => {
-  const { userProfile, session } = useSession();
-  const router = useRouter();
+  const { userProfile } = useSession();
   const toast = useToast();
   const supabase = createClient();
-  const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(false);
-  const [basicInfo, setBasicInfo] = useState<TravelBasicInfo>({
+  const [travelInfo, setTravelInfo] = useState<TravelInfo>({
     title: '',
     location: '',
     startDate: null,
     endDate: null,
     targetBudget: '',
-    allowEdit: true,
   });
 
   const [errors, setErrors] = useState<{
@@ -65,6 +72,21 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
     budget?: string;
   }>({});
 
+  // 초기 데이터 설정
+  useEffect(() => {
+    if (travelPlan && isOpen) {
+      setTravelInfo({
+        title: travelPlan.title,
+        location: travelPlan.location,
+        startDate: new Date(travelPlan.start_date),
+        endDate: new Date(travelPlan.end_date),
+        targetBudget: travelPlan.target_budget
+          ? formatBudgetInput(travelPlan.target_budget.toString())
+          : '',
+      });
+    }
+  }, [travelPlan, isOpen]);
+
   // 사용자 통화 가져오기
   const getUserCurrency = () => {
     return getCurrencyByNationality(userProfile?.nationality);
@@ -72,12 +94,12 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
 
   // 목적지 통화 가져오기
   const getDestinationCurrency = () => {
-    if (!basicInfo.location) return getUserCurrency();
+    if (!travelInfo.location) return getUserCurrency();
 
     const selectedCountry = countriesISO.find(
       (country) =>
-        country.nameKo.toLowerCase() === basicInfo.location.toLowerCase() ||
-        country.nameEn.toLowerCase() === basicInfo.location.toLowerCase()
+        country.nameKo.toLowerCase() === travelInfo.location.toLowerCase() ||
+        country.nameEn.toLowerCase() === travelInfo.location.toLowerCase()
     );
 
     return getCurrencyByDestination(selectedCountry?.code);
@@ -100,7 +122,7 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
 
   useEffect(() => {
     const run = async () => {
-      const amount = parseBudgetValue(basicInfo.targetBudget);
+      const amount = parseBudgetValue(travelInfo.targetBudget);
       const userCur = getUserCurrency();
       const destCur = getDestinationCurrency();
       if (!amount || !destCur) {
@@ -116,7 +138,7 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
     };
     run();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [basicInfo.targetBudget, basicInfo.location, userProfile?.nationality]);
+  }, [travelInfo.targetBudget, travelInfo.location, userProfile?.nationality]);
 
   // 실제 숫자값으로 변환
   const parseBudgetValue = (formattedValue: string): number => {
@@ -125,16 +147,16 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
 
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {};
-    if (!basicInfo.title.trim()) {
+    if (!travelInfo.title.trim()) {
       newErrors.title = '여행 제목을 입력해주세요.';
-    } else if (basicInfo.title.trim().length > 50) {
+    } else if (travelInfo.title.trim().length > 50) {
       newErrors.title = '여행 제목은 50자 이내로 입력해주세요.';
     }
-    if (!basicInfo.location.trim()) {
+    if (!travelInfo.location.trim()) {
       newErrors.location = '나라(국가)를 입력해주세요.';
     } else {
       const normalize = (s: string) => s.trim().toLowerCase();
-      const input = normalize(basicInfo.location);
+      const input = normalize(travelInfo.location);
       const isValidCountry = countriesISO.some(
         (c) => normalize(c.nameKo) === input || normalize(c.nameEn) === input
       );
@@ -142,13 +164,13 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
         newErrors.location = '국가 목록에서 정확한 국가를 선택해주세요.';
       }
     }
-    if (!basicInfo.startDate || !basicInfo.endDate) {
+    if (!travelInfo.startDate || !travelInfo.endDate) {
       newErrors.dates = '여행 시작일과 종료일을 선택해주세요.';
     }
 
     // 예산 검증 (선택사항이지만 입력 시 유효성 검사)
-    if (basicInfo.targetBudget) {
-      const budgetValue = parseBudgetValue(basicInfo.targetBudget);
+    if (travelInfo.targetBudget) {
+      const budgetValue = parseBudgetValue(travelInfo.targetBudget);
       if (budgetValue <= 0) {
         newErrors.budget = '예산은 0보다 큰 값을 입력해주세요.';
       } else if (budgetValue > 1000000000) {
@@ -161,129 +183,76 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const checkDuplicateTitle = async (title: string): Promise<boolean> => {
-    if (!session?.user) return false;
-    try {
-      const { data, error } = await supabase
-        .from('travel_plans')
-        .select('id')
-        .eq('owner_id', session.user.id)
-        .eq('title', title.trim())
-        .single();
-      if (error && error.code !== 'PGRST116') {
-        console.error('Title duplication check failed:', error);
-        return false;
-      }
-      return !!data;
-    } catch (error) {
-      console.error('Title duplication check error:', error);
-      return false;
-    }
-  };
-
-  const handleCreateTrip = async () => {
-    if (!session?.user) {
-      toast.error('로그인이 필요합니다.');
-      return;
-    }
+  const handleUpdateTrip = async () => {
     if (!validateForm()) {
       toast.error('입력 정보를 확인해주세요.');
       return;
     }
+
     setLoading(true);
     try {
-      const isDuplicate = await checkDuplicateTitle(basicInfo.title);
-      if (isDuplicate) {
-        setErrors({ title: '이미 같은 제목의 여행이 있습니다.' });
-        toast.error('이미 같은 제목의 여행이 있습니다.');
-        setLoading(false);
-        return;
-      }
-      const shareLinkId = uuidv4();
-      const budgetValue = parseBudgetValue(basicInfo.targetBudget);
+      const budgetValue = parseBudgetValue(travelInfo.targetBudget);
       const userCurrency = getUserCurrency();
       const destinationCurrency = getDestinationCurrency();
 
       // 목적지 국가 코드 찾기
       const selectedCountry = countriesISO.find(
         (country) =>
-          country.nameKo.toLowerCase() === basicInfo.location.toLowerCase() ||
-          country.nameEn.toLowerCase() === basicInfo.location.toLowerCase()
+          country.nameKo.toLowerCase() === travelInfo.location.toLowerCase() ||
+          country.nameEn.toLowerCase() === travelInfo.location.toLowerCase()
       );
 
-      // 저장 시: 목적지 선택됨 → 예산을 목적지 통화로 변환하여 저장
+      // 목적지 선택됨 → 예산을 목적지 통화로 변환하여 저장
       const budgetToSave = destinationCurrency
         ? await convertCurrency(budgetValue, userCurrency, destinationCurrency)
         : budgetValue;
 
       const budgetCurrencyToSave = destinationCurrency || userCurrency;
 
-      const { data: travelPlan, error: planError } = await supabase
-        .from('travel_plans')
-        .insert({
-          owner_id: session.user.id,
-          title: basicInfo.title.trim(),
-          location: basicInfo.location.trim(),
-          start_date: basicInfo.startDate!.toISOString().split('T')[0],
-          end_date: basicInfo.endDate!.toISOString().split('T')[0],
-          target_budget: budgetValue > 0 ? budgetToSave : 0,
-          budget_currency: budgetCurrencyToSave,
-          destination_country: selectedCountry?.code,
-          share_link_id: shareLinkId,
-          default_permission: basicInfo.allowEdit ? 'editor' : 'viewer',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
-      if (planError) {
-        console.error('Travel plan creation failed:', planError);
-        toast.error('여행 계획 생성에 실패했습니다.');
-        return;
+      const updateData = {
+        title: travelInfo.title.trim(),
+        location: travelInfo.location.trim(),
+        start_date: travelInfo.startDate!.toISOString().split('T')[0],
+        end_date: travelInfo.endDate!.toISOString().split('T')[0],
+        target_budget: budgetValue > 0 ? budgetToSave : 0,
+        budget_currency: budgetCurrencyToSave,
+        destination_country: selectedCountry?.code,
+      };
+
+      const response = await fetch(`/api/travel/${travelPlan.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '여행 계획 수정에 실패했습니다.');
       }
-      const { error: participantError } = await supabase
-        .from('travel_plan_participants')
-        .insert({
-          plan_id: travelPlan.id,
-          user_id: session.user.id,
-          role: 'owner',
-          joined_at: new Date().toISOString(),
-        });
-      if (participantError) {
-        console.error('Participant creation failed:', participantError);
-      }
-      toast.success('여행 계획이 생성되었습니다!');
+
+      toast.success('여행 계획이 수정되었습니다!');
+      onUpdate?.();
       onClose();
-      // 목록 즉시 반영: 관련 쿼리 무효화
-      try {
-        queryClient.invalidateQueries({
-          queryKey: ['accessible-travel-plans'],
-        });
-        queryClient.invalidateQueries({ queryKey: ['invited-travel-plans'] });
-        queryClient.invalidateQueries({ queryKey: ['upcoming-travel'] });
-        queryClient.invalidateQueries({ queryKey: ['recent-activities'] });
-      } catch (error) {
-        console.error('Failed to invalidate queries:', error);
-      }
-      router.push('/');
-    } catch {
-      toast.error('여행 계획 생성 중 오류가 발생했습니다.');
+    } catch (error: any) {
+      toast.error(error.message || '여행 계획 수정 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
   };
 
   const canProceed =
-    basicInfo.title.trim() &&
-    basicInfo.location.trim() &&
-    basicInfo.startDate &&
-    basicInfo.endDate;
+    travelInfo.title.trim() &&
+    travelInfo.location.trim() &&
+    travelInfo.startDate &&
+    travelInfo.endDate;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title='새 여행 계획 시작하기'
+      title='여행 정보 수정'
       width='responsive'
     >
       <div className='flex flex-col'>
@@ -293,9 +262,9 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
               <Input
                 label='여행 제목'
                 placeholder='예: 제주도 힐링 여행, 유럽 배낭여행'
-                value={basicInfo.title}
+                value={travelInfo.title}
                 onChange={(e) => {
-                  setBasicInfo((prev) => ({ ...prev, title: e.target.value }));
+                  setTravelInfo((prev) => ({ ...prev, title: e.target.value }));
                   if (errors.title)
                     setErrors((prev) => ({ ...prev, title: undefined }));
                 }}
@@ -306,9 +275,9 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
                 label='나라(국가)'
                 placeholder='예: 대한민국 / United States'
                 helperText='국가만 선택할 수 있어요'
-                value={basicInfo.location}
+                value={travelInfo.location}
                 onChange={(value) => {
-                  setBasicInfo((prev) => ({ ...prev, location: value }));
+                  setTravelInfo((prev) => ({ ...prev, location: value }));
                   if (errors.location)
                     setErrors((prev) => ({ ...prev, location: undefined }));
                 }}
@@ -316,13 +285,13 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
               />
               <TravelDatePicker
                 label='여행 기간'
-                startDate={basicInfo.startDate}
-                endDate={basicInfo.endDate}
+                startDate={travelInfo.startDate}
+                endDate={travelInfo.endDate}
                 onDateChange={(
                   startDate: Date | null,
                   endDate: Date | null
                 ) => {
-                  setBasicInfo((prev) => ({ ...prev, startDate, endDate }));
+                  setTravelInfo((prev) => ({ ...prev, startDate, endDate }));
                   if (errors.dates)
                     setErrors((prev) => ({ ...prev, dates: undefined }));
                 }}
@@ -337,10 +306,10 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
                   </label>
                   <Input
                     placeholder={`예: ${formatCurrencyWithExchange(1000000, getUserCurrency())}`}
-                    value={basicInfo.targetBudget}
+                    value={travelInfo.targetBudget}
                     onChange={(e) => {
                       const formattedValue = formatBudgetInput(e.target.value);
-                      setBasicInfo((prev) => ({
+                      setTravelInfo((prev) => ({
                         ...prev,
                         targetBudget: formattedValue,
                       }));
@@ -350,7 +319,7 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
                     errorText={errors.budget}
                     helperText={(function () {
                       const ownerName = userProfile?.nationality || '대한민국';
-                      const destName = basicInfo.location;
+                      const destName = travelInfo.location;
                       if (destName) {
                         return `💡 지금은 ${ownerName} 화폐 단위로 입력해주세요.`;
                       }
@@ -359,7 +328,7 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
                   />
                 </div>
 
-                {basicInfo.targetBudget && (
+                {travelInfo.targetBudget && (
                   <div className='rounded-lg border border-blue-200 bg-blue-50 p-4'>
                     <div className='flex items-center space-x-2'>
                       <IoWalletOutline className='h-5 w-5 text-blue-600' />
@@ -378,7 +347,7 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
                             const userCur = getUserCurrency();
                             const destCur = getDestinationCurrency();
                             const amount = parseBudgetValue(
-                              basicInfo.targetBudget
+                              travelInfo.targetBudget
                             );
                             if (!amount)
                               return formatCurrencyWithExchange(0, destCur);
@@ -392,11 +361,11 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
                         <Typography variant='caption' className='text-blue-700'>
                           기준 입력:{' '}
                           {formatCurrencyWithExchange(
-                            parseBudgetValue(basicInfo.targetBudget),
+                            parseBudgetValue(travelInfo.targetBudget),
                             getUserCurrency()
                           )}
                         </Typography>
-                        {basicInfo.location &&
+                        {travelInfo.location &&
                           getDestinationCurrency() !== getUserCurrency() && (
                             <Typography
                               variant='caption'
@@ -409,36 +378,6 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
-            <div>
-              <Typography
-                variant='h6'
-                weight='semiBold'
-                className='mb-4 text-gray-900'
-              >
-                참여자 설정
-              </Typography>
-              <div className='space-y-4'>
-                <div className='rounded-lg border border-gray-200 p-4'>
-                  <div className='flex items-center'>
-                    <IoPersonOutline className='mr-3 h-5 w-5 text-gray-400' />
-                    <div className='flex-1'>
-                      <Typography
-                        variant='body2'
-                        weight='medium'
-                        className='text-gray-900'
-                      >
-                        {userProfile?.nickname ||
-                          userProfile?.email ||
-                          '사용자'}
-                      </Typography>
-                      <Typography variant='caption' className='text-blue-600'>
-                        오너
-                      </Typography>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -455,11 +394,11 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
           <Button
             variant='filled'
             colorTheme='blue'
-            onClick={handleCreateTrip}
+            onClick={handleUpdateTrip}
             disabled={!canProceed || loading}
             className='flex-1'
           >
-            {loading ? '여행 만드는 중...' : '여행 만들기'}
+            {loading ? '수정 중...' : '수정하기'}
           </Button>
         </div>
       </div>
@@ -467,4 +406,4 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
   );
 };
 
-export default TravelBasicInfoModal;
+export default TravelEditInfoModal;

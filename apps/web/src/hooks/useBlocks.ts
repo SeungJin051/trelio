@@ -305,6 +305,7 @@ export const useBlocks = ({
           end_time: request.timeRange?.endTime,
           cost: request.cost?.amount,
           currency: request.cost?.currency,
+          meta: request.meta,
         }),
       });
 
