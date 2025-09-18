@@ -59,20 +59,22 @@ export const TravelHeader: React.FC<TravelHeaderProps> = ({
                 </div>
               )}
             </div>
-            <div className='flex items-center space-x-6'>
-              <div className='flex items-center text-gray-600'>
-                <IoLocationOutline className='mr-1 h-4 w-4' />
-                <Typography variant='caption'>{location}</Typography>
+            <div className='flex flex-wrap items-center gap-x-4 gap-y-1'>
+              <div className='flex min-w-0 items-center text-gray-600'>
+                <IoLocationOutline className='mr-1 h-3 w-3 shrink-0 sm:h-4 sm:w-4' />
+                <Typography variant='caption' className='truncate'>
+                  {location}
+                </Typography>
               </div>
-              <div className='flex items-center text-gray-600'>
-                <IoCalendarOutline className='mr-1 h-4 w-4' />
-                <Typography variant='caption'>
+              <div className='flex min-w-0 items-center text-gray-600'>
+                <IoCalendarOutline className='mr-1 h-3 w-3 shrink-0 sm:h-4 sm:w-4' />
+                <Typography variant='caption' className='truncate'>
                   {new Date(startDate).toLocaleDateString()} -{' '}
                   {new Date(endDate).toLocaleDateString()}
                 </Typography>
               </div>
               <div className='flex items-center text-gray-600'>
-                <IoPeopleOutline className='mr-1 h-4 w-4' />
+                <IoPeopleOutline className='mr-1 h-3 w-3 shrink-0 sm:h-4 sm:w-4' />
                 <Typography variant='caption'>
                   {participants.length}명
                 </Typography>

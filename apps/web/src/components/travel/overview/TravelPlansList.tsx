@@ -296,7 +296,7 @@ const TravelPlansList: React.FC = () => {
               </button>
             ))}
           </div>
-          <div className='flex space-x-3'>
+          <div className='flex flex-col space-y-2 sm:flex-row sm:space-x-3 sm:space-y-0'>
             <Select
               label='정렬'
               value={sort}
@@ -309,7 +309,7 @@ const TravelPlansList: React.FC = () => {
                 value={searchQuery}
                 onChange={handleSearchChange}
                 leftIcon={<IoSearchOutline className='h-4 w-4' />}
-                className='h-[60px] w-64'
+                className='h-[60px] w-full sm:w-64'
               />
             </div>
           </div>

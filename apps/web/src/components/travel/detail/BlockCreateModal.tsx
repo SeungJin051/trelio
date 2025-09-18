@@ -310,11 +310,17 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
   // 블록 타입 선택 UI 렌더링
   const renderBlockTypeSelection = () => (
     <div className='border-b border-gray-100 p-3 pb-6'>
-      <Typography variant='h5' className='mb-2 font-bold text-gray-900'>
+      <Typography
+        variant='h5'
+        className='mb-2 text-base font-bold text-gray-900 sm:text-lg'
+      >
         {currentBlockConfig?.icon}{' '}
         {isEditMode ? '일정 수정' : '새로운 일정 추가'}
       </Typography>
-      <Typography variant='body2' className='mb-6 text-gray-500'>
+      <Typography
+        variant='body2'
+        className='mb-6 text-xs text-gray-500 sm:text-sm'
+      >
         Day {dayNumber} •{' '}
         {isEditMode ? '일정을 수정해보세요' : '완벽한 여행을 위한 한 걸음'}
       </Typography>
@@ -323,7 +329,7 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
         <>
           <Typography
             variant='body1'
-            className='mb-4 font-semibold text-gray-800'
+            className='mb-4 text-sm font-semibold text-gray-800 sm:text-base'
           >
             일정 유형을 선택하세요
           </Typography>
@@ -409,11 +415,14 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
                 <div className='flex-1'>
                   <Typography
                     variant='body2'
-                    className='font-medium text-blue-900'
+                    className='text-sm font-medium text-blue-900 sm:text-base'
                   >
                     항공료는 출발국 통화로 결제됩니다
                   </Typography>
-                  <Typography variant='caption' className='text-blue-600'>
+                  <Typography
+                    variant='caption'
+                    className='text-xs text-blue-600 sm:text-sm'
+                  >
                     {userNationality === 'KR' ? '한국' : userNationality}에서
                     출발하므로 {currency}로 설정됩니다.
                   </Typography>
@@ -421,7 +430,7 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
               </motion.div>
             )}
 
-            <div className='grid grid-cols-2 gap-4'>
+            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
               <SmartInput
                 label='항공편명'
                 value={flightNumber}
@@ -438,7 +447,7 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
               />
             </div>
 
-            <div className='grid grid-cols-2 gap-4'>
+            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
               <SmartInput
                 label='출발공항'
                 value={departureAirport}
@@ -468,7 +477,7 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
               placeholder='선택하세요'
             />
 
-            <div className='grid grid-cols-2 gap-4'>
+            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
               <SmartInput
                 label='출발지'
                 value={fromLocation}
@@ -506,7 +515,7 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
       case 'food':
         return (
           <div className='space-y-6'>
-            <div className='grid grid-cols-2 gap-4'>
+            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
               <Select
                 label='식사 종류'
                 value={mealType}
@@ -585,8 +594,8 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
       modalType='component'
       showCloseButton={false}
     >
-      <div className='mx-auto max-w-4xl px-4 sm:px-6 lg:px-8'>
-        <div className='max-h-[80vh] overflow-y-auto'>
+      <div className='mx-auto max-w-4xl sm:px-6 lg:px-8'>
+        <div className='max-h-[80vh] overflow-y-auto overflow-x-hidden'>
           {/* 헤더 */}
           {renderBlockTypeSelection()}
 
@@ -647,7 +656,7 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
             {renderTypeSpecificFields()}
 
             {/* 제출 버튼 */}
-            <div className='sticky bottom-0 -mx-6 border-t border-gray-100 bg-white px-6 pb-6 pt-6'>
+            <div className='sticky bottom-0 border-t border-gray-100 bg-white pb-6 pt-6 sm:-mx-6'>
               <div
                 className={`flex space-x-3 ${isEditMode ? 'grid grid-cols-3' : ''}`}
               >
@@ -656,7 +665,7 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
                   variant='outlined'
                   size='large'
                   onClick={handleClose}
-                  className={`rounded-2xl border-gray-300 text-gray-600 hover:bg-gray-50 ${isEditMode ? '' : 'flex-1'}`}
+                  className={`rounded-2xl border-gray-300 text-gray-600 hover:bg-gray-50 ${isEditMode ? '' : 'flex-1'} text-sm sm:text-base`}
                   disabled={isLoading}
                 >
                   취소
@@ -668,7 +677,7 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
                     variant='outlined'
                     size='large'
                     onClick={handleDelete}
-                    className='rounded-2xl border-red-300 text-red-600 hover:bg-red-50'
+                    className='rounded-2xl border-red-300 text-sm text-red-600 hover:bg-red-50 sm:text-base'
                     disabled={isLoading}
                   >
                     삭제
@@ -684,7 +693,7 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
                     type='submit'
                     variant='filled'
                     size='large'
-                    className={`w-full rounded-2xl font-semibold transition-all ${
+                    className={`w-full rounded-2xl text-sm font-semibold transition-all sm:text-base ${
                       !title.trim()
                         ? 'cursor-not-allowed bg-gray-200 text-gray-400'
                         : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg hover:shadow-xl'
@@ -697,9 +706,9 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
                         <span>{isEditMode ? '수정 중...' : '추가 중...'}</span>
                       </div>
                     ) : isEditMode ? (
-                      '수정하기'
+                      '수정'
                     ) : (
-                      '추가하기'
+                      '추가'
                     )}
                   </Button>
                 </motion.div>

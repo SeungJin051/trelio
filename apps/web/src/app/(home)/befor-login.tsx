@@ -49,10 +49,7 @@ const HeroTypingTitle: React.FC = () => {
   }, [display, isDeleting, index]);
 
   return (
-    <Typography
-      variant='title1'
-      className='text-3xl leading-tight sm:text-4xl md:text-5xl lg:text-6xl'
-    >
+    <Typography variant='title2'>
       여행을{' '}
       <span className='relative inline-block'>
         <span className=''>{display || ' '}</span>

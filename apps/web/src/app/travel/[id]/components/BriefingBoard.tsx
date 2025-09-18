@@ -211,27 +211,31 @@ export const BriefingBoard: React.FC<BriefingBoardProps> = ({
                       onClick={onExport}
                       colorTheme='gray'
                       size='medium'
-                      className='h-9 w-full justify-start rounded-lg shadow-sm transition-all duration-200 hover:shadow-md sm:h-10 sm:rounded-xl md:h-11'
+                      className='h-10 w-full justify-start rounded-lg shadow-sm transition-all duration-200 hover:shadow-md sm:h-11 sm:rounded-xl md:h-12 lg:h-14'
                       leftIcon={
-                        <IoDownloadOutline className='h-3 w-3 sm:h-4 sm:w-4' />
+                        <IoDownloadOutline className='h-4 w-4 sm:h-5 sm:w-5' />
                       }
                     >
-                      <span className='ml-1 text-xs sm:ml-2 sm:text-sm'>
-                        내보내기
-                      </span>
+                      <div className='ml-2 text-left sm:ml-3'>
+                        <Typography variant='h6' className='text-white'>
+                          내보내기
+                        </Typography>
+                      </div>
                     </Button>
                     <Button
                       onClick={onSettings}
                       colorTheme='gray'
                       size='medium'
-                      className='h-9 w-full justify-start rounded-lg shadow-sm transition-all duration-200 hover:shadow-md sm:h-10 sm:rounded-xl md:h-11'
+                      className='h-10 w-full justify-start rounded-lg shadow-sm transition-all duration-200 hover:shadow-md sm:h-11 sm:rounded-xl md:h-12 lg:h-14'
                       leftIcon={
-                        <IoPencilOutline className='h-3 w-3 sm:h-4 sm:w-4' />
+                        <IoPencilOutline className='h-4 w-4 sm:h-5 sm:w-5' />
                       }
                     >
-                      <span className='ml-1 text-xs sm:ml-2 sm:text-sm'>
-                        여행 정보 수정
-                      </span>
+                      <div className='ml-2 text-left sm:ml-3'>
+                        <Typography variant='h6' className='text-white'>
+                          여행 정보 수정
+                        </Typography>
+                      </div>
                     </Button>
                   </div>
                 </div>

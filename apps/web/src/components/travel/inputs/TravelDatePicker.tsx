@@ -160,14 +160,14 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
             }
           }}
         >
-          <IoCalendarOutline className='mr-3 h-5 w-5 text-gray-400' />
+          <IoCalendarOutline className='mr-3 h-4 w-4 text-gray-400 sm:h-5 sm:w-5' />
           <div className='min-w-0 flex-1'>
             <div className='flex items-center space-x-2'>
               <span className='block truncate whitespace-nowrap font-medium text-gray-900'>
                 {formatRangeDisplay()}
               </span>
               {startDate && endDate && days > 0 && (
-                <span className='shrink-0 text-sm text-gray-500'>
+                <span className='shrink-0 text-xs text-gray-500 sm:text-sm'>
                   ({days}일)
                 </span>
               )}
@@ -175,15 +175,18 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
           </div>
           <IoChevronDownOutline
             className={cn(
-              'ml-3 h-5 w-5 text-gray-400',
+              'ml-3 h-4 w-4 text-gray-400 sm:h-5 sm:w-5',
               showCalendar ? 'rotate-180' : ''
             )}
           />
         </div>
         {showCalendar && !disabled && (
-          <div className='absolute right-0 top-full z-50 mt-3 rounded-3xl bg-white p-5 shadow-xl ring-1 ring-black/5 transition-all duration-300'>
+          <div className='absolute left-1/2 top-full z-50 mt-3 max-w-[95vw] -translate-x-1/2 overflow-x-hidden rounded-3xl bg-white p-3 shadow-xl ring-1 ring-black/5 transition-all duration-200 sm:left-auto sm:right-0 sm:w-auto sm:max-w-none sm:translate-x-0 sm:p-5'>
             <div className='mb-4'>
-              <Typography variant='body2' className='font-medium text-gray-700'>
+              <Typography
+                variant='body2'
+                className='text-sm font-medium text-gray-700 sm:text-base'
+              >
                 {focusedInput === 'start'
                   ? '시작일을 선택해주세요'
                   : '종료일을 선택해주세요'}
@@ -215,11 +218,11 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
                     type='button'
                     onClick={decreaseMonth}
                     disabled={prevMonthButtonDisabled}
-                    className='flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-gray-800 ring-1 ring-black/5 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 disabled:opacity-40'
+                    className='flex h-8 w-8 items-center justify-center rounded-2xl bg-white text-gray-800 ring-1 ring-black/5 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 disabled:opacity-40 sm:h-10 sm:w-10'
                   >
-                    <IoChevronBackOutline className='h-4 w-4' />
+                    <IoChevronBackOutline className='h-3 w-3 sm:h-4 sm:w-4' />
                   </button>
-                  <span className='select-none text-sm font-medium text-gray-800'>
+                  <span className='select-none text-xs font-medium text-gray-800 sm:text-sm'>
                     {date.toLocaleDateString('ko-KR', {
                       year: 'numeric',
                       month: 'long',
@@ -229,9 +232,9 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
                     type='button'
                     onClick={increaseMonth}
                     disabled={nextMonthButtonDisabled}
-                    className='flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-gray-800 ring-1 ring-black/5 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 disabled:opacity-40'
+                    className='flex h-8 w-8 items-center justify-center rounded-2xl bg-white text-gray-800 ring-1 ring-black/5 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 disabled:opacity-40 sm:h-10 sm:w-10'
                   >
-                    <IoChevronForwardOutline className='h-4 w-4' />
+                    <IoChevronForwardOutline className='h-3 w-3 sm:h-4 sm:w-4' />
                   </button>
                 </div>
               )}
@@ -241,7 +244,7 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
                 const inRange = isInRange(date);
                 const day = date.getDay();
                 const classes = [
-                  'w-10 h-10 flex items-center justify-center rounded-full text-sm font-medium transition-colors duration-150 hover:bg-sky-50 active:bg-sky-100',
+                  'flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium transition-colors duration-150 hover:bg-sky-50 active:bg-sky-100 sm:h-10 sm:w-10 sm:text-sm',
                 ];
                 if (isStart || isEnd) {
                   classes.push(

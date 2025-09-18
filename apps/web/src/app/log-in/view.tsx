@@ -227,7 +227,7 @@ const LoginView = () => {
   };
 
   return (
-    <div className='flex min-h-screen items-start justify-center pt-[10vh]'>
+    <div className='flex min-h-screen items-start justify-center pt-[3vh]'>
       <div className='h-[650px] rounded-2xl bg-white shadow-sm'>
         <div className='flex h-full w-[372px] flex-col justify-center rounded-2xl bg-white p-8'>
           {/* 로고 및 헤더 */}

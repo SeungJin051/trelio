@@ -104,14 +104,14 @@ const TimeRangePicker: React.FC<TimeRangePickerProps> = ({
   return (
     <div className={cn('w-full', className)} ref={containerRef}>
       {label && (
-        <label className='mb-1.5 block text-sm font-medium text-gray-700'>
+        <label className='mb-1.5 block text-xs font-medium text-gray-700 sm:text-sm'>
           {label}
         </label>
       )}
 
       <div
         className={cn(
-          'relative flex w-full items-center rounded-2xl bg-white px-4 py-3 text-base text-gray-900 shadow-sm ring-1 ring-black/5',
+          'relative flex w-full items-center rounded-2xl bg-white px-3 py-2 text-sm text-gray-900 shadow-sm ring-1 ring-black/5 sm:px-4 sm:py-3 sm:text-base',
           isError
             ? 'ring-red-500 focus-within:ring-2 focus-within:ring-red-500'
             : 'focus-within:ring-2 focus-within:ring-sky-300',
@@ -124,14 +124,14 @@ const TimeRangePicker: React.FC<TimeRangePickerProps> = ({
           }
         }}
       >
-        <IoTimeOutline className='mr-3 h-5 w-5 text-gray-400' />
-        <div className='grid flex-1 grid-cols-[1fr_auto_1fr] items-center gap-3'>
+        <IoTimeOutline className='mr-2 h-4 w-4 text-gray-400 sm:mr-3 sm:h-5 sm:w-5' />
+        <div className='grid min-w-0 flex-1 grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3'>
           <input
             type='time'
             value={startTime}
             onChange={(e) => onStartTimeChange(e.target.value)}
             onFocus={() => setFocused('start')}
-            className='w-full rounded-xl border-0 bg-transparent p-0 text-gray-900 outline-none focus:outline-none'
+            className='w-full min-w-0 rounded-xl border-0 bg-transparent p-0 text-sm text-gray-900 outline-none focus:outline-none sm:text-base'
             disabled={disabled}
           />
           <span className='select-none text-gray-400'>~</span>
@@ -140,13 +140,13 @@ const TimeRangePicker: React.FC<TimeRangePickerProps> = ({
             value={endTime}
             onChange={(e) => onEndTimeChange(e.target.value)}
             onFocus={() => setFocused('end')}
-            className='w-full rounded-xl border-0 bg-transparent p-0 text-gray-900 outline-none focus:outline-none'
+            className='w-full min-w-0 rounded-xl border-0 bg-transparent p-0 text-sm text-gray-900 outline-none focus:outline-none sm:text-base'
             disabled={disabled}
           />
         </div>
         <IoChevronDownOutline
           className={cn(
-            'ml-3 h-5 w-5 text-gray-400 transition-transform',
+            'ml-2 h-4 w-4 text-gray-400 transition-transform sm:ml-3 sm:h-5 sm:w-5',
             open && 'rotate-180'
           )}
         />
@@ -159,24 +159,24 @@ const TimeRangePicker: React.FC<TimeRangePickerProps> = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.15 }}
-            className='mt-2 rounded-2xl border border-gray-200 bg-white p-3 shadow-lg'
+            className='mt-2 w-full max-w-full overflow-x-hidden rounded-2xl border border-gray-200 bg-white p-2 shadow-lg sm:p-3'
           >
             {startMins === undefined ? (
               <div className='flex flex-wrap items-center gap-2'>
-                <span className='select-none text-xs text-gray-500'>
+                <span className='select-none text-[11px] text-gray-500 sm:text-xs'>
                   시작 시간을 먼저 선택하세요
                 </span>
                 <button
                   type='button'
                   onClick={() => onStartTimeChange(nowHHMM())}
-                  className='rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50'
+                  className='rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 hover:bg-gray-50 sm:px-3 sm:text-sm'
                 >
                   지금으로 설정
                 </button>
                 <button
                   type='button'
                   onClick={() => onStartTimeChange(next30MinHHMM())}
-                  className='rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50'
+                  className='rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 hover:bg-gray-50 sm:px-3 sm:text-sm'
                 >
                   다음 30분으로 설정
                 </button>
@@ -185,22 +185,25 @@ const TimeRangePicker: React.FC<TimeRangePickerProps> = ({
               <>
                 {/* 추천 길이 안내 및 적용 */}
                 {showSuggestion && (
-                  <div className='mb-2 flex items-center justify-between rounded-xl bg-sky-50 p-3'>
+                  <div className='mb-2 flex items-center justify-between rounded-xl bg-sky-50 p-2 sm:p-3'>
                     <div>
                       <Typography
                         variant='body2'
-                        className='font-medium text-sky-900'
+                        className='text-sm font-medium text-sky-900 sm:text-base'
                       >
                         추천 소요시간 적용 ({suggestedDuration}분)
                       </Typography>
-                      <Typography variant='caption' className='text-sky-700'>
+                      <Typography
+                        variant='caption'
+                        className='text-[11px] text-sky-700 sm:text-xs'
+                      >
                         시작 시간 기준으로 종료 시간을 자동 설정합니다
                       </Typography>
                     </div>
                     <button
                       type='button'
                       onClick={applySuggested}
-                      className='rounded-lg bg-sky-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-sky-600'
+                      className='rounded-lg bg-sky-500 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-sky-600 sm:px-3 sm:text-sm'
                     >
                       적용
                     </button>
@@ -209,7 +212,7 @@ const TimeRangePicker: React.FC<TimeRangePickerProps> = ({
 
                 {/* 빠른 선택 프리셋 */}
                 <div className='flex flex-wrap items-center gap-2'>
-                  <span className='select-none text-xs text-gray-500'>
+                  <span className='select-none text-[11px] text-gray-500 sm:text-xs'>
                     빠른 선택
                   </span>
                   {QUICK_PRESETS.map((m) => (
@@ -217,13 +220,13 @@ const TimeRangePicker: React.FC<TimeRangePickerProps> = ({
                       key={m}
                       type='button'
                       onClick={() => applyPreset(m)}
-                      className='rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50'
+                      className='rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 hover:bg-gray-50 sm:px-3 sm:text-sm'
                     >
                       +{m}분
                     </button>
                   ))}
                   {hasBoth && duration !== undefined && (
-                    <span className='ml-auto select-none text-xs text-gray-500'>
+                    <span className='ml-auto select-none text-[11px] text-gray-500 sm:text-xs'>
                       현재 소요시간: {duration}분
                     </span>
                   )}
@@ -235,9 +238,15 @@ const TimeRangePicker: React.FC<TimeRangePickerProps> = ({
       </AnimatePresence>
 
       {helperText && !errorText && (
-        <p className='mt-1.5 text-xs text-gray-500'>{helperText}</p>
+        <p className='mt-1.5 text-[11px] text-gray-500 sm:text-xs'>
+          {helperText}
+        </p>
       )}
-      {errorText && <p className='mt-1.5 text-xs text-red-500'>{errorText}</p>}
+      {errorText && (
+        <p className='mt-1.5 text-[11px] text-red-500 sm:text-xs'>
+          {errorText}
+        </p>
+      )}
     </div>
   );
 };
