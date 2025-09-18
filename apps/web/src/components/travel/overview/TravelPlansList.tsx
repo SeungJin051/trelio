@@ -329,6 +329,9 @@ const TravelPlansList: React.FC = () => {
       <TravelBasicInfoModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+        onUpdate={() => {
+          fetchTravelPlans();
+        }}
       />
     </div>
   );

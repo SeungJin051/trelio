@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 
+import { useRouter } from 'next/navigation';
+
 import { IoWalletOutline } from 'react-icons/io5';
 
 import { Button, Input, Typography } from '@ui/components';
@@ -54,9 +56,11 @@ const TravelEditInfoModal: React.FC<TravelEditInfoModalProps> = ({
 }) => {
   const { userProfile } = useSession();
   const toast = useToast();
+  const router = useRouter();
   const supabase = createClient();
 
   const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [travelInfo, setTravelInfo] = useState<TravelInfo>({
     title: '',
     location: '',
@@ -242,6 +246,40 @@ const TravelEditInfoModal: React.FC<TravelEditInfoModalProps> = ({
     }
   };
 
+  const handleDeleteTrip = async () => {
+    if (
+      !confirm(
+        '정말로 이 여행 계획을 삭제하시겠습니까?\n삭제된 여행 계획은 복구할 수 없습니다.'
+      )
+    ) {
+      return;
+    }
+
+    setDeleteLoading(true);
+    try {
+      const response = await fetch(`/api/travel/${travelPlan.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '여행 계획 삭제에 실패했습니다.');
+      }
+
+      toast.success('여행 계획이 삭제되었습니다.');
+      onUpdate?.();
+      onClose();
+      router.push('/');
+    } catch (error: any) {
+      toast.error(error.message || '여행 계획 삭제 중 오류가 발생했습니다.');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   const canProceed =
     travelInfo.title.trim() &&
     travelInfo.location.trim() &&
@@ -385,17 +423,19 @@ const TravelEditInfoModal: React.FC<TravelEditInfoModalProps> = ({
         <div className='flex space-x-3 border-t px-6 py-4'>
           <Button
             variant='outlined'
-            colorTheme='gray'
-            onClick={onClose}
+            colorTheme='red'
+            onClick={handleDeleteTrip}
+            disabled={deleteLoading || loading}
             className='flex-1'
           >
-            취소
+            {deleteLoading ? '삭제 중...' : '삭제'}
           </Button>
+
           <Button
             variant='filled'
             colorTheme='blue'
             onClick={handleUpdateTrip}
-            disabled={!canProceed || loading}
+            disabled={!canProceed || loading || deleteLoading}
             className='flex-1'
           >
             {loading ? '수정 중...' : '수정하기'}

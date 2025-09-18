@@ -36,11 +36,13 @@ interface TravelBasicInfo {
 interface TravelBasicInfoModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onUpdate?: () => void;
 }
 
 const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
   isOpen,
   onClose,
+  onUpdate,
 }) => {
   const { userProfile, session } = useSession();
   const router = useRouter();
@@ -253,6 +255,7 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
         console.error('Participant creation failed:', participantError);
       }
       toast.success('여행 계획이 생성되었습니다!');
+      onUpdate?.();
       onClose();
       // 목록 즉시 반영: 관련 쿼리 무효화
       try {

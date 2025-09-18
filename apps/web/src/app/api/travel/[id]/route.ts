@@ -193,6 +193,113 @@ export async function PUT(
   }
 }
 
+/**
+ * @api {delete} /api/travel/:id 여행 계획 삭제
+ * @apiName DeleteTravelPlan
+ * @apiGroup Travel
+ *
+ * @apiParam {String} id 여행 계획의 고유 ID
+ *
+ * @apiSuccess {Object} message 삭제 성공 메시지
+ *
+ * @apiError {Object} 400 Plan ID is required
+ * @apiError {Object} 401 Authentication failed / Unauthorized
+ * @apiError {Object} 403 Insufficient permissions
+ * @apiError {Object} 404 Travel plan not found
+ * @apiError {Object} 500 Internal server error
+ *
+ * @apiDescription 여행 계획을 삭제합니다.
+ * 인증된 사용자만 접근 가능하며, 해당 여행의 소유자(owner)만 삭제할 수 있습니다.
+ * 삭제 시 관련된 모든 데이터(참여자, 블록, 활동 로그 등)도 함께 삭제됩니다.
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: planId } = await params;
+
+    const supabase = await createServerSupabaseClient();
+
+    // 사용자 인증 확인
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Authentication failed' },
+        { status: 401 }
+      );
+    }
+
+    if (!planId) {
+      return NextResponse.json(
+        { error: 'Plan ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // 기존 여행 계획 조회
+    const { data: existingPlan, error: fetchError } = await supabase
+      .from('travel_plans')
+      .select('*')
+      .eq('id', planId)
+      .single();
+
+    if (fetchError || !existingPlan) {
+      return NextResponse.json(
+        { error: 'Travel plan not found' },
+        { status: 404 }
+      );
+    }
+
+    // 권한 확인: 소유자만 삭제 가능
+    if (existingPlan.owner_id !== user.id) {
+      return NextResponse.json(
+        { error: 'Insufficient permissions' },
+        { status: 403 }
+      );
+    }
+
+    // 관련 데이터 삭제 (CASCADE로 자동 삭제되지만 명시적으로 처리)
+    // 1. 활동 로그 삭제
+    await supabase.from('travel_activities').delete().eq('plan_id', planId);
+
+    // 2. 참여자 삭제
+    await supabase
+      .from('travel_plan_participants')
+      .delete()
+      .eq('plan_id', planId);
+
+    // 3. 블록 삭제
+    await supabase.from('travel_blocks').delete().eq('plan_id', planId);
+
+    // 4. 여행 계획 삭제
+    const { error: deleteError } = await supabase
+      .from('travel_plans')
+      .delete()
+      .eq('id', planId);
+
+    if (deleteError) {
+      console.error('Travel plan delete error:', deleteError);
+      return NextResponse.json(
+        { error: 'Failed to delete travel plan' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ message: 'Travel plan deleted successfully' });
+  } catch (error) {
+    console.error('API: Unexpected error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
