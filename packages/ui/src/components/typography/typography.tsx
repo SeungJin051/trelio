@@ -5,6 +5,8 @@ import { clsx } from 'clsx';
 // 타이포그래피 컴포넌트에서 사용 가능한 텍스트 크기 변형
 // h1~h6: 제목용 크기, subtitle: 부제목, body: 본문, caption: 작은 설명, overline: 상단 작은 텍스트
 export type TypographyVariant =
+  | 'title1'
+  | 'title2'
   | 'h1'
   | 'h2'
   | 'h3'
@@ -60,6 +62,8 @@ export const Typography = ({
 }: TypographyProps) => {
   // 각 variant에 해당하는 Tailwind CSS 클래스 매핑
   const variantClassMap: Record<TypographyVariant, string> = {
+    title1: 'text-[64px]', // 랜딩페이지 큰 타이틀 (~64px)
+    title2: 'text-[48px]', // 랜딩페이지 서브 타이틀 (~48px)
     h1: 'text-4xl', // 가장 큰 제목 (2.25rem)
     h2: 'text-3xl', // 큰 제목 (1.875rem)
     h3: 'text-2xl', // 중간 제목 (1.5rem)
@@ -116,6 +120,10 @@ export const Typography = ({
  */
 const getDefaultComponent = (variant: TypographyVariant): React.ElementType => {
   switch (variant) {
+    case 'title1':
+      return 'h1'; // 랜딩페이지 메인 타이틀
+    case 'title2':
+      return 'h2'; // 랜딩페이지 서브 타이틀
     case 'h1':
       return 'h1'; // 주요 제목
     case 'h2':
