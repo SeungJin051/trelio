@@ -1,169 +1,65 @@
 # Trelio
 
-사용자가 여행 일정을 효율적으로 관리할 수 있도록 돕는 웹 애플리케이션입니다. 다양한 기능을 통해 여행 계획, 일정 관리, 체크리스트 등을 쉽게 관리할 수 있습니다.
+> ✨ 함께 하는 여행 계획, 완벽한 여행의 시작!
 
-* **서비스:** [Trelio](https://trelio-seungjinlims-projects.vercel.app/)
-* **디자인 시스템:** [Storybook](https://seungjin051.github.io/trelio/)
-  
-## 주요 기능
+## 🖼️ 서비스 소개
+<img width="3780" height="1890" alt="banner" src="https://github.com/user-attachments/assets/94dd1592-4721-47d2-9046-df952bdc7685" />
 
-- 여행 계획 생성 및 관리
-- 여행 일정 관리
-- 다국어 지원 (한국어, 영어)
-- 모바일 친화적 UI
-- 개인화된 여행 추천
+&nbsp;
 
-## 기술 스택
+**Trelio**는 여행 계획 과정에서 한 사람이 주도적으로 일정을 짜고,
 
-### 프론트엔드
-- **Next.js 15**: React 프레임워크
-- **React 19**: UI 컴포넌트 라이브러리
-- **TypeScript**: 정적 타입 지원
-- **TailwindCSS**: 유틸리티 기반 CSS 프레임워크
-- **Zustand**: 상태 관리
-- **React Query**: 서버 상태 관리
-- **next-intl**: 국제화/다국어 지원
+함께 가는 사람들은 수시로 계획을 묻거나 확인해야 하는 불편함을 해결하기 위해 만들어진 **실시간 협업형 여행 계획 서비스**입니다.
 
-### 개발 환경
-- **Turborepo**: 모노레포 관리
-- **pnpm**: 패키지 매니저
-- **Storybook**: UI 컴포넌트 문서화
-- **ESLint/Prettier**: 코드 스타일 및 품질 관리
-- **Husky/Commitlint**: Git 훅 및 커밋 메시지 검증
+혼자 또는 여러 명이 함께 여행을 준비할 때, **쉽고 편리하며 빠르게 여행 일정을 수립하고 공유**할 수 있도록 돕습니다.
 
-## 프로젝트 구조
+> **👉 지금 바로 경험해보세요!**
+> 
+> [**서비스 바로가기 (링크)**](https://trelio-web.vercel.app/ "null")
 
-```
-trelio/
-├── apps/                   # 애플리케이션
-│   ├── web/                # 웹 애플리케이션
-│   │   ├── src/            # 소스 코드
-│   │   │   ├── app/        # Next.js 애플리케이션 라우트
-│   │   │   ├── i18n/       # 국제화 설정
-│   │   │   ├── store/      # 상태 관리 (Zustand)
-│   │   │   ├── messages/   # 다국어 메시지 파일
-│   │   │   ├── providers/  # 컨텍스트 제공자
-│   │   │   └── styles/     # 스타일 관련 파일
-│   └── storybook/          # UI 컴포넌트 문서화
-├── packages/               # 공유 패키지
-│   └── ui/                 # UI 컴포넌트 라이브러리
-│       ├── src/            # 소스 코드
-│       │   ├── components/ # 공유 UI 컴포넌트
-│       │   ├── styles/     # 스타일 관련 파일
-│       │   └── utils/      # 유틸리티 함수
-├── commitlint.config.js    # Commitlint 설정
-├── .husky/                 # Git 훅 설정
-├── .gitmessage             # 커밋 메시지 템플릿
-└── package.json            # 프로젝트 설정 및 의존성
-```
+## ✨ 주요 기능
 
-## 개발 환경 설정
+- **🚀 실시간 협업 계획**: 친구들과 동시에 여행 일정을 작성하고 수정할 수 있어, 불필요한 메신저 대화를 줄이고 **한눈에 보이는 일정 관리**가 가능합니다.
+    
+- **💱 환율 자동 적용**: 실시간 환율을 반영해 예산을 자동 계산합니다. 여행 경비를 나누거나 관리할 때 복잡한 계산 없이 **쉽고 투명하게 비용을 정리**할 수 있습니다.
+    
+- **📅 여행 일별 관리**: 여행 일자별로 예산과 일정을 체계적으로 관리해 **깔끔하고 정돈된 여행 계획**을 세울 수 있습니다.
+    
+## 🤔 이런 분들께 추천해요!
 
-### 요구 사항
+- **여행 계획 때문에 단톡방이 복잡해진 경험**이 있는 분
+    
+- **친구나 가족과 효율적으로 일정과 비용을 나누고 싶은 분**
+    
+- 출장·여행 준비 업무를 자주 맡는 분
+    
 
-- Node.js 18.0.0 이상
-- pnpm 10.0.0 이상
+## 🚀 시작하기
 
-### 설치 및 실행
+Trelio를 사용하는 방법은 간단합니다.
 
-```bash
-# 패키지 설치
-pnpm install
+1. [**서비스 바로가기**](https://trelio-web.vercel.app/ "null")**에 접속**하여 소셜 로그인을 진행합니다.
+    
+2. 대시보드에서 **여행 계획 생성**을 선택하고, 여행의 **제목·기간·예산**을 설정합니다.
+    
+3. **생성된 여행을 클릭**해 일정을 작성하고, 동행자도 초대해 실시간으로 계획을 완성해보세요!
+    
 
-# 모든 개발 서버 실행 (웹 + Storybook)
-pnpm dev
+## 🛠️ 기술 스택
 
-# 웹 애플리케이션만 실행
-pnpm dev:web
+<img width="1324" height="634" alt="image" src="https://github.com/user-attachments/assets/421cf4d8-31be-461e-9a9b-7ed3433fc236" />
 
-# Storybook 실행
-pnpm dev:storybook
+- **Frontend:** React, Next.js, TypeScript, Tailwind CSS, Zustand, TanStack Query, Storybook
+    
+- **Backend:** Next.js Route Handlers
+    
+- **Database:** Supabase
+    
+- **Deployment:** Vercel, GitHub Pages
+    
 
-# 린트 검사
-pnpm lint
+## 📞 문의 및 피드백
 
-# 코드 포맷팅
-pnpm format
-```
+서비스에 대한 문의나 소중한 피드백은 아래 메일로 부탁드립니다.
 
-## 배포
-
-```bash
-# 빌드 실행
-pnpm build
-
-# 서버 실행
-pnpm start
-```
-
-## 커밋 컨벤션
-
-이 프로젝트는 [Conventional Commits](https://www.conventionalcommits.org/ko/v1.0.0/) 스펙을 따릅니다.
-
-### 커밋 메시지 구조
-
-```
-<타입>[적용 범위(선택 사항)]: <설명>
-
-[본문(선택 사항)]
-
-[꼬리말(선택 사항)]
-```
-
-### 커밋 타입
-
-- **feat**: 새로운 기능 추가
-- **fix**: 버그 수정
-- **docs**: 문서 수정
-- **style**: 코드 포맷팅, 세미콜론 누락 등 (코드 변경 없음)
-- **refactor**: 코드 리팩토링
-- **test**: 테스트 코드 추가 또는 수정
-- **chore**: 빌드 프로세스, 패키지 매니저 설정 등 (소스 변경 없음)
-- **perf**: 성능 개선
-- **ci**: CI 설정 변경
-- **build**: 빌드 관련 변경
-- **revert**: 이전 커밋으로 되돌리기
-
-### 예시
-
-```
-feat: 사용자 회원가입 기능 추가
-
-회원가입 폼과 이메일 검증 로직 구현
-
-Resolves: #123
-```
-
-## 브랜치 전략
-
-- **main**: 프로덕션 브랜치
-- **develop**: 개발 브랜치
-- **feature/기능명**: 새로운 기능 개발
-- **fix/버그명**: 버그 수정
-- **refactor/리팩토링명**: 코드 리팩토링
-- **docs/문서명**: 문서 작업
-
-## CI/CD
-
-이 프로젝트는 GitHub Actions와 Vercel을 통한 CI/CD 파이프라인이 구축되어 있습니다.
-
-### 자동화된 배포
-
-- **메인 브랜치 푸시** - 자동으로 Production 환경에 배포됩니다.
-- **PR 생성** - PR에 대한 프리뷰 배포가 자동으로 생성됩니다.
-
-### 자동 버전 관리
-
-메인 브랜치에 머지될 때 다음과 같은 규칙에 따라 자동으로 버전이 업데이트됩니다:
-
-- **BREAKING CHANGE** 커밋 - Major 버전 증가 (1.0.0 → 2.0.0)
-- **feat** 커밋 - Minor 버전 증가 (1.0.0 → 1.1.0)
-- **fix, chore, refactor 등** 커밋 - Patch 버전 증가 (1.0.0 → 1.0.1)
-
-### 배포 설정
-
-CI/CD 파이프라인을 설정하려면 GitHub 저장소에 다음 시크릿을 추가해야 합니다:
-
-- `VERCEL_TOKEN` - Vercel API 토큰
-- `VERCEL_ORG_ID` - Vercel 조직 ID
-- `VERCEL_PROJECT_ID` - Vercel 프로젝트 ID
+- **이메일:** seungjin051@gmail.com
