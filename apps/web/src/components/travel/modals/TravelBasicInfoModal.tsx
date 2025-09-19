@@ -290,7 +290,7 @@ const TravelBasicInfoModal: React.FC<TravelBasicInfoModalProps> = ({
       width='responsive'
     >
       <div className='flex flex-col'>
-        <div className='max-h-[70vh] overflow-y-auto px-6 py-6'>
+        <div className='max-h-[70vh] overflow-y-auto py-6'>
           <div className='space-y-8'>
             <div className='space-y-4'>
               <Input

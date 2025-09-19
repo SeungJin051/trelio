@@ -51,7 +51,7 @@ const TravelActivitiesModal: React.FC<TravelActivitiesModalProps> = ({
       width='responsive'
     >
       <div className='flex flex-col'>
-        <div className='max-h-[70vh] overflow-y-auto px-6 py-6'>
+        <div className='max-h-[70vh] overflow-y-auto py-6'>
           {activities.length === 0 ? (
             <div className='py-12 text-center'>
               <Typography variant='body1' className='text-gray-500'>
