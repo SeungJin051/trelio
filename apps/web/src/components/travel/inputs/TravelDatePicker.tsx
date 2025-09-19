@@ -2,9 +2,21 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 
+import {
+  addMonths,
+  eachDayOfInterval,
+  endOfMonth,
+  endOfWeek,
+  format,
+  isBefore,
+  isSameDay,
+  isSameMonth,
+  startOfDay,
+  startOfMonth,
+  startOfWeek,
+  subMonths,
+} from 'date-fns';
 import { ko } from 'date-fns/locale';
-import DatePicker, { registerLocale } from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
 import {
   IoCalendarOutline,
   IoChevronBackOutline,
@@ -14,8 +26,6 @@ import {
 
 import { Typography } from '@ui/components';
 import { cn } from '@ui/utils/cn';
-
-registerLocale('ko', ko);
 
 interface TravelDatePickerProps {
   startDate: Date | null;
@@ -43,7 +53,7 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
     null
   );
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isMobile, setIsMobile] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(startDate || new Date());
 
   const calculateDays = (start: Date | null, end: Date | null): number => {
     if (!start || !end) return 0;
@@ -77,23 +87,17 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
     };
   }, []);
 
-  useEffect(() => {
-    const update = () => setIsMobile(window.innerWidth < 640);
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
-  }, []);
-
-  const handleDateSelect = (date: Date | null, type: 'start' | 'end') => {
+  const handleDateSelect = (date: Date) => {
+    const type = focusedInput;
     if (type === 'start') {
-      if (endDate && date && date > endDate) {
+      if (endDate && date > endDate) {
         onDateChange(date, date);
       } else {
         onDateChange(date, endDate);
       }
       setFocusedInput('end');
     } else {
-      if (startDate && date && date < startDate) {
+      if (startDate && date < startDate) {
         onDateChange(date, date);
       } else {
         onDateChange(startDate, date);
@@ -105,31 +109,20 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
 
   const isError = !!errorText;
   const days = calculateDays(startDate, endDate);
+
   const formatRangeDisplay = (): string => {
     if (!startDate || !endDate) return '여행 날짜를 선택해주세요';
-    const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
-    if (isMobile) {
-      return `${startDate.getFullYear()}.${pad(startDate.getMonth() + 1)}.${pad(
-        startDate.getDate()
-      )} ~ ${pad(endDate.getMonth() + 1)}.${pad(endDate.getDate())}`;
-    }
     return `${formatDate(startDate)} ~ ${formatDate(endDate)}`;
   };
-  const startOfDay = (d: Date) => {
-    const nd = new Date(d);
-    nd.setHours(0, 0, 0, 0);
-    return nd;
-  };
-  const isSameDay = (a?: Date | null, b?: Date | null) => {
-    if (!a || !b) return false;
-    return startOfDay(a).getTime() === startOfDay(b).getTime();
-  };
-  const isInRange = (d: Date) => {
-    if (!startDate || !endDate) return false;
-    const t = startOfDay(d).getTime();
-    return (
-      t > startOfDay(startDate).getTime() && t < startOfDay(endDate).getTime()
-    );
+
+  const formatMobileRangeDisplay = (): string => {
+    if (!startDate || !endDate) return '여행 날짜를 선택해주세요';
+    const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+    return `${startDate.getFullYear()}.${pad(
+      startDate.getMonth() + 1
+    )}.${pad(startDate.getDate())} ~ ${pad(endDate.getMonth() + 1)}.${pad(
+      endDate.getDate()
+    )}`;
   };
 
   return (
@@ -164,7 +157,8 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
           <div className='min-w-0 flex-1'>
             <div className='flex items-center space-x-2'>
               <span className='block truncate whitespace-nowrap font-medium text-gray-900'>
-                {formatRangeDisplay()}
+                <span className='hidden sm:block'>{formatRangeDisplay()}</span>
+                <span className='sm:hidden'>{formatMobileRangeDisplay()}</span>
               </span>
               {startDate && endDate && days > 0 && (
                 <span className='shrink-0 text-xs text-gray-500 sm:text-sm'>
@@ -192,80 +186,128 @@ const TravelDatePicker: React.FC<TravelDatePickerProps> = ({
                   : '종료일을 선택해주세요'}
               </Typography>
             </div>
-            <DatePicker
-              selected={focusedInput === 'start' ? startDate : endDate}
-              onChange={(date: Date | null) =>
-                handleDateSelect(date, focusedInput!)
-              }
-              minDate={new Date()}
+            <CustomCalendar
+              currentMonth={currentMonth}
+              setCurrentMonth={setCurrentMonth}
+              onDateSelect={handleDateSelect}
               startDate={startDate}
               endDate={endDate}
-              selectsStart={focusedInput === 'start'}
-              selectsEnd={focusedInput === 'end'}
-              inline
-              monthsShown={1}
-              calendarClassName='!bg-transparent !border-0 !shadow-none'
-              locale='ko'
-              renderCustomHeader={({
-                date,
-                decreaseMonth,
-                increaseMonth,
-                prevMonthButtonDisabled,
-                nextMonthButtonDisabled,
-              }) => (
-                <div className='mb-3 flex items-center justify-between px-1'>
-                  <button
-                    type='button'
-                    onClick={decreaseMonth}
-                    disabled={prevMonthButtonDisabled}
-                    className='flex h-8 w-8 items-center justify-center rounded-2xl bg-white text-gray-800 ring-1 ring-black/5 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 disabled:opacity-40 sm:h-10 sm:w-10'
-                  >
-                    <IoChevronBackOutline className='h-3 w-3 sm:h-4 sm:w-4' />
-                  </button>
-                  <span className='select-none text-xs font-medium text-gray-800 sm:text-sm'>
-                    {date.toLocaleDateString('ko-KR', {
-                      year: 'numeric',
-                      month: 'long',
-                    })}
-                  </span>
-                  <button
-                    type='button'
-                    onClick={increaseMonth}
-                    disabled={nextMonthButtonDisabled}
-                    className='flex h-8 w-8 items-center justify-center rounded-2xl bg-white text-gray-800 ring-1 ring-black/5 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 disabled:opacity-40 sm:h-10 sm:w-10'
-                  >
-                    <IoChevronForwardOutline className='h-3 w-3 sm:h-4 sm:w-4' />
-                  </button>
-                </div>
-              )}
-              dayClassName={(date: Date) => {
-                const isStart = isSameDay(date, startDate);
-                const isEnd = isSameDay(date, endDate);
-                const inRange = isInRange(date);
-                const day = date.getDay();
-                const classes = [
-                  'flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium transition-colors duration-150 hover:bg-sky-50 active:bg-sky-100 sm:h-10 sm:w-10 sm:text-sm',
-                ];
-                if (isStart || isEnd) {
-                  classes.push(
-                    '!bg-sky-100 !text-sky-800 !ring-1 !ring-sky-200'
-                  );
-                } else if (inRange) {
-                  classes.push('!bg-sky-50 !text-sky-700');
-                } else {
-                  if (day === 0) classes.push('text-gray-400');
-                  if (day === 6) classes.push('text-gray-400');
-                }
-                return classes.join(' ');
-              }}
             />
           </div>
         )}
       </div>
+
       {helperText && !errorText && (
-        <p className='mt-1.5 text-xs text-gray-500'>{helperText}</p>
+        <p className='mt-1.5 text-sm text-gray-500'>{helperText}</p>
       )}
       {errorText && <p className='mt-1.5 text-xs text-red-500'>{errorText}</p>}
+    </div>
+  );
+};
+
+const CustomCalendar = ({
+  currentMonth,
+  setCurrentMonth,
+  onDateSelect,
+  startDate,
+  endDate,
+}: {
+  currentMonth: Date;
+  setCurrentMonth: (date: Date) => void;
+  onDateSelect: (date: Date) => void;
+  startDate: Date | null;
+  endDate: Date | null;
+}) => {
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(monthStart);
+  const gridStartDate = startOfWeek(monthStart);
+  const gridEndDate = endOfWeek(monthEnd);
+  const days = eachDayOfInterval({ start: gridStartDate, end: gridEndDate });
+  const today = startOfDay(new Date());
+
+  const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
+  const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
+
+  const isPrevMonthButtonDisabled = isBefore(monthStart, today);
+
+  const getDayClassName = (day: Date) => {
+    const isDayStart = startDate && isSameDay(day, startDate);
+    const isDayEnd = endDate && isSameDay(day, endDate);
+    const isInRange =
+      startDate &&
+      endDate &&
+      isBefore(startOfDay(startDate), day) &&
+      isBefore(day, startOfDay(endDate));
+    const isDayDisabled = isBefore(day, today);
+    const isDayInCurrentMonth = isSameMonth(day, currentMonth);
+
+    const classes = [
+      'flex h-9 w-9 items-center justify-center rounded-full text-sm font-medium transition-colors duration-150',
+    ];
+
+    if (!isDayInCurrentMonth) {
+      classes.push('text-gray-300');
+    } else if (isDayDisabled) {
+      classes.push('text-gray-400', 'cursor-not-allowed');
+    } else {
+      classes.push('hover:bg-sky-50 active:bg-sky-100 cursor-pointer');
+      if (isDayStart || isDayEnd) {
+        classes.push('!bg-sky-100 !text-sky-800 !ring-1 !ring-sky-200');
+      } else if (isInRange) {
+        classes.push('!bg-sky-50 !text-sky-700');
+      } else if (day.getDay() === 0 || day.getDay() === 6) {
+        classes.push('text-gray-400');
+      } else {
+        classes.push('text-gray-800');
+      }
+    }
+    return cn(classes);
+  };
+
+  return (
+    <div className='w-full'>
+      <div className='mb-3 flex items-center justify-between px-1'>
+        <button
+          type='button'
+          onClick={handlePrevMonth}
+          disabled={isPrevMonthButtonDisabled}
+          className='flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-gray-800 ring-1 ring-black/5 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 disabled:opacity-40'
+        >
+          <IoChevronBackOutline className='h-4 w-4' />
+        </button>
+        <span className='select-none text-sm font-medium text-gray-800'>
+          {format(currentMonth, 'yyyy년 MMMM', { locale: ko })}
+        </span>
+        <button
+          type='button'
+          onClick={handleNextMonth}
+          className='flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-gray-800 ring-1 ring-black/5 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 disabled:opacity-40'
+        >
+          <IoChevronForwardOutline className='h-4 w-4' />
+        </button>
+      </div>
+      <div className='grid grid-cols-7 text-center text-sm text-gray-500'>
+        {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
+          <div key={day} className='py-2'>
+            {day}
+          </div>
+        ))}
+      </div>
+      <div className='grid grid-cols-7 place-items-center'>
+        {days.map((day) => (
+          <div
+            key={day.toString()}
+            className={getDayClassName(day)}
+            onClick={() => {
+              if (isBefore(day, today) || !isSameMonth(day, currentMonth))
+                return;
+              onDateSelect(day);
+            }}
+          >
+            {format(day, 'd')}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
