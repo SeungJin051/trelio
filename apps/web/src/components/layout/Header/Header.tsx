@@ -48,7 +48,6 @@ export const Header = ({
   sidebarOpen = false,
   shouldShowSidebar = false,
 }: HeaderProps = {}) => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileTravelMenuOpen, setMobileTravelMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -278,15 +277,7 @@ export const Header = ({
       </div>
 
       {/* 모바일 햄버거 메뉴 버튼 */}
-      <div className='flex items-center md:hidden'>
-        <button
-          onClick={() => setMobileMenuOpen(true)}
-          className='rounded-full p-2 text-gray-700 transition-colors hover:bg-gray-100'
-          title='메뉴'
-        >
-          <Icon as={CiMenuBurger} color='#374151' size={24} />
-        </button>
-      </div>
+      <div className='flex items-center md:hidden'></div>
     </>
   );
 
@@ -305,17 +296,6 @@ export const Header = ({
           새 여행 계획
         </Typography>
       </Button>
-
-      {/* 알림 아이콘 */}
-      {/* <button
-        className='flex items-center justify-center w-10 h-10 transition-colors rounded-full hover:bg-gray-100'
-        onClick={() => {
-          // TODO: 알림 모달 열기
-          console.log('알림 모달 열기');
-        }}
-      >
-        <Icon as={IoNotificationsOutline} color='#374151' size={24} />
-      </button> */}
 
       {/* 아바타 */}
       <div className='profile-dropdown relative'>
@@ -418,26 +398,12 @@ export const Header = ({
           <button
             onClick={() => {
               setNewTravelModalOpen(true);
-              setMobileMenuOpen(false);
             }}
             className='flex w-full items-center justify-center space-x-2 rounded-xl bg-[#3182F6] px-4 py-3 font-medium text-white transition-colors hover:bg-[#2b74e0]'
           >
             <Icon as={IoAddOutline} size={20} />
             <span>새 여행 계획 생성</span>
           </button>
-
-          {/* 알림 버튼 */}
-          {/* <button
-            className='flex items-center justify-center w-full px-4 py-3 space-x-2 font-medium text-gray-700 transition-colors bg-gray-100 rounded-xl hover:bg-gray-200'
-            onClick={() => {
-              // TODO: 알림 모달 열기
-              console.log('알림 모달 열기');
-              setMobileMenuOpen(false);
-            }}
-          >
-            <Icon as={IoNotificationsOutline} size={20} />
-            <span>알림</span>
-          </button> */}
 
           {/* 사용자 프로필 정보 */}
           <div className='flex items-center space-x-3 px-4 py-2'>
@@ -456,20 +422,10 @@ export const Header = ({
             </div>
           </div>
 
-          {/* 프로필 설정 버튼 */}
-          {/* <Link
-            href='/profile'
-            className='flex items-center justify-center w-full px-4 py-3 font-medium text-gray-700 transition-colors bg-gray-100 rounded-xl hover:bg-gray-200'
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            프로필 설정
-          </Link> */}
-
           {/* 로그아웃 버튼 */}
           <button
             onClick={() => {
               handleSignOut();
-              setMobileMenuOpen(false);
             }}
             className='flex w-full items-center justify-center rounded-xl bg-red-100 px-4 py-3 font-medium text-red-700 transition-colors hover:bg-red-200'
           >
@@ -485,7 +441,6 @@ export const Header = ({
         <Link
           href='/sign-up'
           className='flex w-full items-center justify-center rounded-xl bg-amber-100 px-4 py-3 font-medium text-amber-700 transition-colors hover:bg-amber-200'
-          onClick={() => setMobileMenuOpen(false)}
         >
           <Icon as={FaExclamationTriangle} className='mr-2 h-4 w-4' />
           가입 완료하기
@@ -498,7 +453,6 @@ export const Header = ({
       <Link
         href='/log-in'
         className='flex w-full items-center justify-center rounded-xl bg-[#3182F6] px-4 py-3 font-medium text-white transition-colors hover:bg-[#2b74e0] focus:outline-none focus:ring-2 focus:ring-[#3182F6] focus:ring-offset-2'
-        onClick={() => setMobileMenuOpen(false)}
       >
         로그인
       </Link>
@@ -519,8 +473,12 @@ export const Header = ({
   // 모바일 오른쪽 영역 렌더링 로직
   const renderMobileRightArea = () => {
     if (!isAuthenticated || !isSignUpCompleted) {
-      // 로그인 전 상태 - 아무것도 표시하지 않음 (햄버거 메뉴는 이제 왼쪽에 있음)
-      return null;
+      // 로그인 전 상태 - 로그인 아이콘 표시
+      return (
+        <div className='flex flex-1 justify-end md:hidden'>
+          {renderProfileArea()}
+        </div>
+      );
     }
 
     // 로그인 후 모바일 헤더
@@ -609,81 +567,6 @@ export const Header = ({
         {/* 헤더 오른쪽 영역 (데스크톱) */}
         {renderHeaderRightArea()}
       </nav>
-
-      {/* 모바일 메뉴 (로그인 전 사용자만) */}
-      <AnimatePresence>
-        {mobileMenuOpen && (!isAuthenticated || !isSignUpCompleted) && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className='fixed inset-0 z-40 bg-black/20 backdrop-blur-sm'
-              onClick={() => setMobileMenuOpen(false)}
-            />
-
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className='fixed inset-y-0 right-0 z-50 w-full max-w-sm bg-white shadow-lg'
-            >
-              <div className='flex h-full flex-col overflow-y-auto'>
-                <div className='flex items-center justify-between border-b border-gray-100 px-6 py-4'>
-                  <Link
-                    href='/'
-                    className='flex items-center'
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <TrelioLogo
-                      width={32}
-                      height={32}
-                      className='text-[#3182F6]'
-                    />
-                    <span className='ml-2 text-lg font-medium text-gray-900'>
-                      Trelio
-                    </span>
-                  </Link>
-                  <button
-                    type='button'
-                    className='rounded-full p-2 text-gray-700 transition-colors hover:bg-gray-100'
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <span className='sr-only'>메뉴 닫기</span>
-                    <Icon as={IoCloseOutline} color='#374151' size={24} />
-                  </button>
-                </div>
-
-                {/* 네비게이션 메뉴 */}
-                <div className='flex-1 px-6 py-6'>
-                  <div className='flex flex-col space-y-2'>
-                    {navigation.map((item) => (
-                      <Link
-                        key={item.name}
-                        href={item.href}
-                        className='flex items-center rounded-xl px-4 py-3 text-gray-700 transition-colors hover:bg-gray-50'
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                        }}
-                      >
-                        <Typography variant='body1' weight='medium'>
-                          {item.name}
-                        </Typography>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-
-                <div className='border-t border-gray-100 px-6 py-6'>
-                  {renderMobileBottomArea()}
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
 
       {/* 모바일 여행 계획 메뉴 */}
       <AnimatePresence>

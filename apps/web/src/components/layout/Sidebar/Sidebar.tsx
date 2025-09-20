@@ -174,9 +174,24 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
             table: 'travel_plan_participants',
             filter: `plan_id=in.(${planIds.join(',')})`,
           },
-          () => {
-            // 참여자 변경 시 다시 계산
-            fetchParticipantCounts();
+          (payload) => {
+            const { eventType, new: newRecord, old: oldRecord } = payload;
+            const record = eventType === 'INSERT' ? newRecord : oldRecord;
+            const planId = record?.plan_id;
+
+            if (!planId) return;
+
+            setParticipantCountMap((prevMap) => {
+              const newMap = new Map(prevMap);
+              const currentCount = newMap.get(planId) || 0;
+
+              if (eventType === 'INSERT') {
+                newMap.set(planId, currentCount + 1);
+              } else if (eventType === 'DELETE') {
+                newMap.set(planId, Math.max(0, currentCount - 1));
+              }
+              return newMap;
+            });
           }
         )
         .subscribe();
@@ -225,13 +240,6 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
   }, [accessiblePlans, participantCountMap]);
 
   const loading = isLoading || isFetching;
-
-  // 모바일에서 사이드바가 열릴 때 데이터 새로고침
-  useEffect(() => {
-    if (isOpen && isMobile && userProfile) {
-      refetch();
-    }
-  }, [isOpen, isMobile, userProfile, refetch]);
 
   // 필터링된 여행 계획
   const filteredPlans = travelPlans.filter((plan) => {
