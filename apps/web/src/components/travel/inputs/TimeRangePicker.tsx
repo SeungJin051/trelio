@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { IoChevronDownOutline, IoTimeOutline } from 'react-icons/io5';
@@ -60,9 +60,9 @@ const TimeRangePicker: React.FC<TimeRangePickerProps> = ({
   errorText,
   helperText,
 }) => {
-  const [open, setOpen] = React.useState(false);
-  const [focused, setFocused] = React.useState<'start' | 'end' | null>(null);
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const [, setFocused] = useState<'start' | 'end' | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const isError = !!errorText;
   const startMins = toMinutes(startTime);
@@ -75,7 +75,7 @@ const TimeRangePicker: React.FC<TimeRangePickerProps> = ({
       (endMins === undefined || endMins <= startMins)
   );
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (!containerRef.current) return;
       if (!containerRef.current.contains(e.target as Node)) {

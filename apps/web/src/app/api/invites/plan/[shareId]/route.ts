@@ -46,7 +46,7 @@ export async function GET(
     return NextResponse.json(
       {
         error: 'Unexpected error',
-        detail: String((err as any)?.message || ''),
+        detail: String((err as Error)?.message || ''),
       },
       { status: 500 }
     );

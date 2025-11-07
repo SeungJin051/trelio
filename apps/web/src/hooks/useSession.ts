@@ -40,7 +40,7 @@ export const useSession = () => {
     if (!pathname) return '/';
     const segments = pathname.split('/');
     const firstSegment = segments[1];
-    if ((locales as readonly string[]).includes(firstSegment as any)) {
+    if ((locales as readonly string[]).includes(firstSegment as string)) {
       const rest = '/' + segments.slice(2).join('/');
       return rest === '/' ? '/' : rest.replace(/\/$/, '') || '/';
     }

@@ -24,6 +24,8 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 
+import type { PostgrestError } from '@supabase/supabase-js';
+
 import { createServerSupabaseClient } from '@/lib/supabase/client/supabase-server';
 
 export async function POST(
@@ -90,8 +92,8 @@ export async function POST(
     if (moveError) {
       // Fallback: unique 제약(23505) 등으로 RPC 실패 시 수동 재정렬 수행
       const isUniqueViolation =
-        (moveError as any)?.code === '23505' ||
-        String((moveError as any)?.message || '').includes(
+        (moveError as PostgrestError)?.code === '23505' ||
+        String((moveError as PostgrestError)?.message || '').includes(
           'duplicate key value violates unique constraint'
         );
 
@@ -104,8 +106,8 @@ export async function POST(
       }
 
       // 안전 재정렬 로직
-      const planId = (existingBlock as any).plan_id as string;
-      const currentDay = (existingBlock as any).day_number as number;
+      const planId = existingBlock.plan_id as string;
+      const currentDay = existingBlock.day_number as number;
       const tempOffset = 10000;
 
       // 같은 날 내 이동

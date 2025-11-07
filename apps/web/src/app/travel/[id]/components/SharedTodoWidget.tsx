@@ -164,8 +164,6 @@ const SharedTodoWidgetBase: React.FC<SharedTodoWidgetProps> = ({
         method: 'DELETE',
       });
 
-      const data = await response.json();
-
       if (response.ok) {
         setTodos((prev) => prev.filter((t) => t.id !== todoId));
       }

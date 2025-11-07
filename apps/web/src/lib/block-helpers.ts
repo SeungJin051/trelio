@@ -2,7 +2,7 @@
  * 블록 생성 관련 헬퍼 함수들
  * 통화 로직, 시간 계산, 공항 제안 등의 스마트 기능
  */
-import { CURRENCIES, CurrencyCode } from '@/lib/currency';
+import { CurrencyCode } from '@/lib/currency';
 import { BlockType } from '@/types/travel/blocks';
 
 // 사용자 국적별 기본 통화 매핑

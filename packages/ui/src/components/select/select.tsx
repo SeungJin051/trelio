@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import React, { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -91,7 +91,7 @@ export interface MultiSelectProps {
   maxDisplay?: number;
 }
 
-export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
+export const MultiSelect = forwardRef<HTMLDivElement, MultiSelectProps>(
   (props, ref) => {
     const {
       label,
@@ -107,15 +107,15 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
       maxDisplay = 3,
     } = props;
 
-    const [isFocused, setIsFocused] = React.useState(false);
-    const [isOpen, setIsOpen] = React.useState(false);
-    const containerRef = React.useRef<HTMLDivElement>(null);
+    const [isFocused, setIsFocused] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     const hasValue = value.length > 0;
     const shouldFloat = hasValue || isFocused || isOpen;
 
     // 외부 클릭 감지하여 드롭다운 닫기
-    React.useEffect(() => {
+    useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
         if (
           containerRef.current &&
@@ -150,7 +150,7 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
       onChange(value.filter((v) => v !== valueToRemove));
     };
 
-    const selectedOptions = React.useMemo(
+    const selectedOptions = useMemo(
       () => options.filter((opt) => value.includes(opt.value)),
       [options, value]
     );
@@ -317,7 +317,7 @@ export interface SelectProps {
   // disableLabelAnimation prop 제거
 }
 
-export const Select = React.forwardRef<HTMLDivElement, SelectProps>(
+export const Select = forwardRef<HTMLDivElement, SelectProps>(
   (
     {
       label,
@@ -333,14 +333,14 @@ export const Select = React.forwardRef<HTMLDivElement, SelectProps>(
     },
     ref
   ) => {
-    const [isFocused, setIsFocused] = React.useState(false);
-    const [isOpen, setIsOpen] = React.useState(false);
-    const containerRef = React.useRef<HTMLDivElement>(null);
+    const [isFocused, setIsFocused] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     const hasValue = Boolean(value);
     const shouldFloat = hasValue || isFocused || isOpen;
 
-    React.useEffect(() => {
+    useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
         if (
           containerRef.current &&

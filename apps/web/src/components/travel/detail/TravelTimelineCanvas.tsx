@@ -5,21 +5,13 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import {
-  IoAddOutline,
-  IoAirplaneOutline,
-  IoBedOutline,
-  IoCarOutline,
-  IoDocumentTextOutline,
-  IoGameControllerOutline,
-  IoRestaurantOutline,
-} from 'react-icons/io5';
+import { IoAddOutline, IoDocumentTextOutline } from 'react-icons/io5';
 
 import { Typography } from '@ui/components';
 
 // DnD 컨텍스트는 상위에서 제공됩니다.
 
-import { BlockType, TravelBlock, TravelTimeline } from '@/types/travel/blocks';
+import { TravelBlock, TravelTimeline } from '@/types/travel/blocks';
 
 import { TravelBlockItem } from './TravelBlockItem';
 
@@ -44,7 +36,7 @@ export const TravelTimelineCanvas: React.FC<TravelTimelineCanvasProps> = ({
   selectedDay,
   onDaySelect: _onDaySelect,
   onBlockCreate: _onBlockCreate,
-  onBlockMove,
+  onBlockMove: _onBlockMove,
   onBlockClick,
   onBlockEdit,
 }) => {

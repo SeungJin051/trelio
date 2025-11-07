@@ -58,7 +58,7 @@ export async function POST(
 
     const row = Array.isArray(data) ? data[0] : data;
     return NextResponse.json({ planId: row.plan_id }, { status: 200 });
-  } catch (_err) {
+  } catch {
     return NextResponse.json({ error: 'Unexpected error' }, { status: 500 });
   }
 }

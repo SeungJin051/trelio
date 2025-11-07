@@ -8,7 +8,7 @@ import {
   IoWalletOutline,
 } from 'react-icons/io5';
 
-import { Button, Typography } from '@ui/components';
+import { Typography } from '@ui/components';
 
 import { formatCurrency } from '@/lib/currency';
 import { TravelBlock } from '@/types/travel/blocks';
@@ -36,10 +36,11 @@ export const BlockDetailModal: React.FC<BlockDetailModalProps> = ({
   block,
   onEdit,
   onDelete,
-  canEdit = false,
+  canEdit: _canEdit = false,
 }) => {
   if (!isOpen || !block) return null;
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleEdit = () => {
     if (onEdit) {
       onEdit(block);
@@ -47,6 +48,7 @@ export const BlockDetailModal: React.FC<BlockDetailModalProps> = ({
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleDelete = () => {
     if (onDelete && confirm('정말로 이 일정을 삭제하시겠습니까?')) {
       onDelete(block.id);

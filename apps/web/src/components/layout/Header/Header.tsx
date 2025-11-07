@@ -388,7 +388,8 @@ export const Header = ({
     return null;
   };
 
-  // 모바일 하단 영역 렌더링
+  // 모바일 하단 영역 렌더링 (현재 사용되지 않음 - 향후 사용 예정)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const renderMobileBottomArea = () => {
     if (isAuthenticated && userProfile && isSignUpCompleted) {
       // 로그인 완료 상태 - 새로운 모바일 레이아웃

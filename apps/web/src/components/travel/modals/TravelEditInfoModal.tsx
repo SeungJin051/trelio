@@ -20,7 +20,6 @@ import {
   getCurrencyByDestination,
   getCurrencyByNationality,
 } from '@/lib/exchange-rate';
-import { createClient } from '@/lib/supabase/client/supabase';
 
 interface TravelInfo {
   title: string;
@@ -57,7 +56,6 @@ const TravelEditInfoModal: React.FC<TravelEditInfoModalProps> = ({
   const { userProfile } = useSession();
   const toast = useToast();
   const router = useRouter();
-  const supabase = createClient();
 
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -239,8 +237,10 @@ const TravelEditInfoModal: React.FC<TravelEditInfoModalProps> = ({
       toast.success('여행 계획이 수정되었습니다!');
       onUpdate?.();
       onClose();
-    } catch (error: any) {
-      toast.error(error.message || '여행 계획 수정 중 오류가 발생했습니다.');
+    } catch (error: unknown) {
+      toast.error(
+        (error as Error)?.message || '여행 계획 수정 중 오류가 발생했습니다.'
+      );
     } finally {
       setLoading(false);
     }
@@ -273,8 +273,10 @@ const TravelEditInfoModal: React.FC<TravelEditInfoModalProps> = ({
       onUpdate?.();
       onClose();
       router.push('/');
-    } catch (error: any) {
-      toast.error(error.message || '여행 계획 삭제 중 오류가 발생했습니다.');
+    } catch (error: unknown) {
+      toast.error(
+        (error as Error)?.message || '여행 계획 삭제 중 오류가 발생했습니다.'
+      );
     } finally {
       setDeleteLoading(false);
     }

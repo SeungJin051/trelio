@@ -10,7 +10,7 @@ import {
   IoPersonOutline,
 } from 'react-icons/io5';
 
-import { Avatar, Button, Input, Typography } from '@ui/components';
+import { Avatar, Button, Typography } from '@ui/components';
 
 import { Modal } from '@/components/basic';
 import { useToast } from '@/hooks/useToast';

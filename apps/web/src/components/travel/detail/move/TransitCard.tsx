@@ -12,7 +12,7 @@ import {
 
 import { Typography } from '@ui/components';
 
-import { getBlockColor, getBlockLabel } from '../utils/BlockPresentation';
+import { getBlockLabel } from '../utils/BlockPresentation';
 
 interface TransitCardData {
   title: string;

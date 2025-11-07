@@ -347,7 +347,7 @@ export const useAccessibleTravelPlans = (limit: number = 100) => {
         console.error('[useAccessibleTravelPlans] RPC error:', error);
         return [];
       }
-      return (data || []).map((row: any) => ({
+      return (data || []).map((row: Record<string, unknown>) => ({
         id: String(row.id),
         title: String(row.title),
         location: String(row.location),

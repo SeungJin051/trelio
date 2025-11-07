@@ -176,7 +176,12 @@ export async function createBlock(
   });
 
   if (!response.ok) {
-    let parsed: any = {};
+    let parsed: {
+      error?: string;
+      details?: string;
+      hint?: string;
+      raw?: string;
+    } = {};
     try {
       parsed = await response.json();
     } catch {
@@ -217,11 +222,16 @@ export async function updateBlock(
   });
 
   if (!response.ok) {
-    let error: any = {};
+    let error: {
+      error?: string;
+      details?: string;
+      hint?: string;
+      message?: string;
+    } = {};
     let errorText = '';
     try {
       error = await response.json();
-    } catch (e) {
+    } catch {
       errorText = await response.text();
     }
     console.error('[updateBlock] failed', {
@@ -247,7 +257,12 @@ export async function deleteBlock(blockId: string): Promise<void> {
   });
 
   if (!response.ok) {
-    let parsed: any = {};
+    let parsed: {
+      error?: string;
+      details?: string;
+      hint?: string;
+      raw?: string;
+    } = {};
     try {
       parsed = await response.json();
     } catch {
