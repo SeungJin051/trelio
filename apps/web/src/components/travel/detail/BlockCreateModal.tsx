@@ -97,6 +97,7 @@ export const BlockCreateModal: React.FC<BlockCreateModalProps> = ({
   const [transportType, setTransportType] = useState('');
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [roomType, setRoomType] = useState('');
   const [mealType, setMealType] = useState('');
   const [cuisine, setCuisine] = useState('');

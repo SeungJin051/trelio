@@ -203,9 +203,9 @@ const TravelDetailView = () => {
       );
       const totalCost = dayBlocks.reduce((sum, block) => {
         const amount =
-          typeof block.cost === 'object' && block.cost
+          typeof block.cost === 'object' && block.cost && 'amount' in block.cost
             ? // JSONB 형태
-              ((block.cost as any).amount ?? 0)
+              ((block.cost as { amount?: number }).amount ?? 0)
             : typeof block.cost === 'number'
               ? block.cost
               : 0;
@@ -255,8 +255,8 @@ const TravelDetailView = () => {
       );
       const totalCost = dayBlocks.reduce((sum, block) => {
         const amount =
-          typeof block.cost === 'object' && block.cost
-            ? ((block.cost as any).amount ?? 0)
+          typeof block.cost === 'object' && block.cost && 'amount' in block.cost
+            ? ((block.cost as { amount?: number }).amount ?? 0)
             : typeof block.cost === 'number'
               ? block.cost
               : 0;

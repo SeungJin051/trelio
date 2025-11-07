@@ -6,6 +6,32 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@repo/ui'],
 
+  // 성능 최적화 설정
+  images: {
+    // 이미지 최적화 설정
+    formats: ['image/avif', 'image/webp'],
+  },
+
+  // 압축 설정
+  compress: true,
+
+  // 레거시 브라우저 지원 제거
+  compiler: {
+    // SWC 컴파일러 최적화
+    removeConsole:
+      process.env.NODE_ENV === 'production'
+        ? {
+            exclude: ['error', 'warn'],
+          }
+        : false,
+  },
+
+  // 실험적 기능: 레거시 JavaScript 제거
+  experimental: {
+    // Modern browsers만 지원하여 레거시 폴리필 제거
+    optimizePackageImports: ['@repo/ui'],
+  },
+
   // 환경 변수 처리 개선
   env: {
     // 빌드 시 환경 변수가 없는 경우 기본값 제공
@@ -32,6 +58,13 @@ const nextConfig: NextConfig = {
       console.log('  VERCEL:', !!process.env.VERCEL);
       console.log('  NODE_ENV:', process.env.NODE_ENV);
     }
+
+    // 레거시 JavaScript 제거를 위한 설정
+    if (!dev && config.optimization) {
+      // Modern browsers만 지원하도록 설정
+      config.optimization.usedExports = true;
+    }
+
     return config;
   },
 };

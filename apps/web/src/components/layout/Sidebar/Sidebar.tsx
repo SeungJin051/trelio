@@ -162,7 +162,7 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
     fetchParticipantCounts();
 
     // 참여자 변경 실시간 감지
-    const planIds = (accessiblePlans || []).map((p: any) => p.id);
+    const planIds = (accessiblePlans || []).map((p: { id: string }) => p.id);
     if (planIds.length > 0) {
       const subscription = supabase
         .channel('participant-changes')
@@ -237,6 +237,7 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
         participantCount: participantCountMap.get(plan.id) || 1,
       };
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessiblePlans, participantCountMap]);
 
   const loading = isLoading || isFetching;
@@ -315,7 +316,7 @@ export const Sidebar = ({ isOpen, onToggle }: SidebarProps) => {
     return () => {
       try {
         channel.unsubscribe();
-      } catch (e) {
+      } catch {
         // noop
       }
     };

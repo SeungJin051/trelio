@@ -1,0 +1,10 @@
+# Modern browsers only - ES6+ 지원
+last 2 Chrome versions
+last 2 Firefox versions
+last 2 Safari versions
+last 2 Edge versions
+# ES2020 이상 기능 지원 (Array.prototype.at, Object.hasOwn 등)
+not IE 11
+not dead
+not op_mini all
+

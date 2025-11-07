@@ -63,6 +63,8 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 
+import type { PostgrestError } from '@supabase/supabase-js';
+
 import { createServerSupabaseClient } from '@/lib/supabase/client/supabase-server';
 
 export async function PUT(
@@ -257,9 +259,9 @@ export async function DELETE(
       return NextResponse.json(
         {
           error: deleteError.message || 'Failed to delete block',
-          details: (deleteError as any).details,
-          hint: (deleteError as any).hint,
-          code: (deleteError as any).code,
+          details: (deleteError as PostgrestError).details,
+          hint: (deleteError as PostgrestError).hint,
+          code: (deleteError as PostgrestError).code,
         },
         { status: 500 }
       );

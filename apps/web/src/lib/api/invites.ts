@@ -30,8 +30,10 @@ export async function acceptShareLink(
   if (res.status === 400) throw new Error('INVALID_REQUEST');
   if (res.status === 423) throw new Error('LINK_CLOSED');
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}) as any);
-    const detail = (body as any)?.detail as string | undefined;
+    const body = (await res.json().catch(() => ({}))) as {
+      detail?: string;
+    };
+    const detail = body?.detail as string | undefined;
     throw new Error(detail ? `FAILED:${detail}` : 'FAILED');
   }
   return (await res.json()) as { planId: string };

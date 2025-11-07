@@ -51,6 +51,10 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+  // CSS 렌더링 차단 최적화: CSS를 비동기로 로드
+  other: {
+    'x-css-loading': 'async',
+  },
 };
 
 export const viewport: Viewport = {

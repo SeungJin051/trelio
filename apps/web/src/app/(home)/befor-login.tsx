@@ -46,6 +46,7 @@ const HeroTypingTitle: React.FC = () => {
 
     const timer = setTimeout(tick, typingSpeed);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [display, isDeleting, index]);
 
   return (
@@ -126,6 +127,9 @@ const BeforeLoginHomeView = () => {
                 src='/travel_landing.png'
                 alt='여행 랜딩 일러스트'
                 className='h-full w-full object-contain'
+                sizes='(max-width: 768px) 100vw, 430px'
+                priority
+                fetchPriority='high'
               />
             </div>
           </div>
@@ -210,7 +214,7 @@ const BeforeLoginHomeView = () => {
 
       {/* 고민이신가요? 섹션 */}
       <section className='py-12 sm:py-16'>
-        <div className='py-24sm:py-32'>
+        <div className='py-24 sm:py-32'>
           <div className='mx-auto max-w-7xl px-6 lg:px-8'>
             <div className='mx-auto max-w-2xl lg:text-center'>
               <Typography
@@ -278,7 +282,7 @@ const BeforeLoginHomeView = () => {
               <div className='mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row'>
                 <Link href='/log-in'>
                   <Button variant='filled' size='large'>
-                    <Typography className='tleading-relaxed text-white sm:text-base'>
+                    <Typography className='leading-relaxed text-white sm:text-base'>
                       로그인하기
                     </Typography>
                   </Button>

@@ -103,7 +103,7 @@ const SignUpView = () => {
               metadata.avatar_url || metadata.picture || undefined,
           }));
         }
-      } catch (error) {
+      } catch {
         toast.error('사용자 정보를 확인하는 중 오류가 발생했습니다.');
         router.push('/log-in');
       }
@@ -224,7 +224,7 @@ const SignUpView = () => {
             profileVerified = true;
             break;
           }
-        } catch (verifyError) {
+        } catch {
           console.error('프로필 확인 오류');
         }
 
@@ -268,7 +268,7 @@ const SignUpView = () => {
             const { planId } = (await res.json()) as { planId: string };
             window.location.href = `/travel/${planId}`;
             return;
-          } catch (_err) {
+          } catch {
             // 초대 수락 실패 시 next로 폴백
             router.replace(next!);
             return;

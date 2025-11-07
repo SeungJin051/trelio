@@ -61,8 +61,8 @@ const InviteSharePage = () => {
       setSubmitting(true);
       const res = await acceptShareLink(shareId);
       router.replace(`/travel/${res.planId}`);
-    } catch (err: any) {
-      const code = String(err?.message || 'ERROR');
+    } catch (err: unknown) {
+      const code = String((err as Error)?.message || 'ERROR');
       if (code === 'UNAUTHORIZED') {
         setBanner({
           type: 'info',

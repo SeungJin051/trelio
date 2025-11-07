@@ -143,7 +143,16 @@ export async function PUT(
     }
 
     // 수정할 데이터 준비
-    const updateData: any = {
+    const updateData: {
+      updated_at: string;
+      title?: string;
+      location?: string;
+      start_date?: string;
+      end_date?: string;
+      target_budget?: string;
+      budget_currency?: string;
+      destination_country?: string;
+    } = {
       updated_at: new Date().toISOString(),
     };
 

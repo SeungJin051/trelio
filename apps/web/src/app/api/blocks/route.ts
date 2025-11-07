@@ -42,7 +42,16 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 
+import type { PostgrestError } from '@supabase/supabase-js';
+
 import { createServerSupabaseClient } from '@/lib/supabase/client/supabase-server';
+
+interface LocationData {
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  placeId?: string;
+}
 
 /**
  * @api {get} /api/blocks 여행 블록 조회
@@ -220,10 +229,10 @@ export async function POST(request: NextRequest) {
         : typeof location === 'string'
           ? { address: location }
           : {
-              address: (location as any)?.address ?? '',
-              latitude: (location as any)?.latitude ?? undefined,
-              longitude: (location as any)?.longitude ?? undefined,
-              placeId: (location as any)?.placeId ?? undefined,
+              address: (location as LocationData)?.address ?? '',
+              latitude: (location as LocationData)?.latitude ?? undefined,
+              longitude: (location as LocationData)?.longitude ?? undefined,
+              placeId: (location as LocationData)?.placeId ?? undefined,
             };
 
     // 블록 생성
@@ -259,9 +268,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: blockError.message || 'Failed to create block',
-          details: (blockError as any).details,
-          hint: (blockError as any).hint,
-          code: (blockError as any).code,
+          details: (blockError as PostgrestError).details,
+          hint: (blockError as PostgrestError).hint,
+          code: (blockError as PostgrestError).code,
         },
         { status: 500 }
       );

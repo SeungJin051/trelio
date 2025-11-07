@@ -41,9 +41,6 @@ const TravelPlansList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [initialLoad, setInitialLoad] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [participantCountMap, setParticipantCountMap] = useState<
-    Map<string, number>
-  >(new Map());
 
   const supabase = useMemo(() => createClient(), []);
 

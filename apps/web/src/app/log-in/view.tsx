@@ -111,7 +111,7 @@ const LoginView = () => {
 
     // subscription.unsubscribe()를 호출하여 onAuthStateChange에서 등록한 인증 상태 변화 감지 콜백을 제거함
     return () => subscription.unsubscribe();
-  }, [supabase, router, toast]);
+  }, [supabase, router, toast, searchParams]);
 
   /**
    * 카카오 소셜 로그인 처리 함수

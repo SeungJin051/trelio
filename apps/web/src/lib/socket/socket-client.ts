@@ -48,6 +48,42 @@ class SocketManager {
 
   constructor() {
     this.initSocket();
+    this.setupPageLifecycleHandlers();
+  }
+
+  /**
+   * 페이지 생명주기 핸들러 설정
+   * bfcache 최적화를 위해 페이지 숨김 시 연결 해제, 표시 시 재연결
+   */
+  private setupPageLifecycleHandlers() {
+    if (typeof window === 'undefined') return;
+
+    // 페이지 숨김 시 (bfcache 진입 전)
+    const handlePageHide = () => {
+      if (this.socket?.connected) {
+        // 연결을 끊어 bfcache 진입 가능하도록 함
+        this.socket.disconnect();
+      }
+    };
+
+    // 페이지 표시 시 (bfcache 복원 후)
+    const handlePageShow = (event: PageTransitionEvent) => {
+      // bfcache에서 복원된 경우 재연결
+      if (event.persisted && !this.socket?.connected) {
+        this.initSocket();
+        // 이전 여행 계획에 재참여
+        if (this.currentTravelPlanId) {
+          setTimeout(() => {
+            this.joinTravelPlan(this.currentTravelPlanId!);
+          }, 100);
+        }
+      }
+    };
+
+    window.addEventListener('pagehide', handlePageHide);
+    window.addEventListener('pageshow', handlePageShow);
+
+    // 정리 함수는 싱글톤이므로 제거하지 않음
   }
 
   /**
