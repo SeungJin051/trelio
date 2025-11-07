@@ -1,23 +1,14 @@
 import localFont from 'next/font/local';
 
-// Pretendard 폰트 설정
+/**
+ * Pretendard 폰트 설정
+ *
+ * - 실제로 사용되는 웨이트만 로드하여 초기 로딩 시간 단축
+ * - Regular(400) 폰트를 preload하여 FCP 개선
+ * - display: swap으로 폰트 로딩 중에도 텍스트 표시
+ */
 export const pretendard = localFont({
   src: [
-    {
-      path: '../../public/fonts/Pretendard-Thin.woff2',
-      weight: '100',
-      style: 'normal',
-    },
-    {
-      path: '../../public/fonts/Pretendard-ExtraLight.woff2',
-      weight: '200',
-      style: 'normal',
-    },
-    {
-      path: '../../public/fonts/Pretendard-Light.woff2',
-      weight: '300',
-      style: 'normal',
-    },
     {
       path: '../../public/fonts/Pretendard-Regular.woff2',
       weight: '400',
@@ -38,17 +29,20 @@ export const pretendard = localFont({
       weight: '700',
       style: 'normal',
     },
-    {
-      path: '../../public/fonts/Pretendard-ExtraBold.woff2',
-      weight: '800',
-      style: 'normal',
-    },
-    {
-      path: '../../public/fonts/Pretendard-Black.woff2',
-      weight: '900',
-      style: 'normal',
-    },
   ],
   display: 'swap',
   variable: '--font-pretendard',
+  preload: true,
+  fallback: [
+    '-apple-system',
+    'BlinkMacSystemFont',
+    'system-ui',
+    'Roboto',
+    'Helvetica Neue',
+    'Segoe UI',
+    'Apple SD Gothic Neo',
+    'Noto Sans KR',
+    'Malgun Gothic',
+    'sans-serif',
+  ],
 });
