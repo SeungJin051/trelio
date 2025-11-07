@@ -2,14 +2,28 @@
 
 import React from 'react';
 
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { BsArrowRight } from 'react-icons/bs';
 
 import { Icon, Typography } from '@ui/components';
 
 import { NOT_FOUND_LOTTIE_URL } from '@/constants/constants';
+
+// DotLottieReact는 404 페이지에서만 필요하므로 동적 import로 로드하여 초기 번들에서 제외
+const DotLottieReact = dynamic(
+  () =>
+    import('@lottiefiles/dotlottie-react').then((mod) => mod.DotLottieReact),
+  {
+    ssr: false,
+    loading: () => (
+      <div className='flex h-[180px] w-[180px] items-center justify-center'>
+        <div className='h-16 w-16 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600'></div>
+      </div>
+    ),
+  }
+);
 
 const NotFound = () => {
   return (
